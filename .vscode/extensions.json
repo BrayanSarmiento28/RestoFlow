@@ -1,3 +1,8 @@
 {
-  "recommendations": ["vscjava.vscode-java-pack", "vmware.vscode-boot-dev-pack", "angular.ng-template"]
+  "recommendations": [
+    "vscjava.vscode-java-pack",
+    "vmware.vscode-boot-dev-pack",
+    "angular.ng-template",
+    "humao.rest-client"
+  ]
 }

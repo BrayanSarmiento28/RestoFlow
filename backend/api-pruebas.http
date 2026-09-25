@@ -1,0 +1,78 @@
+### =====================================================================
+### RestoFlow · Pruebas del API del Sprint 1
+### Uso: instale la extensión "REST Client" (humao.rest-client) en VS Code
+### y haga clic en "Send Request" encima de cada petición.
+### =====================================================================
+
+@api = http://localhost:8080/api
+
+### 1. HU-01 · Iniciar sesión como administrador (copie el "token" de la respuesta)
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@restoflow.com",
+  "password": "Admin2026*"
+}
+
+### Guarda el token automáticamente para las siguientes peticiones
+@token = {{login.response.body.token}}
+
+### 2. Login con contraseña incorrecta (debe responder 401)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@restoflow.com",
+  "password": "equivocada"
+}
+
+### 3. HU-03 · Crear una cuenta de mesero (solo ADMIN, requiere el token)
+POST {{api}}/usuarios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Laura Gómez",
+  "email": "correo.real@gmail.com",
+  "password": "Mesero2026",
+  "rol": "MESERO"
+}
+
+### 4. HU-03 · Listar cuentas
+GET {{api}}/usuarios
+Authorization: Bearer {{token}}
+
+### 5. Crear cuenta SIN token (debe responder 401)
+POST {{api}}/usuarios
+Content-Type: application/json
+
+{
+  "nombre": "Intruso",
+  "email": "intruso@correo.com",
+  "password": "Intruso2026",
+  "rol": "ADMIN"
+}
+
+### 6. HU-02 · Paso 1: pedir el código de recuperación (llega al correo)
+POST {{api}}/auth/recuperar
+Content-Type: application/json
+
+{
+  "email": "correo.real@gmail.com"
+}
+
+### 7. HU-02 · Paso 2: restablecer con el código recibido
+POST {{api}}/auth/restablecer
+Content-Type: application/json
+
+{
+  "email": "correo.real@gmail.com",
+  "codigo": "123456",
+  "nuevaPassword": "NuevaClave2026"
+}
+
+### 8. Datos del usuario del token
+GET {{api}}/auth/me
+Authorization: Bearer {{token}}
