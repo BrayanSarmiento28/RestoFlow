@@ -19,7 +19,7 @@ Criterios de aceptación:
 Criterios de aceptación:
 - Al escribir mi correo, recibo un código de 6 dígitos que vence en 15 minutos.
 - Con el código correcto puedo definir una contraseña nueva (mínimo 8 caracteres).
-- El código solo puede usarse una vez.
+- El código solo puede usarse una vez y se bloquea después de 5 intentos fallidos.
 - Por seguridad, el sistema responde lo mismo aunque el correo no exista.
 
 ### HU-03 · Crear cuenta de empleado
@@ -56,7 +56,7 @@ Criterios de aceptación:
 | Tabla | Campos |
 |---|---|
 | `usuarios` | id_usuario, nombre, email (único), password_hash, rol, activo, fecha_creacion |
-| `codigos_recuperacion` | id_codigo, id_usuario (FK), codigo_hash, fecha_expiracion, usado |
+| `codigos_recuperacion` | id_codigo, id_usuario (FK), codigo_hash, fecha_expiracion, usado, intentos_fallidos |
 
 ## Contrato del API (acordado entre frontend y backend)
 
