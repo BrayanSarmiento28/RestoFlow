@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    
+    {
+      "type": "java",
+      "name": "Backend RestoFlow",
+      "request": "launch",
+      "mainClass": "com.udec.restoflow.RestoFlowApplication",
+      "projectName": "restoflow-backend",
+      "cwd": "${workspaceFolder}/backend"
+    }
+  ]
+}

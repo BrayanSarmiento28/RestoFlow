@@ -1,0 +1,25 @@
+# Configuración SOLO para las pruebas automáticas: base de datos H2 en memoria
+# (así las pruebas no dependen de tener SQL Server encendido ni internet).
+spring:
+  datasource:
+    url: jdbc:h2:mem:restoflow_test;MODE=MSSQLServer;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+restoflow:
+  jwt:
+    secret: clave-de-pruebas-restoflow-con-mas-de-32-caracteres
+    expiracion-minutos: 60
+  cors:
+    origenes-permitidos: http://localhost:4200
+  correo:
+    modo: consola
+  admin-inicial:
+    nombre: Administrador Pruebas
+    email: admin@pruebas.com
+    contrasena: Admin2026*
