@@ -33,23 +33,29 @@ Criterios de aceptación:
 
 ## Tareas
 
-| # | Tarea | Responsable |
-|---|---|---|
-| B1 | Proyecto Spring Boot base | Brayan |
-| B2 | Estructura de carpetas hexagonal | Brayan |
-| B3 | Dominio: Usuario, Rol, CodigoRecuperacion | Brayan |
-| B4 | Puertos de entrada y salida | Brayan |
-| B5 | Casos de uso: login, crear cuenta, recuperar contraseña | Brayan |
-| B6 | Persistencia JPA + SQL Server | Brayan |
-| B7 | Seguridad: JWT, BCrypt y roles | Brayan |
-| B8 | Envío de correo (Gmail SMTP) | Brayan |
-| B9 | Controladores REST y manejo de errores | Brayan |
-| B10 | Pruebas unitarias del dominio | Brayan |
-| F1 | Proyecto Angular base | Sebastián |
-| F2 | Servicios, modelos e interceptor JWT | Sebastián |
-| F3 | Pantalla Iniciar sesión | Sebastián |
-| F4 | Pantalla Olvidé mi contraseña | Sebastián |
-| F5 | Pantalla Crear cuenta (solo admin) | Sebastián |
+| # | Tarea | Responsable | Estado |
+|---|---|---|---|
+| B1 | Proyecto Spring Boot base | Brayan | ✅ Terminada |
+| B2 | Estructura de carpetas hexagonal | Brayan | ✅ Terminada |
+| B3 | Dominio: Usuario, Rol, CodigoRecuperacion | Brayan | ✅ Terminada |
+| B4 | Puertos de entrada y salida | Brayan | ✅ Terminada |
+| B5 | Casos de uso: login, crear cuenta, recuperar contraseña | Brayan | ✅ Terminada |
+| B6 | Persistencia JPA + SQL Server | Brayan | ✅ Terminada |
+| B7 | Seguridad: JWT, BCrypt y roles | Brayan | ✅ Terminada |
+| B8 | Envío de correo (Gmail SMTP) | Brayan | ✅ Terminada |
+| B9 | Controladores REST y manejo de errores | Brayan | ✅ Terminada |
+| B10 | Pruebas unitarias del dominio | Brayan | ✅ Terminada |
+| F1 | Proyecto Angular base | Sebastián | ⏳ Pendiente |
+| F2 | Servicios, modelos e interceptor JWT | Sebastián | ⏳ Pendiente |
+| F3 | Pantalla Iniciar sesión | Sebastián | ⏳ Pendiente |
+| F4 | Pantalla Olvidé mi contraseña | Sebastián | ⏳ Pendiente |
+| F5 | Pantalla Crear cuenta (solo admin) | Sebastián | ⏳ Pendiente |
+
+## Resultado del backend
+
+- Las 3 historias de usuario se probaron de punta a punta contra SQL Server y Gmail reales
+  (archivo `backend/api-pruebas.http`).
+- 30 pruebas automáticas en verde (dominio, casos de uso y arranque de la aplicación).
 
 ## Modelo de datos del sprint
 
