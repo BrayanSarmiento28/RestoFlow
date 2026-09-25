@@ -36,6 +36,12 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Seguridad: autenticación con JWT, cifrado BCrypt y control de acceso por rol -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Persistencia (adaptador de salida): JPA / Hibernate -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
