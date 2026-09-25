@@ -1,0 +1,29 @@
+# ===== Backend (Java / Maven) =====
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.log
+hs_err_pid*
+
+# ===== Frontend (Angular / Node) =====
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/out-tsc/
+npm-debug.log*
+
+# ===== Configuración local y secretos (NUNCA subir contraseñas) =====
+.env
+*.env
+backend/src/main/resources/application-local.yml
+
+# ===== Editores y sistema operativo =====
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.factorypath
+bin/
+.DS_Store
+Thumbs.db
