@@ -1,0 +1,6 @@
+# PLANTILLA. Copie este archivo como "application-local.yml" (en esta misma carpeta)
+# y escriba sus datos reales. "application-local.yml" está en .gitignore: nunca se sube a GitHub.
+spring:
+  datasource:
+    username: restoflow_app
+    password: ESCRIBA_AQUI_LA_CONTRASENA

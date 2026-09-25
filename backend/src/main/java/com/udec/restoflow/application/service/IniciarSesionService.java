@@ -7,6 +7,7 @@ import com.udec.restoflow.application.port.out.UsuarioRepositoryPort;
 import com.udec.restoflow.domain.exception.CredencialesInvalidasException;
 import com.udec.restoflow.domain.exception.DomainException;
 import com.udec.restoflow.domain.model.Usuario;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * HU-01 · Iniciar sesión.
@@ -17,6 +18,7 @@ import com.udec.restoflow.domain.model.Usuario;
  *   <li>Genera el token de sesión.</li>
  * </ol>
  */
+@Transactional(readOnly = true)
 public class IniciarSesionService implements IniciarSesionUseCase {
 
     private final UsuarioRepositoryPort usuarios;

@@ -12,10 +12,12 @@ import com.udec.restoflow.domain.model.Usuario;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * HU-02 · Recuperar contraseña con un código de 6 dígitos enviado al correo.
  */
+@Transactional
 public class RecuperarContrasenaService implements RecuperarContrasenaUseCase {
 
     private final UsuarioRepositoryPort usuarios;
@@ -53,8 +55,12 @@ public class RecuperarContrasenaService implements RecuperarContrasenaUseCase {
                 CodigoRecuperacion.VIGENCIA_MINUTOS);
     }
 
-    /** Paso 2. Valida el código y, si es correcto, cambia la contraseña. */
+    /**
+     * Paso 2. Valida el código y, si es correcto, cambia la contraseña.
+     * noRollbackFor: aunque el código sea incorrecto, el intento fallido SÍ debe quedar guardado.
+     */
     @Override
+    @Transactional(noRollbackFor = CodigoRecuperacionInvalidoException.class)
     public void restablecerContrasena(ComandoRestablecer comando) {
         Usuario.validarContrasenaSegura(comando.nuevaContrasena());
 

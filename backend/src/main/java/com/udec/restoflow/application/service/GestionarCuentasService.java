@@ -10,11 +10,13 @@ import com.udec.restoflow.domain.model.Usuario;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * HU-03 · El administrador crea las cuentas del personal y les asigna un rol.
  * (El control de que solo un ADMIN pueda hacerlo se aplica en la capa de seguridad, paso B7.)
  */
+@Transactional
 public class GestionarCuentasService implements GestionarCuentasUseCase {
 
     private final UsuarioRepositoryPort usuarios;
