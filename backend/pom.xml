@@ -42,6 +42,12 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- Envío de correos (adaptador de salida): código de recuperación por Gmail -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Persistencia (adaptador de salida): JPA / Hibernate -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

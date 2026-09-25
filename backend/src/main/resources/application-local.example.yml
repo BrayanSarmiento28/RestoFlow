@@ -3,4 +3,11 @@
 spring:
   datasource:
     username: restoflow_app
-    password: ESCRIBA_AQUI_LA_CONTRASENA
+    password: ESCRIBA_AQUI_LA_CONTRASENA_DE_SQL_SERVER
+  mail:
+    username: su_correo@gmail.com
+    password: ESCRIBA_AQUI_LA_CONTRASENA_DE_APLICACION_DE_GOOGLE
+
+restoflow:
+  correo:
+    modo: gmail   # use "consola" si no tiene Gmail configurado

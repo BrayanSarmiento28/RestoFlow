@@ -12,6 +12,19 @@ spring:
     username: ${DB_USER:restoflow_app}
     password: ${DB_PASSWORD:}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  # ---------- Correo: Gmail SMTP ----------
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}   # contraseña de aplicación de Google (va en application-local.yml)
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+
   jpa:
     hibernate:
       # "update" crea o completa las tablas a partir de las entidades sin borrar datos
@@ -30,6 +43,10 @@ restoflow:
     expiracion-minutos: 480   # 8 horas = un turno de trabajo
   cors:
     origenes-permitidos: http://localhost:4200   # dirección del frontend Angular
+  correo:
+    # "consola": muestra el código en la consola (pruebas) · "gmail": lo envía por correo real
+    modo: ${CORREO_MODO:consola}
+    remitente-nombre: RestoFlow
   admin-inicial:
     # Se crea automáticamente SOLO si la tabla usuarios está vacía
     nombre: Administrador RestoFlow
