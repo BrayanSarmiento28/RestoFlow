@@ -17,7 +17,8 @@ npm-debug.log*
 *.env
 backend/src/main/resources/application-local.yml
 
-# ===== Editores y sistema operativo =====
+# ===== Editores, extensiones y sistema operativo =====
+.github/modernize/
 .idea/
 *.iml
 .classpath

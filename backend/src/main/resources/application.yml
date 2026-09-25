@@ -1,0 +1,7 @@
+# Configuración general del backend de RestoFlow
+spring:
+  application:
+    name: restoflow-backend
+
+server:
+  port: 8080
