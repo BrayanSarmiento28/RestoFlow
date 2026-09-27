@@ -1,1 +1,26 @@
-/* You can add global styles to this file, and also import other style files */
+// Colores de RestoFlow (tomados del diseño en Figma)
+:root {
+  --rf-azul-oscuro: #0b1530;
+  --rf-azul-medio: #13244d;
+  --rf-primario: #1d5cff;
+  --rf-primario-hover: #1447d6;
+  --rf-acento: #4f9dff;
+  --rf-texto: #0f172a;
+  --rf-texto-suave: #64748b;
+  --rf-borde: #e2e8f0;
+  --rf-fondo: #f8fafc;
+  --rf-error: #dc2626;
+  --rf-exito: #16a34a;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--rf-texto);
+  background: var(--rf-fondo);
+}
+
+button, input { font-family: inherit; }

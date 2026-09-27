@@ -1,0 +1,65 @@
+<div class="login">
+  <!-- Panel izquierdo: presentación -->
+  <section class="panel-marca">
+    <div class="logo">
+      <span class="logo__icono">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+      </span>
+      <span class="logo__texto">RestoFlow</span>
+    </div>
+
+    <div class="mensaje">
+      <h1>Gestión inteligente <span>para tu restaurante</span></h1>
+      <p>Conecta pedidos, cocina, inventario y administración en tiempo real. Con IA integrada que aprende de tu negocio.</p>
+    </div>
+
+    <div class="estadisticas">
+      <div class="estadistica"><strong>98%</strong><span>Precisión en pedidos</span></div>
+      <div class="estadistica"><strong>2.4x</strong><span>Eficiencia en cocina</span></div>
+      <div class="estadistica"><strong>30%</strong><span>Reducción de desperdicios</span></div>
+    </div>
+  </section>
+
+  <!-- Panel derecho: formulario -->
+  <section class="panel-form">
+    <form class="formulario" [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
+      <h2>Bienvenido</h2>
+      <p class="subtitulo">Ingresa tus credenciales para continuar</p>
+
+      @if (error()) {
+        <div class="alerta" role="alert">{{ error() }}</div>
+      }
+
+      <label for="email">Usuario</label>
+      <input id="email" type="email" formControlName="email" placeholder="admin@restoflow.com"
+             autocomplete="username" [class.con-error]="invalido('email')" />
+      @if (invalido('email')) {
+        <small class="error-campo">Escribe un correo válido</small>
+      }
+
+      <label for="password">Contraseña</label>
+      <div class="campo-password">
+        <input id="password" [type]="verPassword() ? 'text' : 'password'" formControlName="password"
+               placeholder="••••••••" autocomplete="current-password" [class.con-error]="invalido('password')" />
+        <button type="button" class="ver" (click)="verPassword.set(!verPassword())"
+                [attr.aria-label]="verPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      @if (invalido('password')) {
+        <small class="error-campo">La contraseña es obligatoria</small>
+      }
+
+      <div class="opciones">
+        <label class="recordarme"><input type="checkbox" formControlName="recordarme" /> Recordarme</label>
+        <a routerLink="/recuperar">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <button type="submit" class="boton" [disabled]="cargando()">
+        @if (cargando()) { Ingresando... } @else { Iniciar sesión <span aria-hidden="true">→</span> }
+      </button>
+    </form>
+  </section>
+</div>
