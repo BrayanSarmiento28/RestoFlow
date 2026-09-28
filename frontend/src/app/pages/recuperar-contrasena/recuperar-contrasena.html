@@ -1,0 +1,89 @@
+<div class="auth">
+  <app-panel-marca></app-panel-marca>
+
+  <section class="auth__form">
+    @switch (paso()) {
+      <!-- Paso 1: pedir el código -->
+      @case (1) {
+        <form class="formulario" [formGroup]="formCorreo" (ngSubmit)="enviarCodigo()" novalidate>
+          <h2>Recuperar contraseña</h2>
+          <p class="subtitulo">Escribe tu correo y te enviaremos un código de 6 dígitos para crear una nueva contraseña.</p>
+
+          @if (error()) {
+            <div class="alerta" role="alert">{{ error() }}</div>
+          }
+
+          <label for="email">Correo</label>
+          <input id="email" type="email" formControlName="email" placeholder="tu@restoflow.com"
+                 autocomplete="email" [class.con-error]="invalido(formCorreo.controls.email)" />
+          @if (invalido(formCorreo.controls.email)) {
+            <small class="error-campo">Escribe un correo válido</small>
+          }
+
+          <button type="submit" class="boton" [disabled]="cargando()">
+            {{ cargando() ? 'Enviando...' : 'Enviar código' }}
+          </button>
+
+          <a class="enlace volver" routerLink="/login">← Volver a iniciar sesión</a>
+        </form>
+      }
+
+      <!-- Paso 2: código + nueva contraseña -->
+      @case (2) {
+        <form class="formulario" [formGroup]="formCodigo" (ngSubmit)="restablecer()" novalidate>
+          <h2>Crea tu nueva contraseña</h2>
+          <p class="subtitulo">Escribe el código que enviamos a <strong>{{ correo }}</strong>. Vence en 15 minutos.</p>
+
+          @if (mensaje()) {
+            <div class="alerta alerta--exito">{{ mensaje() }}</div>
+          }
+          @if (error()) {
+            <div class="alerta" role="alert">{{ error() }}</div>
+          }
+
+          <label for="codigo">Código de verificación</label>
+          <input id="codigo" type="text" formControlName="codigo" class="codigo" placeholder="000000"
+                 inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+                 [class.con-error]="invalido(formCodigo.controls.codigo)" />
+          @if (invalido(formCodigo.controls.codigo)) {
+            <small class="error-campo">El código tiene 6 números</small>
+          }
+
+          <label for="nueva">Nueva contraseña</label>
+          <input id="nueva" type="password" formControlName="nuevaPassword" placeholder="Mínimo 8 caracteres"
+                 autocomplete="new-password" [class.con-error]="invalido(formCodigo.controls.nuevaPassword)" />
+          @if (invalido(formCodigo.controls.nuevaPassword)) {
+            <small class="error-campo">Mínimo 8 caracteres, con al menos una letra y un número</small>
+          }
+
+          <label for="confirmar">Confirmar contraseña</label>
+          <input id="confirmar" type="password" formControlName="confirmar" placeholder="Repite la contraseña"
+                 autocomplete="new-password"
+                 [class.con-error]="formCodigo.hasError('noCoinciden') && formCodigo.controls.confirmar.touched" />
+          @if (formCodigo.hasError('noCoinciden') && formCodigo.controls.confirmar.touched) {
+            <small class="error-campo">Las contraseñas no coinciden</small>
+          }
+
+          <button type="submit" class="boton" [disabled]="cargando()">
+            {{ cargando() ? 'Guardando...' : 'Cambiar contraseña' }}
+          </button>
+
+          <div class="acciones">
+            <a class="enlace" (click)="enviarCodigo()">Reenviar código</a>
+            <a class="enlace" (click)="cambiarCorreo()">Usar otro correo</a>
+          </div>
+        </form>
+      }
+
+      <!-- Paso 3: listo -->
+      @case (3) {
+        <div class="formulario">
+          <div class="exito-icono" aria-hidden="true">✓</div>
+          <h2>¡Contraseña actualizada!</h2>
+          <p class="subtitulo">{{ mensaje() ?? 'Ya puedes iniciar sesión con tu nueva contraseña.' }}</p>
+          <a class="boton boton--enlace" routerLink="/login">Ir a iniciar sesión</a>
+        </div>
+      }
+    }
+  </section>
+</div>

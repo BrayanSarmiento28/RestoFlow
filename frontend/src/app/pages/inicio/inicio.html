@@ -1,1 +1,5 @@
-<p>inicio works!</p>
+<main style="padding: 48px">
+  <h1>Hola, {{ usuario?.nombre }} 👋</h1>
+  <p>Ingresaste con el rol <strong>{{ usuario?.rol }}</strong>.</p>
+  <button (click)="salir()">Cerrar sesión</button>
+</main>

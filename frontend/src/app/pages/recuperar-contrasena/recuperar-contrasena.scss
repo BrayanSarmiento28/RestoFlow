@@ -1,0 +1,31 @@
+.volver { margin-top: 24px; text-align: center; }
+
+.acciones {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.formulario input.codigo {
+  font-size: 22px;
+  letter-spacing: 10px;
+  text-align: center;
+}
+
+.exito-icono {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 20px;
+  font-size: 28px;
+  color: var(--rf-exito);
+  border-radius: 50%;
+  background: #dcfce7;
+}
+
+.boton--enlace {
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
