@@ -1,0 +1,78 @@
+<div class="pagina">
+  <header class="encabezado">
+    <div>
+      <h1>Cuentas del personal</h1>
+      <p class="fecha">Crea las cuentas de tu equipo y asígnales un rol.</p>
+    </div>
+  </header>
+
+  <div class="columnas">
+    <section class="tarjeta">
+      <form class="formulario" [formGroup]="form" (ngSubmit)="crear()" novalidate>
+        <h2>Nueva cuenta</h2>
+
+        @if (exito()) {
+          <div class="alerta alerta--exito">{{ exito() }}</div>
+        }
+        @if (error()) {
+          <div class="alerta" role="alert">{{ error() }}</div>
+        }
+
+        <label for="nombre">Nombre completo</label>
+        <input id="nombre" type="text" formControlName="nombre" placeholder="Laura Gómez"
+               [class.con-error]="invalido('nombre')" />
+        @if (invalido('nombre')) {
+          <small class="error-campo">Escribe el nombre (mínimo 3 letras)</small>
+        }
+
+        <label for="email">Correo</label>
+        <input id="email" type="email" formControlName="email" placeholder="laura@restoflow.com"
+               autocomplete="off" [class.con-error]="invalido('email')" />
+        @if (invalido('email')) {
+          <small class="error-campo">Escribe un correo válido</small>
+        }
+
+        <label for="password">Contraseña temporal</label>
+        <input id="password" type="text" formControlName="password" placeholder="Mínimo 8 caracteres"
+               autocomplete="new-password" [class.con-error]="invalido('password')" />
+        @if (invalido('password')) {
+          <small class="error-campo">Mínimo 8 caracteres, con al menos una letra y un número</small>
+        }
+
+        <label for="rol">Rol</label>
+        <select id="rol" formControlName="rol">
+          @for (r of roles; track r.valor) {
+            <option [value]="r.valor">{{ r.etiqueta }}</option>
+          }
+        </select>
+
+        <button type="submit" class="boton" [disabled]="cargando()">
+          {{ cargando() ? 'Creando...' : 'Crear cuenta' }}
+        </button>
+      </form>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Personal registrado ({{ usuarios().length }})</h2>
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <thead>
+            <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            @for (u of usuarios(); track u.id) {
+              <tr>
+                <td>{{ u.nombre }}</td>
+                <td>{{ u.email }}</td>
+                <td><span [class]="'rol rol--' + u.rol.toLowerCase()">{{ nombreRol(u.rol) }}</span></td>
+                <td>{{ u.activo ? 'Activa' : 'Inactiva' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="vacio">Aún no hay cuentas registradas</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>

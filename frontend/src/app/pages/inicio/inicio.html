@@ -1,5 +1,17 @@
-<main style="padding: 48px">
-  <h1>Hola, {{ usuario?.nombre }} 👋</h1>
-  <p>Ingresaste con el rol <strong>{{ usuario?.rol }}</strong>.</p>
-  <button (click)="salir()">Cerrar sesión</button>
-</main>
+<div class="pagina">
+  <header class="encabezado">
+    <div>
+      <h1>Dashboard</h1>
+      <p class="fecha">{{ hoy }}</p>
+    </div>
+    <span class="estado"><span class="punto"></span> Sistema activo</span>
+  </header>
+
+  <section class="bienvenida">
+    <h2>Hola, {{ usuario?.nombre }} 👋</h2>
+    <p>Bienvenido a RestoFlow. Los módulos de pedidos, cocina, inventario y RestoFlow AI se habilitarán en los próximos sprints.</p>
+    @if (esAdmin) {
+      <a class="boton-claro" routerLink="/usuarios">Gestionar cuentas del personal →</a>
+    }
+  </section>
+</div>

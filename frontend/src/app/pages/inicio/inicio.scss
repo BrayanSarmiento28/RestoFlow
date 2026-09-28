@@ -1,0 +1,33 @@
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  background: #f0fdf4;
+}
+
+.punto { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+
+.bienvenida {
+  padding: 32px;
+  color: #fff;
+  border-radius: 16px;
+  background: linear-gradient(120deg, var(--rf-azul-oscuro), var(--rf-azul-medio));
+  h2 { margin: 0 0 8px; font-size: 24px; }
+  p { max-width: 620px; margin: 0 0 20px; line-height: 1.6; color: #b6c2dc; }
+}
+
+.boton-claro {
+  display: inline-block;
+  padding: 10px 18px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 10px;
+  background: var(--rf-primario);
+  &:hover { background: var(--rf-primario-hover); }
+}

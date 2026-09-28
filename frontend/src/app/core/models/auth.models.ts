@@ -31,3 +31,10 @@ export interface ErrorResponse {
   mensaje: string;
   campos?: Record<string, string>;
 }
+
+export interface CrearUsuarioRequest {
+  nombre: string;
+  email: string;
+  password: string;
+  rol: Rol;
+}
