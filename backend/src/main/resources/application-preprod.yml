@@ -1,0 +1,23 @@
+# ===================== PRE-PRODUCCIÓN (perfil "preprod") =====================
+# Copia de producción para probar antes de publicar: misma configuración que producción,
+# pero con Swagger encendido para validar el API. Los datos llegan por variables de entorno.
+restoflow:
+  entorno: pre-produccion
+  jwt:
+    secret: ${JWT_SECRET:restoflow-preprod-clave-de-prueba-cambiar-con-variable}
+  cors:
+    origenes-permitidos: ${CORS_ORIGINS:http://localhost:4200}
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.udec.restoflow: INFO

@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 
 interface ItemMenu {
   etiqueta: string;
@@ -22,6 +23,8 @@ export class Estructura {
   private router = inject(Router);
 
   protected readonly usuario = this.auth.usuario;
+  /** Entorno en el que corre la app (desarrollo, pre-produccion o produccion). */
+  protected readonly entorno = environment;
   protected readonly iniciales = (this.usuario?.nombre ?? '?')
     .split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
   protected readonly nombresRol: Record<string, string> = {
@@ -46,4 +49,4 @@ export class Estructura {
     this.auth.logout();
     this.router.navigate(['/login']);
   }
-}
+}

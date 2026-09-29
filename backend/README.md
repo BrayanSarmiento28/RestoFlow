@@ -22,7 +22,20 @@ La explicación de la arquitectura está en [`ARQUITECTURA.md`](ARQUITECTURA.md)
    `application-local.yml` y escribir la contraseña de la base de datos y la de Gmail. Este archivo no se sube a GitHub.
 3. **Arrancar:** en VS Code, `Ejecutar y depurar` → **Backend RestoFlow** → ▶.
    Al primer arranque se crea el administrador `admin@restoflow.com` / `Admin2026*`.
-4. **Probar el API:** abrir `api-pruebas.http` con la extensión REST Client y usar "Send Request".
+4. **Probar el API:**
+   - **Swagger:** abrir **http://localhost:8080/swagger-ui.html**. Ejecutar `POST /api/auth/login`, copiar el
+     `token`, pulsar **Authorize** y pegarlo para probar las rutas protegidas.
+   - **REST Client:** abrir `api-pruebas.http` y usar "Send Request".
+
+## Entornos (perfiles de Spring Boot)
+
+| Perfil | Entorno | Cómo se activa | Swagger |
+|---|---|---|---|
+| `dev` | Desarrollo (por defecto) | Arrancar normal | Sí |
+| `preprod` | Pre-producción | `--spring.profiles.active=preprod` o la configuración **Backend RestoFlow (pre-producción)** de VS Code | Sí |
+| `prod` | Producción | `SPRING_PROFILES_ACTIVE=prod` + variables `JWT_SECRET`, `ADMIN_PASSWORD`, `CORS_ORIGINS`, `DB_*`, `MAIL_*` | No |
+
+Con Maven: `mvn spring-boot:run -Dspring-boot.run.profiles=preprod`. Detalle en [`../docs/entornos.md`](../docs/entornos.md).
 
 ## Pruebas automáticas
 

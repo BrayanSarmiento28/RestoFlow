@@ -1,0 +1,116 @@
+# =====================================================================
+# RestoFlow · Ruta de ejecución (CI/CD) por entornos
+#
+#   rama develop  ──►  entorno "desarrollo"
+#   rama preprod  ──►  entorno "pre-produccion"
+#   rama main     ──►  entorno "produccion"   (requiere aprobación)
+#
+# En cada push o pull request a esas ramas:
+#   1. Backend:  compila y ejecuta las pruebas automáticas (JUnit con H2).
+#   2. Frontend: instala dependencias y compila Angular con la
+#                configuración del entorno (development / preprod / production).
+#   3. Despliegue: solo en push (cuando el PR ya se unió), empaqueta los
+#                artefactos del entorno correspondiente.
+# =====================================================================
+name: CI/CD RestoFlow
+
+on:
+  push:
+    branches: [develop, preprod, main]
+  pull_request:
+    branches: [develop, preprod, main]
+
+permissions:
+  contents: read
+
+env:
+  # Rama destino: en un PR es la rama a la que se quiere unir; en un push, la rama actual
+  RAMA: ${{ github.base_ref || github.ref_name }}
+
+jobs:
+  backend:
+    name: Backend · pruebas y compilación
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Pruebas automáticas y empaquetado (.jar)
+        run: mvn -B verify
+
+      - name: Guardar el .jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/restoflow-backend-*.jar
+          retention-days: 7
+
+  frontend:
+    name: Frontend · compilación por entorno
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Elegir la configuración de Angular según la rama
+        id: config
+        run: |
+          case "$RAMA" in
+            main)    echo "angular=production"  >> "$GITHUB_OUTPUT" ;;
+            preprod) echo "angular=preprod"     >> "$GITHUB_OUTPUT" ;;
+            *)       echo "angular=development" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Compilar Angular (${{ steps.config.outputs.angular }})
+        run: npx ng build --configuration ${{ steps.config.outputs.angular }}
+
+      - name: Guardar la compilación
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-${{ steps.config.outputs.angular }}
+          path: frontend/dist/
+          retention-days: 7
+
+  desplegar:
+    name: Desplegar en ${{ github.ref_name == 'main' && 'producción' || github.ref_name == 'preprod' && 'pre-producción' || 'desarrollo' }}
+    needs: [backend, frontend]
+    # Solo cuando el código ya entró a la rama (push), no en los pull requests
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'produccion' || github.ref_name == 'preprod' && 'pre-produccion' || 'desarrollo' }}
+    steps:
+      - name: Descargar artefactos
+        uses: actions/download-artifact@v4
+        with:
+          path: artefactos
+
+      - name: Publicar
+        run: |
+          echo "Rama: ${{ github.ref_name }}"
+          echo "Perfil de Spring Boot: ${{ github.ref_name == 'main' && 'prod' || github.ref_name == 'preprod' && 'preprod' || 'dev' }}"
+          ls -R artefactos | head -40
+          # Aquí va el paso de publicación cuando el equipo tenga servidor
+          # (por ejemplo: copiar el .jar y la carpeta dist al servidor del entorno).
+          echo "Artefactos listos para el entorno."

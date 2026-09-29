@@ -7,6 +7,12 @@
       <div><strong>RestoFlow</strong><small>PRO MANAGER</small></div>
     </div>
 
+    @if (!entorno.produccion) {
+      <div class="entorno" [class.entorno--preprod]="entorno.nombre === 'pre-produccion'">
+        Entorno: {{ entorno.nombre === 'pre-produccion' ? 'Pre-producción' : 'Desarrollo' }}
+      </div>
+    }
+
     <nav class="menu">
       @for (item of menu; track item.etiqueta) {
         @if (item.ruta) {
@@ -45,4 +51,4 @@
   <main class="contenido">
     <router-outlet></router-outlet>
   </main>
-</div>
+</div>

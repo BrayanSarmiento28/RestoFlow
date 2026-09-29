@@ -24,6 +24,13 @@
     </properties>
 
     <dependencies>
+        <!-- Documentación interactiva del API (Swagger UI / OpenAPI 3) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.9</version>
+        </dependency>
+
         <!-- API REST (adaptador de entrada) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

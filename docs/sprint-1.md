@@ -45,11 +45,13 @@ Criterios de aceptación:
 | B8 | Envío de correo (Gmail SMTP) | Brayan | ✅ Terminada |
 | B9 | Controladores REST y manejo de errores | Brayan | ✅ Terminada |
 | B10 | Pruebas unitarias del dominio | Brayan | ✅ Terminada |
-| F1 | Proyecto Angular base | Sebastián | ⏳ Pendiente |
-| F2 | Servicios, modelos e interceptor JWT | Sebastián | ⏳ Pendiente |
-| F3 | Pantalla Iniciar sesión | Sebastián | ⏳ Pendiente |
-| F4 | Pantalla Olvidé mi contraseña | Sebastián | ⏳ Pendiente |
-| F5 | Pantalla Crear cuenta (solo admin) | Sebastián | ⏳ Pendiente |
+| F1 | Proyecto Angular base | Sebastián | ✅ Terminada |
+| F2 | Servicios, modelos e interceptor JWT | Sebastián | ✅ Terminada |
+| F3 | Pantalla Iniciar sesión | Sebastián | ✅ Terminada |
+| F4 | Pantalla Olvidé mi contraseña | Sebastián | ✅ Terminada |
+| F5 | Pantalla Crear cuenta (solo admin) | Sebastián | ✅ Terminada |
+| B11 | Documentación del API con Swagger (OpenAPI) | Brayan | ✅ Terminada |
+| C1 | Entornos desarrollo, pre-producción y producción + pipeline de GitHub Actions | Equipo | ✅ Terminada |
 
 ## Resultado del backend
 
