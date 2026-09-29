@@ -60,7 +60,7 @@ Variables de producción: `JWT_SECRET`, `ADMIN_PASSWORD`, `CORS_ORIGINS`, `DB_HO
 |---|---|
 | Desarrollo | `npm start` |
 | Pre-producción | `npm run start:preprod` (o `npm run build:preprod`) |
-| Producción | `npm run build:prod` |
+| Producción | `npm run start:prod` (versión optimizada, con `proxy.conf.json` hacia el backend) o `npm run build:prod` para generar `dist/` |
 
 **Swagger:** http://localhost:8080/swagger-ui.html (desarrollo y pre-producción).
 

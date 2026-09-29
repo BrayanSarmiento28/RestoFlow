@@ -24,9 +24,13 @@ Usuario inicial: `admin@restoflow.com` / `Admin2026*`.
 |---|---|---|---|
 | `npm start` | Desarrollo | `src/environments/environment.ts` | `http://localhost:8080/api` |
 | `npm run start:preprod` · `npm run build:preprod` | Pre-producción | `src/environments/environment.preprod.ts` | servidor de pre-producción |
-| `npm run build:prod` | Producción | `src/environments/environment.prod.ts` | `/api` (mismo dominio) |
+| `npm run start:prod` · `npm run build:prod` | Producción | `src/environments/environment.prod.ts` | `/api` (mismo dominio) |
 
 En desarrollo y pre-producción el menú lateral muestra una etiqueta con el entorno activo.
+
+`npm run start:prod` sirve la versión optimizada de producción en http://localhost:4200 y, con
+`proxy.conf.json`, reenvía las llamadas a `/api` al backend en `localhost:8080` (simula que ambos están
+en el mismo dominio, como en el servidor real).
 
 ## Estructura
 
