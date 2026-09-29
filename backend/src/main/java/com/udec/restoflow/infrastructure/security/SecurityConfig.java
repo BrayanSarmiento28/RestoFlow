@@ -36,6 +36,8 @@ public class SecurityConfig {
                 // Públicas: iniciar sesión y recuperar contraseña (HU-01 y HU-02)
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/recuperar", "/api/auth/restablecer").permitAll()
                 .requestMatchers("/error").permitAll()
+                // Documentación Swagger (en producción se apaga desde application-prod.yml)
+                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Solo el administrador gestiona cuentas (HU-03)
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                 // Todo lo demás requiere haber iniciado sesión

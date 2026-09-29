@@ -1,7 +1,12 @@
 # Configuración general del backend de RestoFlow
+# Entornos: dev (desarrollo, por defecto) · preprod (pre-producción) · prod (producción).
+# Se elige con --spring.profiles.active=<perfil> o con la variable SPRING_PROFILES_ACTIVE.
+# Cada perfil tiene su archivo: application-dev.yml, application-preprod.yml y application-prod.yml.
 spring:
   application:
     name: restoflow-backend
+  profiles:
+    default: dev
   config:
     # Datos privados de cada computador (contraseñas). Este archivo NO se sube a GitHub.
     import: optional:classpath:application-local.yml

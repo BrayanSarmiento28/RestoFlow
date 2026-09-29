@@ -1,7 +1,6 @@
 {
   "version": "0.2.0",
   "configurations": [
-    
     {
       "type": "java",
       "name": "Backend RestoFlow",
@@ -9,6 +8,15 @@
       "mainClass": "com.udec.restoflow.RestoFlowApplication",
       "projectName": "restoflow-backend",
       "cwd": "${workspaceFolder}/backend"
+    },
+    {
+      "type": "java",
+      "name": "Backend RestoFlow (pre-producción)",
+      "request": "launch",
+      "mainClass": "com.udec.restoflow.RestoFlowApplication",
+      "projectName": "restoflow-backend",
+      "cwd": "${workspaceFolder}/backend",
+      "args": "--spring.profiles.active=preprod"
     }
   ]
 }

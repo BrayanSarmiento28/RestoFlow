@@ -28,13 +28,23 @@ Angular (localhost:4200)  ──HTTP/JSON──►  Spring Boot (localhost:8080/
 ## Metodología
 
 Scrum con sprints de 2 semanas durante 16 semanas. Cada funcionalidad se desarrolla en una rama propia
-y se integra a `main` mediante *pull request*.
+y avanza por tres entornos mediante *pull request*:
 
-| Rama | Uso |
-|---|---|
-| `main` | Versión estable que se presenta en cada comité |
-| `backend/<funcionalidad>` | Trabajo del backend (ej. `backend/autenticacion`) |
-| `frontend/<funcionalidad>` | Trabajo del frontend (ej. `frontend/autenticacion`) |
+```
+backend/… · frontend/…  ──PR──►  develop  ──PR──►  preprod  ──PR──►  main
+     (funcionalidad)           desarrollo       pre-producción     producción
+```
+
+| Rama | Entorno | Uso |
+|---|---|---|
+| `main` | Producción | Versión estable que se presenta en cada comité (requiere aprobación) |
+| `preprod` | Pre-producción | Validación final antes de publicar |
+| `develop` | Desarrollo | Integración del trabajo de backend y frontend |
+| `backend/<funcionalidad>` | — | Trabajo del backend (ej. `backend/autenticacion`) |
+| `frontend/<funcionalidad>` | — | Trabajo del frontend (ej. `frontend/autenticacion`) |
+
+Cada push o *pull request* ejecuta el pipeline de GitHub Actions (pruebas del backend y compilación del
+frontend con la configuración del entorno). Detalle en [`docs/entornos.md`](docs/entornos.md).
 
 Convención de mensajes de commit: `feat:` nueva funcionalidad · `fix:` corrección · `docs:` documentación ·
 `test:` pruebas · `chore:` configuración.

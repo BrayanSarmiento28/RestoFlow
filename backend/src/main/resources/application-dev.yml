@@ -1,0 +1,19 @@
+# ===================== DESARROLLO (perfil "dev", el que se usa por defecto) =====================
+# Cada integrante en su computador: SQL Server local, correo por consola y Swagger encendido.
+restoflow:
+  entorno: desarrollo
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update        # crea o completa las tablas automáticamente
+    show-sql: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+logging:
+  level:
+    com.udec.restoflow: DEBUG

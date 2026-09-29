@@ -1,0 +1,31 @@
+# ===================== PRODUCCIÓN (perfil "prod") =====================
+# Sistema real del restaurante. Ningún secreto va en este archivo: todos llegan por variables
+# de entorno del servidor. Si falta JWT_SECRET o ADMIN_PASSWORD, la aplicación NO arranca (a propósito).
+restoflow:
+  entorno: produccion
+  jwt:
+    secret: ${JWT_SECRET}
+  cors:
+    origenes-permitidos: ${CORS_ORIGINS}
+  correo:
+    modo: gmail
+  admin-inicial:
+    contrasena: ${ADMIN_PASSWORD}
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none          # en producción las tablas se crean con el script SQL, nunca automáticamente
+    show-sql: false
+
+# Swagger apagado: en producción no se publica la documentación del API
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.udec.restoflow: INFO
