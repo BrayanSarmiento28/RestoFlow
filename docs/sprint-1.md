@@ -57,7 +57,7 @@ Criterios de aceptación:
 
 - Las 3 historias de usuario se probaron de punta a punta contra SQL Server y Gmail reales
   (archivo `backend/api-pruebas.http`).
-- 30 pruebas automáticas en verde (dominio, casos de uso y arranque de la aplicación).
+- 24 pruebas automáticas en verde (dominio, casos de uso y arranque de la aplicación).
 
 ## Modelo de datos del sprint
 

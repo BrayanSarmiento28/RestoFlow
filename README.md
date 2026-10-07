@@ -7,8 +7,9 @@ Asignaturas: Ingeniería de Software y Sistemas de Información.
 
 | Integrante | Responsabilidad |
 |---|---|
-| Brayan Estiven Sarmiento Vargas | Backend (Java 17 · Spring Boot 3 · Arquitectura hexagonal · SQL Server) |
-| Juan Sebastián Patiño Ocampo | Frontend (Angular · diseño UI/UX en Figma) |
+| Brayan Estiven Sarmiento Vargas | Backend, frontend y documentación (Java 17 · Spring Boot 3 · Angular · SQL Server) |
+
+Juan Sebastián Patiño Ocampo participó en el frontend del Sprint 1.
 
 ## Estructura del repositorio
 
@@ -53,6 +54,6 @@ Convención de mensajes de commit: `feat:` nueva funcionalidad · `fix:` correcc
 
 | Sprint | Alcance | Estado |
 |---|---|---|
-| 1 | RF-01 Autenticación: iniciar sesión, recuperar contraseña, creación de cuentas por el administrador | En curso |
+| 1 | RF-01 Autenticación: iniciar sesión, recuperar contraseña, creación de cuentas por el administrador | Terminado (sustentado el 30 de septiembre de 2026) |
 
 Detalle en [`docs/sprint-1.md`](docs/sprint-1.md).
