@@ -14,7 +14,7 @@ En Jira estas historias están en el proyecto **RES**, épicas *Gestión de Pedi
 | Recomendación | Qué se hizo |
 |---|---|
 | Agregar entidades en backend y frontend | Backend: 10 entidades de dominio con sus reglas (`domain/model`) y sus 10 tablas JPA (`persistence/entity`), incluidas las de inventario y alertas para los siguientes sprints. Frontend: carpeta `core/entities` con una interfaz por entidad |
-| Agregar environments | Cada archivo de entorno del frontend ahora define versión y tiempos de actualización; el backend define por entorno si carga el menú de ejemplo. Guía de GitHub Environments en `docs/entornos.md` |
+| Agregar environments | Archivos `.env` en el backend con plantillas por entorno (`.env.example`, `.env.preprod.example`, `.env.prod.example`), que fijan el perfil y las variables. Cada environment del frontend define además versión y tiempos de actualización, y el backend define por entorno si carga el menú de ejemplo. Guía de GitHub Environments en `docs/entornos.md` |
 | Identidad del proyecto (logo) | Logo propio de RestoFlow aplicado en login, menú lateral, pestaña del navegador y documentación |
 
 ## Historias de usuario
@@ -48,7 +48,7 @@ Los códigos corresponden al documento de historias de usuario del proyecto.
 | P3 | Reglas de acceso por rol en `SecurityConfig` | ✅ |
 | P4 | Pantallas de Pedidos, Cocina y Productos; menú lateral según el rol | ✅ |
 | P5 | Pruebas de dominio, de casos de uso y de integración | ✅ |
-| C1 | Campos nuevos en los environments y guía de GitHub Environments | ✅ |
+| C1 | Archivos `.env` por entorno, campos nuevos en los environments y guía de GitHub Environments | ✅ |
 | C2 | Logo e identidad visual | ✅ |
 
 ## Reglas de negocio implementadas

@@ -83,6 +83,23 @@ compilar (`fileReplacements` en `angular.json`). Todos tienen los mismos campos:
 **Backend** (`backend/src/main/resources/`): `application.yml` tiene lo común y cada perfil sobrescribe lo suyo
 en `application-dev.yml`, `application-preprod.yml` o `application-prod.yml`.
 
+### Archivos `.env` del backend
+
+Las contraseñas y datos de cada computador o servidor también se pueden poner en un archivo `backend/.env`
+(formato `CLAVE=valor`). Spring Boot lo lee al arrancar (`spring.config.import` en `application.yml`) y de ahí
+toma también el perfil con `SPRING_PROFILES_ACTIVE`.
+
+| Plantilla (sí se sube) | Entorno | Qué trae |
+|---|---|---|
+| `backend/.env.example` | Desarrollo | Perfil `dev`, SQL Server local, correo por consola |
+| `backend/.env.preprod.example` | Pre-producción | Perfil `preprod`, servidor de pruebas, Gmail, clave JWT propia |
+| `backend/.env.prod.example` | Producción | Perfil `prod`, todas las variables obligatorias |
+
+Para usar una: `Copy-Item .env.example .env` dentro de `backend/` y escribir los datos reales. El archivo `.env`
+nunca se sube (`.gitignore`). Si se usa `.env`, no hace falta `application-local.yml`; si existen los dos, la
+contraseña de `application-local.yml` tiene prioridad. El perfil que fija VS Code (configuración
+"Backend RestoFlow (pre-producción)") o el argumento `--spring.profiles.active` tienen prioridad sobre el `.env`.
+
 ## 5. Configuración de GitHub (una sola vez)
 
 1. **Crear las ramas** `develop` y `preprod` a partir de `main` y subirlas.
