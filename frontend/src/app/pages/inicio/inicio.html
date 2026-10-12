@@ -9,9 +9,19 @@
 
   <section class="bienvenida">
     <h2>Hola, {{ usuario?.nombre }} 👋</h2>
-    <p>Bienvenido a RestoFlow. Los módulos de pedidos, cocina, inventario y RestoFlow AI se habilitarán en los próximos sprints.</p>
-    @if (esAdmin) {
-      <a class="boton-claro" routerLink="/usuarios">Gestionar cuentas del personal →</a>
-    }
+    <p>Bienvenido a RestoFlow. Ya están disponibles los módulos de pedidos y cocina; inventario, reportes y
+      RestoFlow AI llegan en los próximos sprints.</p>
   </section>
+
+  @if (accesos.length > 0) {
+    <section class="accesos">
+      @for (a of accesos; track a.ruta) {
+        <a class="acceso" [routerLink]="a.ruta">
+          <strong>{{ a.titulo }}</strong>
+          <span>{{ a.texto }}</span>
+          <em>Abrir →</em>
+        </a>
+      }
+    </section>
+  }
 </div>

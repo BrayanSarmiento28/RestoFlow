@@ -1,0 +1,57 @@
+<div class="cocina">
+  <header class="cabecera">
+    <div>
+      <h1>Cocina</h1>
+      <p>{{ total() }} {{ total() === 1 ? 'comanda por atender' : 'comandas por atender' }}</p>
+    </div>
+    <div class="cabecera__derecha">
+      @if (actualizado()) {
+        <span class="vivo"><span class="punto"></span> Actualizado {{ actualizado()!.toLocaleTimeString('es-CO') }}</span>
+      }
+      <button type="button" class="refrescar" (click)="cargar()">Actualizar</button>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="aviso" role="alert">{{ error() }}</div>
+  }
+
+  <div class="tablero">
+    @for (col of columnas; track col.estado) {
+      <section class="columna">
+        <h2 [class]="'columna__titulo columna__titulo--' + col.estado.toLowerCase()">
+          {{ col.titulo }} <span>{{ deEstado(col.estado).length }}</span>
+        </h2>
+
+        @for (p of deEstado(col.estado); track p.id) {
+          <article class="comanda" [class.comanda--demorada]="col.estado !== 'LISTO' && minutos(p) >= 20">
+            <header class="comanda__cabecera">
+              <span class="mesa">Mesa {{ p.numeroMesa }}</span>
+              <span class="tiempo">{{ minutos(p) }} min</span>
+            </header>
+            <p class="comanda__meta">#{{ p.id }} · {{ hora(p.fechaCreacion) }} · {{ p.meseroNombre }}</p>
+
+            <ul class="comanda__lineas">
+              @for (l of p.lineas; track l.id) {
+                <li>
+                  <strong>{{ l.cantidad }}×</strong> {{ l.productoNombre }}
+                  @if (l.nota) { <em>{{ l.nota }}</em> }
+                </li>
+              }
+            </ul>
+            @if (p.observaciones) {
+              <p class="comanda__obs">⚠ {{ p.observaciones }}</p>
+            }
+
+            <button type="button" [class]="'avanzar avanzar--' + p.estadoCocina.toLowerCase()"
+                    [disabled]="procesando() === p.id" (click)="avanzar(p)">
+              {{ procesando() === p.id ? 'Guardando...' : accion(p) }}
+            </button>
+          </article>
+        } @empty {
+          <p class="vacio">Sin comandas</p>
+        }
+      </section>
+    }
+  </div>
+</div>

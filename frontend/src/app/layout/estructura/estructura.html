@@ -2,14 +2,14 @@
   <aside class="lateral">
     <div class="marca">
       <span class="marca__icono">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+        <app-logo [tamano]="26" />
       </span>
-      <div><strong>RestoFlow</strong><small>PRO MANAGER</small></div>
+      <div><strong>Resto<span>Flow</span></strong><small>PRO MANAGER</small></div>
     </div>
 
     @if (!entorno.produccion) {
       <div class="entorno" [class.entorno--preprod]="entorno.nombre === 'pre-produccion'">
-        Entorno: {{ entorno.nombre === 'pre-produccion' ? 'Pre-producción' : 'Desarrollo' }}
+        Entorno: {{ entorno.nombre === 'pre-produccion' ? 'Pre-producción' : 'Desarrollo' }} · v{{ entorno.version }}
       </div>
     }
 
@@ -51,4 +51,4 @@
   <main class="contenido">
     <router-outlet></router-outlet>
   </main>
-</div>
+</div>

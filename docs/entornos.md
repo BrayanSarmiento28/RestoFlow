@@ -25,6 +25,9 @@ paso GitHub Actions comprueba que el backend pase sus pruebas y que el frontend 
 | **Registros (logs)** | Detallados (`DEBUG`) | Normales (`INFO`) | Mínimos (`WARN`) |
 | **Aprobación para desplegar** | No | No | **Sí** (GitHub Environment) |
 | **Etiqueta en el menú** | "Entorno: Desarrollo" | "Entorno: Pre-producción" | Sin etiqueta |
+| **Menú de ejemplo** (`restoflow.datos-demo`) | Sí | Sí | No: el menú lo registra el administrador |
+| **Actualización de cocina / pedidos** | 5 s / 10 s | 5 s / 10 s | 5 s / 15 s |
+| **Dirección del API** (`apiUrl`) | `http://localhost:8080/api` | `http://localhost:8080/api` (cambiar por el servidor) | `/api` (mismo dominio) |
 
 ## 2. El pipeline (`.github/workflows/ci-cd.yml`)
 
@@ -64,16 +67,36 @@ Variables de producción: `JWT_SECRET`, `ADMIN_PASSWORD`, `CORS_ORIGINS`, `DB_HO
 
 **Swagger:** http://localhost:8080/swagger-ui.html (desarrollo y pre-producción).
 
-## 4. Configuración de GitHub (una sola vez)
+## 4. Qué contiene cada archivo de entorno
+
+**Frontend** (`frontend/src/environments/`): Angular reemplaza `environment.ts` por el archivo del entorno al
+compilar (`fileReplacements` en `angular.json`). Todos tienen los mismos campos:
+
+| Campo | Para qué sirve |
+|---|---|
+| `nombre` | Entorno activo; se muestra en el menú lateral |
+| `produccion` | `true` oculta la etiqueta de entorno |
+| `apiUrl` | Dirección del backend |
+| `version` | Versión de la aplicación; se muestra junto al entorno |
+| `refrescoCocinaMs` / `refrescoPedidosMs` | Cada cuánto se actualizan solas la pantalla de cocina y la lista de pedidos |
+
+**Backend** (`backend/src/main/resources/`): `application.yml` tiene lo común y cada perfil sobrescribe lo suyo
+en `application-dev.yml`, `application-preprod.yml` o `application-prod.yml`.
+
+## 5. Configuración de GitHub (una sola vez)
 
 1. **Crear las ramas** `develop` y `preprod` a partir de `main` y subirlas.
-2. **Settings → Environments:** crear `desarrollo`, `pre-produccion` y `produccion`. En `produccion`, activar
-   **Required reviewers** y agregar a los integrantes, para que publicar exija aprobación.
+2. **Settings → Environments:** crear `desarrollo`, `pre-produccion` y `produccion` (si el pipeline ya corrió,
+   GitHub pudo haberlos creado solo; en ese caso basta con configurarlos). En `produccion`:
+   - activar **Required reviewers** y agregar al responsable, para que publicar exija aprobación;
+   - en **Deployment branches** dejar solo la rama `main`;
+   - en **Environment secrets** guardar `JWT_SECRET`, `ADMIN_PASSWORD` y `DB_PASSWORD` (nunca en el código).
+   En `pre-produccion`, limitar las ramas a `preprod`.
 3. **Settings → Branches → Add rule** para `main` y `preprod`: **Require a pull request before merging** y
    **Require status checks to pass** (seleccionar los trabajos *Backend* y *Frontend*).
 4. **Settings → General → Default branch:** dejar `develop` como rama por defecto para el trabajo diario.
 
-## 5. Flujo de trabajo diario
+## 6. Flujo de trabajo diario
 
 1. Crear la rama de la funcionalidad desde `develop` (ej. `frontend/pedidos`).
 2. Terminar, hacer commit y abrir un **pull request hacia `develop`**. El pipeline corre las pruebas.

@@ -3,6 +3,7 @@
 # de entorno del servidor. Si falta JWT_SECRET o ADMIN_PASSWORD, la aplicación NO arranca (a propósito).
 restoflow:
   entorno: produccion
+  datos-demo: false   # en producción el menú lo registra el administrador
   jwt:
     secret: ${JWT_SECRET}
   cors:

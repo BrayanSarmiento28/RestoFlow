@@ -1,0 +1,165 @@
+<div class="pagina">
+  <header class="encabezado">
+    <div>
+      <h1>Pedidos</h1>
+      <p class="fecha">Arma el pedido de la mesa, envíalo a cocina y sigue su estado.</p>
+    </div>
+  </header>
+
+  @if (exito()) {
+    <div class="alerta alerta--exito">{{ exito() }}</div>
+  }
+  @if (error()) {
+    <div class="alerta" role="alert">{{ error() }}</div>
+  }
+
+  <div class="columnas">
+    <!-- Menú: productos disponibles para la venta -->
+    <section class="tarjeta">
+      <h2>Menú</h2>
+      <input class="buscador" type="search" placeholder="Buscar producto..."
+             [value]="busqueda()" (input)="busqueda.set($any($event.target).value)" />
+      <div class="chips">
+        @for (c of categorias(); track c) {
+          <button type="button" class="chip" [class.chip--activo]="c === categoriaActiva()"
+                  (click)="categoriaActiva.set(c)">{{ c }}</button>
+        }
+      </div>
+      <div class="productos">
+        @for (p of productosVisibles(); track p.id) {
+          <button type="button" class="producto" (click)="agregar(p)">
+            <span class="producto__nombre">{{ p.nombre }}</span>
+            <span class="producto__categoria">{{ p.categoriaNombre }}</span>
+            <strong class="producto__precio">{{ pesos(p.precio) }}</strong>
+            <span class="producto__mas" aria-hidden="true">+</span>
+          </button>
+        } @empty {
+          <p class="vacio">No hay productos disponibles. El administrador puede crearlos en «Productos».</p>
+        }
+      </div>
+    </section>
+
+    <!-- Pedido que se está armando -->
+    <section class="tarjeta carrito">
+      <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+        <h2>{{ editandoId() ? 'Editar pedido #' + editandoId() : 'Nuevo pedido' }}</h2>
+
+        <label for="mesa">Mesa</label>
+        <input id="mesa" type="number" min="1" max="999" formControlName="mesa" placeholder="Número de mesa"
+               [class.con-error]="invalido('mesa')" />
+        @if (invalido('mesa')) {
+          <small class="error-campo">Escribe el número de mesa</small>
+        }
+
+        <div class="lineas">
+          @for (item of carrito(); track item.producto.id) {
+            <div class="linea">
+              <div class="linea__fila">
+                <span class="linea__nombre">{{ item.producto.nombre }}</span>
+                <div class="cantidad">
+                  <button type="button" (click)="cambiarCantidad(item, -1)" aria-label="Quitar uno">−</button>
+                  <span>{{ item.cantidad }}</span>
+                  <button type="button" (click)="cambiarCantidad(item, 1)" aria-label="Agregar uno">+</button>
+                </div>
+                <strong class="linea__subtotal">{{ pesos(item.producto.precio * item.cantidad) }}</strong>
+              </div>
+              <input class="linea__nota" type="text" maxlength="200" placeholder="Nota para cocina (opcional)"
+                     [value]="item.nota" (input)="cambiarNota(item, $any($event.target).value)" />
+            </div>
+          } @empty {
+            <p class="vacio">Toca un producto del menú para agregarlo.</p>
+          }
+        </div>
+
+        <label for="observaciones">Observaciones</label>
+        <textarea id="observaciones" rows="2" maxlength="300" formControlName="observaciones"
+                  placeholder="Ej: cliente con afán, alergia al maní"></textarea>
+
+        <div class="total">
+          <span>Total</span>
+          <strong>{{ pesos(total()) }}</strong>
+        </div>
+
+        <button type="submit" class="boton" [disabled]="enviando() || carrito().length === 0">
+          {{ enviando() ? 'Enviando...' : (editandoId() ? 'Guardar cambios' : 'Enviar a cocina') }}
+        </button>
+        @if (editandoId()) {
+          <button type="button" class="boton-secundario" (click)="cancelarEdicion()">Descartar cambios</button>
+        } @else if (carrito().length > 0) {
+          <button type="button" class="boton-secundario" (click)="limpiar()">Vaciar</button>
+        }
+      </form>
+    </section>
+  </div>
+
+  <!-- Pedidos registrados -->
+  <section class="tarjeta lista">
+    <div class="lista__encabezado">
+      <h2>Pedidos ({{ pedidos().length }})</h2>
+      <div class="filtros">
+        <input type="number" min="1" placeholder="Mesa" class="filtro-mesa"
+               (change)="cambiarFiltroMesa($any($event.target).value)" />
+        <select (change)="cambiarFiltroEstado($any($event.target).value)">
+          @for (f of filtrosEstado; track f.valor) {
+            <option [value]="f.valor" [selected]="f.valor === filtroEstado()">{{ f.etiqueta }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="tabla-contenedor">
+      <table class="tabla">
+        <thead>
+          <tr><th>#</th><th>Mesa</th><th>Hora</th><th>Mesero</th><th>Total</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (p of pedidos(); track p.id) {
+            <tr class="fila" (click)="alternarDetalle(p.id)">
+              <td>{{ p.id }}</td>
+              <td><strong>{{ p.numeroMesa }}</strong></td>
+              <td>{{ hora(p.fechaCreacion) }}</td>
+              <td>{{ p.meseroNombre }}</td>
+              <td>{{ pesos(p.total) }}</td>
+              <td>
+                @if (p.estadoPedido === 'ABIERTO') {
+                  <span [class]="'estado estado--' + p.estadoCocina.toLowerCase()">{{ nombresEstado[p.estadoCocina] }}</span>
+                } @else {
+                  <span [class]="'estado estado--' + p.estadoPedido.toLowerCase()">{{ nombresEstadoPedido[p.estadoPedido] }}</span>
+                }
+              </td>
+              <td class="acciones" (click)="$event.stopPropagation()">
+                @if (p.estadoPedido === 'ABIERTO' && p.estadoCocina === 'PENDIENTE') {
+                  <button type="button" class="accion" (click)="editar(p)">Editar</button>
+                  <button type="button" class="accion accion--peligro" (click)="cancelar(p)">Cancelar</button>
+                }
+                @if (p.estadoPedido === 'ABIERTO' && p.estadoCocina === 'ENTREGADO') {
+                  <button type="button" class="accion accion--principal" (click)="pagar(p)">Registrar venta</button>
+                }
+              </td>
+            </tr>
+            @if (abierto() === p.id) {
+              <tr class="detalle">
+                <td colspan="7">
+                  <ul>
+                    @for (l of p.lineas; track l.id) {
+                      <li>
+                        <strong>{{ l.cantidad }}×</strong> {{ l.productoNombre }}
+                        <span class="detalle__precio">{{ pesos(l.subtotal) }}</span>
+                        @if (l.nota) { <em> · {{ l.nota }}</em> }
+                      </li>
+                    }
+                  </ul>
+                  @if (p.observaciones) {
+                    <p class="detalle__obs">Observaciones: {{ p.observaciones }}</p>
+                  }
+                </td>
+              </tr>
+            }
+          } @empty {
+            <tr><td colspan="7" class="vacio">No hay pedidos con este filtro</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
