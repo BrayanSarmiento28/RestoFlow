@@ -3,6 +3,7 @@
 # pero con Swagger encendido para validar el API. Los datos llegan por variables de entorno.
 restoflow:
   entorno: pre-produccion
+  datos-demo: true   # menú de ejemplo para las pruebas de aceptación
   jwt:
     secret: ${JWT_SECRET:restoflow-preprod-clave-de-prueba-cambiar-con-variable}
   cors:

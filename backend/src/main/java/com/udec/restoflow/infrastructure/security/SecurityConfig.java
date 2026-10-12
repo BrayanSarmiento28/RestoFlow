@@ -40,6 +40,14 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Solo el administrador gestiona cuentas (HU-03)
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                // Menú: todos lo consultan; solo el administrador lo crea y edita
+                .requestMatchers(HttpMethod.GET, "/api/categorias/**", "/api/productos/**").authenticated()
+                .requestMatchers("/api/categorias/**", "/api/productos/**").hasRole("ADMIN")
+                // Cocina (RF-03, RF-04): personal de cocina y administrador
+                .requestMatchers("/api/cocina/**").hasAnyRole("COCINA", "ADMIN")
+                // Pedidos (RF-02): la cocina también puede consultarlos; solo mesero y admin los cambian
+                .requestMatchers(HttpMethod.GET, "/api/pedidos/**").hasAnyRole("MESERO", "COCINA", "ADMIN")
+                .requestMatchers("/api/pedidos/**").hasAnyRole("MESERO", "ADMIN")
                 // Todo lo demás requiere haber iniciado sesión
                 .anyRequest().authenticated())
             .addFilterBefore(new JwtAuthenticationFilter(jwt), UsernamePasswordAuthenticationFilter.class);

@@ -1,0 +1,102 @@
+<div class="pagina">
+  <header class="encabezado">
+    <div>
+      <h1>Productos</h1>
+      <p class="fecha">Arma el menú: categorías, productos y precios. Un producto desactivado no aparece para la venta.</p>
+    </div>
+  </header>
+
+  @if (exito()) {
+    <div class="alerta alerta--exito">{{ exito() }}</div>
+  }
+  @if (error()) {
+    <div class="alerta" role="alert">{{ error() }}</div>
+  }
+
+  <div class="columnas">
+    <section class="tarjeta">
+      <form class="formulario" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <h2>{{ editandoId() ? 'Editar producto' : 'Nuevo producto' }}</h2>
+
+        <label for="nombre">Nombre</label>
+        <input id="nombre" type="text" formControlName="nombre" placeholder="Bandeja paisa"
+               [class.con-error]="invalido('nombre')" />
+        @if (invalido('nombre')) {
+          <small class="error-campo">Escribe el nombre (mínimo 3 letras)</small>
+        }
+
+        <label for="descripcion">Descripción (opcional)</label>
+        <input id="descripcion" type="text" formControlName="descripcion" placeholder="Ingredientes o acompañamientos" />
+
+        <label for="precio">Precio (COP)</label>
+        <input id="precio" type="number" min="1" step="100" formControlName="precio" placeholder="32000"
+               [class.con-error]="invalido('precio')" />
+        @if (invalido('precio')) {
+          <small class="error-campo">El precio debe ser mayor que cero</small>
+        }
+
+        <label for="categoria">Categoría</label>
+        <select id="categoria" formControlName="categoriaId" [class.con-error]="invalido('categoriaId')">
+          <option [ngValue]="null" disabled>Selecciona una categoría</option>
+          @for (c of categorias(); track c.id) {
+            <option [ngValue]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+        @if (invalido('categoriaId')) {
+          <small class="error-campo">Selecciona la categoría</small>
+        }
+
+        <button type="submit" class="boton" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando...' : (editandoId() ? 'Guardar cambios' : 'Crear producto') }}
+        </button>
+        @if (editandoId()) {
+          <button type="button" class="boton-secundario" (click)="nuevo()">Cancelar edición</button>
+        }
+      </form>
+
+      <div class="nueva-categoria">
+        <h3>Nueva categoría</h3>
+        <div class="nueva-categoria__fila">
+          <input type="text" [formControl]="nuevaCategoria" placeholder="Ej: Bebidas calientes" maxlength="60" />
+          <button type="button" class="accion" (click)="crearCategoria()">Agregar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Menú ({{ productos().length }})</h2>
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <thead>
+            <tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (p of productos(); track p.id) {
+              <tr [class.inactivo]="!p.activo">
+                <td>
+                  <strong>{{ p.nombre }}</strong>
+                  @if (p.descripcion) { <small>{{ p.descripcion }}</small> }
+                </td>
+                <td>{{ p.categoriaNombre }}</td>
+                <td>{{ pesos(p.precio) }}</td>
+                <td>
+                  <span [class]="'estado ' + (p.activo ? 'estado--activo' : 'estado--inactivo')">
+                    {{ p.activo ? 'Disponible' : 'Desactivado' }}
+                  </span>
+                </td>
+                <td class="acciones">
+                  <button type="button" class="accion" (click)="editar(p)">Editar</button>
+                  <button type="button" class="accion" [class.accion--peligro]="p.activo" (click)="alternar(p)">
+                    {{ p.activo ? 'Desactivar' : 'Activar' }}
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="vacio">Aún no hay productos</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>

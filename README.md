@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/identidad/logo-horizontal.png" alt="RestoFlow" width="360"></p>
+
 # RestoFlow
 
 Plataforma web inteligente para la automatización y gestión operativa de restaurantes.
@@ -53,6 +55,7 @@ Convención de mensajes de commit: `feat:` nueva funcionalidad · `fix:` correcc
 
 | Sprint | Alcance | Estado |
 |---|---|---|
-| 1 | RF-01 Autenticación: iniciar sesión, recuperar contraseña, creación de cuentas por el administrador | En curso |
+| 1 | RF-01 Autenticación: iniciar sesión, recuperar contraseña, creación de cuentas por el administrador | Terminado |
+| 2 | Entidades de todo el sistema · RF-02 Pedidos · RF-03 Estados de cocina · RF-04 Comandas · menú de productos · identidad visual | Terminado |
 
-Detalle en [`docs/sprint-1.md`](docs/sprint-1.md).
+Detalle en [`docs/sprint-1.md`](docs/sprint-1.md) y [`docs/sprint-2.md`](docs/sprint-2.md).

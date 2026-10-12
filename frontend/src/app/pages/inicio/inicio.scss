@@ -31,3 +31,26 @@
   background: var(--rf-primario);
   &:hover { background: var(--rf-primario-hover); }
 }
+.accesos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.acceso {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+  color: var(--rf-texto);
+  text-decoration: none;
+  border: 1px solid var(--rf-borde);
+  border-radius: 14px;
+  background: #fff;
+  transition: border-color 0.15s, transform 0.15s;
+  &:hover { border-color: var(--rf-primario); transform: translateY(-2px); }
+  strong { font-size: 16px; }
+  span { font-size: 14px; line-height: 1.5; color: var(--rf-texto-suave); }
+  em { margin-top: 6px; font-size: 14px; font-style: normal; font-weight: 600; color: var(--rf-primario); }
+}

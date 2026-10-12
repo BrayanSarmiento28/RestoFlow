@@ -2,6 +2,7 @@
 # Cada integrante en su computador: SQL Server local, correo por consola y Swagger encendido.
 restoflow:
   entorno: desarrollo
+  datos-demo: true   # carga un menú de ejemplo si no hay productos
 
 spring:
   jpa:

@@ -5,6 +5,7 @@ import com.udec.restoflow.domain.exception.CorreoYaRegistradoException;
 import com.udec.restoflow.domain.exception.CredencialesInvalidasException;
 import com.udec.restoflow.domain.exception.CuentaInactivaException;
 import com.udec.restoflow.domain.exception.DomainException;
+import com.udec.restoflow.domain.exception.OperacionNoPermitidaException;
 import com.udec.restoflow.domain.exception.RecursoNoEncontradoException;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.ErrorResponse;
 import com.udec.restoflow.infrastructure.adapter.out.mail.CorreoNoEnviadoException;
@@ -46,6 +47,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CorreoYaRegistradoException.class)
     public ResponseEntity<ErrorResponse> correoRepetido(CorreoYaRegistradoException e) {
+        return respuesta(HttpStatus.CONFLICT, e.getMessage(), null);              // 409
+    }
+
+    /** La regla existe pero el registro no está en el estado que se necesita (ej. pedido ya en preparación). */
+    @ExceptionHandler(OperacionNoPermitidaException.class)
+    public ResponseEntity<ErrorResponse> operacionNoPermitida(OperacionNoPermitidaException e) {
         return respuesta(HttpStatus.CONFLICT, e.getMessage(), null);              // 409
     }
 

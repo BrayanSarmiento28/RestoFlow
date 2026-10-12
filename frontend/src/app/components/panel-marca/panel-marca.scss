@@ -19,13 +19,14 @@
   &__icono {
     display: grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: var(--rf-primario);
+    width: 48px;
+    height: 48px;
+    color: #fff;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--rf-primario), var(--rf-acento));
     box-shadow: 0 8px 24px rgba(29, 92, 255, 0.45);
   }
-  &__texto { font-size: 22px; font-weight: 700; }
+  &__texto { font-size: 24px; font-weight: 700; span { color: var(--rf-acento); } }
 }
 
 .mensaje {

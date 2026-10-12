@@ -23,13 +23,14 @@
   &__icono {
     display: grid;
     place-items: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    background: var(--rf-primario);
+    width: 40px;
+    height: 40px;
+    color: #fff;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--rf-primario), var(--rf-acento));
     box-shadow: 0 6px 18px rgba(29, 92, 255, 0.45);
   }
-  strong { display: block; font-size: 18px; }
+  strong { display: block; font-size: 18px; span { color: var(--rf-acento); } }
   small { font-size: 10px; letter-spacing: 0.18em; color: #8fa0c2; }
 }
 

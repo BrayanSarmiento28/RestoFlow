@@ -1,14 +1,8 @@
-// Tipos que coinciden con el contrato del API acordado con el backend (docs/sprint-1.md)
+// Datos que se envían y reciben en el login y la gestión de cuentas (docs/sprint-1.md).
+// Las entidades (Usuario, Rol, Pedido...) viven en core/entities.
+import type { Rol, Usuario } from '../entities';
 
-export type Rol = 'ADMIN' | 'MESERO' | 'COCINA' | 'INVENTARIO';
-
-export interface Usuario {
-  id: number;
-  nombre: string;
-  email: string;
-  rol: Rol;
-  activo: boolean;
-}
+export type { Rol, Usuario };
 
 export interface LoginRequest {
   email: string;

@@ -36,8 +36,16 @@ en el mismo dominio, como en el servidor real).
 
 ```
 src/app/
-├── core/          models, services (AuthService, UsuarioService), interceptors (JWT) y guards (sesión y rol)
+├── core/
+│   ├── entities/  una interfaz por entidad del sistema: usuario, categoria, producto, pedido,
+│   │              ingrediente, movimiento-inventario, alerta (misma forma que las tablas y el API)
+│   ├── models/    datos que se envían al API (login, crear cuenta, pedido, producto)
+│   ├── services/  AuthService, UsuarioService, CatalogoService, PedidoService, CocinaService
+│   ├── interceptors/  agrega el token JWT a cada petición
+│   ├── guards/    authGuard (sesión), adminGuard y rolGuard (por rol)
+│   └── util/      formato de pesos y horas
 ├── components/    componentes reutilizables (panel de marca)
-├── layout/        estructura con menú lateral
-└── pages/         login, recuperar-contrasena, inicio (dashboard), usuarios (solo ADMIN)
+├── layout/        estructura con menú lateral (cada rol ve solo sus módulos)
+└── pages/         login, recuperar-contrasena, inicio, usuarios, productos (ADMIN),
+                   pedidos (MESERO y ADMIN), cocina (COCINA y ADMIN)
 ```

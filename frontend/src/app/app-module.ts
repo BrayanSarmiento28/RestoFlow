@@ -7,13 +7,17 @@ import { App } from './app';
 import { Login } from './pages/login/login';
 import { Inicio } from './pages/inicio/inicio';
 import { PanelMarca } from './components/panel-marca/panel-marca';
+import { Logo } from './components/logo/logo';
 import { RecuperarContrasena } from './pages/recuperar-contrasena/recuperar-contrasena';
 import { Usuarios } from './pages/usuarios/usuarios';
 import { Estructura } from './layout/estructura/estructura';
+import { Pedidos } from './pages/pedidos/pedidos';
+import { Cocina } from './pages/cocina/cocina';
+import { Productos } from './pages/productos/productos';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 
 @NgModule({
-  declarations: [App, Login, Inicio, PanelMarca, RecuperarContrasena, Usuarios, Estructura],
+  declarations: [App, Login, Inicio, PanelMarca, Logo, RecuperarContrasena, Usuarios, Estructura, Pedidos, Cocina, Productos],
   imports: [BrowserModule, ReactiveFormsModule, AppRoutingModule],
   providers: [
     provideBrowserGlobalErrorListeners(),

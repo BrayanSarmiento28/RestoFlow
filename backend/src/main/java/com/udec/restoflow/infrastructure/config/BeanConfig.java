@@ -1,14 +1,23 @@
 package com.udec.restoflow.infrastructure.config;
 
+import com.udec.restoflow.application.port.in.GestionarCatalogoUseCase;
+import com.udec.restoflow.application.port.in.GestionarCocinaUseCase;
 import com.udec.restoflow.application.port.in.GestionarCuentasUseCase;
+import com.udec.restoflow.application.port.in.GestionarPedidosUseCase;
 import com.udec.restoflow.application.port.in.IniciarSesionUseCase;
 import com.udec.restoflow.application.port.in.RecuperarContrasenaUseCase;
+import com.udec.restoflow.application.port.out.CategoriaRepositoryPort;
 import com.udec.restoflow.application.port.out.CifradoContrasenaPort;
 import com.udec.restoflow.application.port.out.CodigoRecuperacionRepositoryPort;
 import com.udec.restoflow.application.port.out.EnviarCorreoPort;
 import com.udec.restoflow.application.port.out.GeneradorTokenPort;
+import com.udec.restoflow.application.port.out.PedidoRepositoryPort;
+import com.udec.restoflow.application.port.out.ProductoRepositoryPort;
 import com.udec.restoflow.application.port.out.UsuarioRepositoryPort;
+import com.udec.restoflow.application.service.GestionarCatalogoService;
+import com.udec.restoflow.application.service.GestionarCocinaService;
 import com.udec.restoflow.application.service.GestionarCuentasService;
+import com.udec.restoflow.application.service.GestionarPedidosService;
 import com.udec.restoflow.application.service.IniciarSesionService;
 import com.udec.restoflow.application.service.RecuperarContrasenaService;
 import org.springframework.context.annotation.Bean;
@@ -48,5 +57,22 @@ public class BeanConfig {
     public GestionarCuentasUseCase gestionarCuentasUseCase(UsuarioRepositoryPort usuarios,
                                                            CifradoContrasenaPort cifrado, Clock reloj) {
         return new GestionarCuentasService(usuarios, cifrado, reloj);
+    }
+
+    @Bean
+    public GestionarCatalogoUseCase gestionarCatalogoUseCase(CategoriaRepositoryPort categorias,
+                                                             ProductoRepositoryPort productos) {
+        return new GestionarCatalogoService(categorias, productos);
+    }
+
+    @Bean
+    public GestionarPedidosUseCase gestionarPedidosUseCase(PedidoRepositoryPort pedidos, ProductoRepositoryPort productos,
+                                                           UsuarioRepositoryPort usuarios, Clock reloj) {
+        return new GestionarPedidosService(pedidos, productos, usuarios, reloj);
+    }
+
+    @Bean
+    public GestionarCocinaUseCase gestionarCocinaUseCase(PedidoRepositoryPort pedidos, Clock reloj) {
+        return new GestionarCocinaService(pedidos, reloj);
     }
 }
