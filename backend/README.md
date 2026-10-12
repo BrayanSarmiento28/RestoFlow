@@ -35,8 +35,12 @@ para el sprint de inventario. Script de las tablas nuevas: `database/02_menu_ped
 
 1. **Base de datos:** ejecutar `database/01_crear_base_de_datos.sql` y luego `database/02_menu_pedidos_inventario.sql` en SQL Server Management Studio
    (requiere autenticación mixta y TCP/IP en el puerto 1433).
-2. **Configuración privada:** copiar `src/main/resources/application-local.example.yml` como
-   `application-local.yml` y escribir la contraseña de la base de datos y la de Gmail. Este archivo no se sube a GitHub.
+2. **Configuración privada** (elegir una):
+   - copiar `.env.example` como `.env` (en la carpeta `backend`) y escribir la contraseña de la base de datos
+     y la de Gmail; o
+   - copiar `src/main/resources/application-local.example.yml` como `application-local.yml`.
+
+   Ninguno de los dos archivos se sube a GitHub. Hay plantillas `.env` para pre-producción y producción.
 3. **Arrancar:** en VS Code, `Ejecutar y depurar` → **Backend RestoFlow** → ▶.
    Al primer arranque se crea el administrador `admin@restoflow.com` / `Admin2026*`.
 4. **Probar el API:**

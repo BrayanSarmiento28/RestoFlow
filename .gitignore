@@ -15,6 +15,9 @@ npm-debug.log*
 # ===== Configuración local y secretos (NUNCA subir contraseñas) =====
 .env
 *.env
+.env.*
+# Las plantillas sin datos reales sí se suben
+!.env*.example
 backend/src/main/resources/application-local.yml
 
 # ===== Editores, extensiones y sistema operativo =====

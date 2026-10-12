@@ -6,10 +6,15 @@ spring:
   application:
     name: restoflow-backend
   profiles:
-    default: dev
+    # Perfil activo: se toma de SPRING_PROFILES_ACTIVE (en el archivo .env o en el sistema); si no existe, "dev"
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   config:
-    # Datos privados de cada computador (contraseñas). Este archivo NO se sube a GitHub.
-    import: optional:classpath:application-local.yml
+    # Datos privados de cada computador. Ninguno de estos dos archivos se sube a GitHub:
+    #  - application-local.yml (formato YAML de Spring)
+    #  - .env (variables CLAVE=valor; plantillas en backend/.env.*.example)
+    import:
+      - optional:classpath:application-local.yml
+      - optional:file:.env[.properties]
 
   # ---------- Base de datos: SQL Server ----------
   datasource:
