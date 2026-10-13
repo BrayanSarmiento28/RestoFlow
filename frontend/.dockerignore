@@ -1,0 +1,16 @@
+# Lo que NO se copia a la imagen: dependencias (se instalan dentro), compilados y archivos locales
+node_modules/
+dist/
+.angular/
+out-tsc/
+coverage/
+*.log
+.env
+.env.*
+.git
+.gitignore
+.vscode/
+.idea/
+Dockerfile
+.dockerignore
+README.md

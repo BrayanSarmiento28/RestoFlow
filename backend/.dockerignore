@@ -1,0 +1,18 @@
+# Lo que NO se copia a la imagen: compilados, configuración local y secretos
+target/
+.mvn/wrapper/maven-wrapper.jar
+*.log
+.env
+.env.*
+src/main/resources/application-local.yml
+*.http
+.git
+.gitignore
+.vscode/
+.idea/
+*.iml
+Dockerfile
+.dockerignore
+README.md
+ARQUITECTURA.md
+database/
