@@ -122,6 +122,12 @@ class PedidoFlujoIntegracionTest {
     }
 
     @Test
+    @DisplayName("El estado del servicio es público (lo usa el healthcheck de Docker)")
+    void saludPublica() throws Exception {
+        mvc.perform(get("/api/salud")).andExpect(status().isOk()).andExpect(jsonPath("$.estado").value("UP"));
+    }
+
+    @Test
     @DisplayName("Sin token no se puede consultar pedidos (401)")
     void sinToken() throws Exception {
         mvc.perform(get("/api/pedidos")).andExpect(status().isUnauthorized());

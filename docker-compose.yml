@@ -1,0 +1,127 @@
+# =====================================================================
+# RestoFlow · Docker Compose
+# Levanta la solución completa con un solo comando:
+#
+#   db        SQL Server 2022 (datos guardados en un volumen)
+#   db-init   ejecuta una sola vez los scripts SQL que crean la base de datos y las tablas
+#   backend   API REST en Spring Boot (imagen construida con backend/Dockerfile)
+#   frontend  Angular servido con Nginx (imagen construida con frontend/Dockerfile)
+#
+# Uso:
+#   1. Copy-Item .env.example .env      (y cambiar las contraseñas)
+#   2. docker compose up -d --build
+#   3. Abrir http://localhost:4200  ·  Swagger: http://localhost:8080/swagger-ui.html
+#   Detener: docker compose down       (agregar -v borra también la base de datos)
+#
+# Las contraseñas NO están en este archivo: llegan desde .env (que no se sube a GitHub).
+# =====================================================================
+name: restoflow
+
+services:
+
+  # ---------- Base de datos ----------
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-CU23-ubuntu-22.04
+    container_name: restoflow-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD en el archivo .env}
+    ports:
+      # 14330 en el computador para no chocar con un SQL Server instalado (1433)
+      - "${DB_PUERTO:-14330}:1433"
+    volumes:
+      - sqlserver_datos:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -Q 'SELECT 1' -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - restoflow-red
+
+  # ---------- Creación de la base de datos y las tablas (se ejecuta y termina) ----------
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-CU23-ubuntu-22.04
+    container_name: restoflow-db-init
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD en el archivo .env}
+      APP_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD en el archivo .env}
+    volumes:
+      - ./docker/sqlserver/00_inicializar.sql:/scripts/00_inicializar.sql:ro
+      - ./backend/database/01_crear_base_de_datos.sql:/scripts/01_crear_base_de_datos.sql:ro
+      - ./backend/database/02_menu_pedidos_inventario.sql:/scripts/02_menu_pedidos_inventario.sql:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for script in /scripts/00_inicializar.sql /scripts/01_crear_base_de_datos.sql /scripts/02_menu_pedidos_inventario.sql; do
+          echo "Ejecutando $$script"
+          /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -v APP_PASSWORD="$$APP_PASSWORD" -i "$$script"
+        done
+        echo "Base de datos lista"
+    restart: "no"
+    networks:
+      - restoflow-red
+
+  # ---------- Backend: API REST ----------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: restoflow-backend:${RESTOFLOW_VERSION:-0.2.0}
+    container_name: restoflow-backend
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      # Perfil de Spring Boot: dev · preprod · prod
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-preprod}
+      DB_HOST: db
+      DB_PORT: "1433"
+      DB_NAME: RestoFlowDB
+      DB_USER: restoflow_app
+      DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD en el archivo .env}
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET en el archivo .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@restoflow.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD en el archivo .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
+      CORREO_MODO: ${CORREO_MODO:-consola}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    ports:
+      # Expuesto solo para usar Swagger desde el navegador; el frontend llega por la red interna
+      - "${BACKEND_PUERTO:-8080}:8080"
+    restart: unless-stopped
+    networks:
+      - restoflow-red
+
+  # ---------- Frontend: Angular + Nginx ----------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        CONFIGURACION: production
+    image: restoflow-frontend:${RESTOFLOW_VERSION:-0.2.0}
+    container_name: restoflow-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PUERTO:-4200}:8080"
+    restart: unless-stopped
+    networks:
+      - restoflow-red
+
+volumes:
+  sqlserver_datos:
+
+networks:
+  restoflow-red:
+    driver: bridge

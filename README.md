@@ -18,6 +18,7 @@ Asignaturas: Ingeniería de Software y Sistemas de Información.
 RestoFlow/
 ├── backend/    API REST en Spring Boot con arquitectura hexagonal (puertos y adaptadores)
 ├── frontend/   Aplicación web en Angular que consume el API
+├── docker/     Scripts que usa Docker Compose (inicialización de SQL Server)
 └── docs/       Documentación técnica: sprints, historias de usuario y modelo de datos
 ```
 
@@ -26,6 +27,18 @@ El frontend y el backend son **aplicaciones independientes** que se comunican po
 ```
 Angular (localhost:4200)  ──HTTP/JSON──►  Spring Boot (localhost:8080/api)  ──JPA──►  SQL Server
 ```
+
+## Ejecutar con Docker
+
+Toda la solución (SQL Server, backend y frontend) se levanta con Docker Compose:
+
+```
+Copy-Item .env.example .env
+docker compose up -d --build
+```
+
+Aplicación en http://localhost:4200 y Swagger en http://localhost:8080/swagger-ui.html.
+Detalle y buenas prácticas aplicadas en [`docs/docker.md`](docs/docker.md).
 
 ## Metodología
 
