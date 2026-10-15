@@ -50,6 +50,10 @@ public class SecurityConfig {
                 // Pedidos (RF-02): la cocina también puede consultarlos; solo mesero y admin los cambian
                 .requestMatchers(HttpMethod.GET, "/api/pedidos/**").hasAnyRole("MESERO", "COCINA", "ADMIN")
                 .requestMatchers("/api/pedidos/**").hasAnyRole("MESERO", "ADMIN")
+                // Inventario y alertas (RF-05 a RF-07): personal de inventario y administrador
+                .requestMatchers("/api/inventario/**", "/api/alertas/**").hasAnyRole("INVENTARIO", "ADMIN")
+                // Panel e historial (RF-08, RF-12): solo el administrador
+                .requestMatchers("/api/panel/**", "/api/historial/**").hasRole("ADMIN")
                 // Todo lo demás requiere haber iniciado sesión
                 .anyRequest().authenticated())
             .addFilterBefore(new JwtAuthenticationFilter(jwt), UsernamePasswordAuthenticationFilter.class);

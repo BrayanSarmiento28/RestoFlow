@@ -27,8 +27,9 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("RestoFlow API")
                         .version("0.2.0")
-                        .description("API REST de RestoFlow · Sprint 1 (RF-01 Autenticación) y Sprint 2 (RF-02 Pedidos, "
-                                + "RF-03 Estados de cocina, RF-04 Comandas y menú). "
+                        .description("API REST de RestoFlow · Sprint 1 (RF-01 Autenticación), Sprint 2 (RF-02 Pedidos, "
+                                + "RF-03 Estados de cocina, RF-04 Comandas y menú) y Sprint 3 (RF-05 Inventario, "
+                                + "RF-06 Descuento automático por venta, RF-07 Alertas, RF-08 Panel y RF-12 Historial). "
                                 + "Entorno: " + entorno + ". "
                                 + "Para probar las rutas protegidas: ejecute POST /api/auth/login, copie el token "
                                 + "y péguelo en el botón Authorize.")

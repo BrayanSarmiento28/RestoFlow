@@ -41,7 +41,7 @@ class GestionarPedidosServiceTest {
         productos = new DoblesPedidos.ProductosEnMemoria();
         Dobles.UsuariosEnMemoria usuarios = new Dobles.UsuariosEnMemoria();
         reloj = new Dobles.RelojManual();
-        servicio = new GestionarPedidosService(pedidos, productos, usuarios, reloj);
+        servicio = new GestionarPedidosService(pedidos, productos, usuarios, pedido -> List.of(), reloj);
         cocina = new GestionarCocinaService(pedidos, reloj);
 
         meseroId = usuarios.guardar(Usuario.nuevo("Laura Gómez", "laura@resto.com", "hash", Rol.MESERO,

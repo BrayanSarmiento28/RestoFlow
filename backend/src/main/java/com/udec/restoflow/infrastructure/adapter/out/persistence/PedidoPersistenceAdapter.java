@@ -13,6 +13,7 @@ import com.udec.restoflow.infrastructure.adapter.out.persistence.repository.Prod
 import com.udec.restoflow.infrastructure.adapter.out.persistence.repository.UsuarioJpaRepository;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -81,5 +82,15 @@ public class PedidoPersistenceAdapter implements PedidoRepositoryPort {
     @Override
     public List<Pedido> pendientesEnCocina() {
         return repositorio.pendientesEnCocina().stream().map(PersistenceMapper::aDominio).toList();
+    }
+
+    @Override
+    public List<Pedido> creadosEntre(LocalDateTime desde, LocalDateTime hasta, EstadoPedido estadoPedido) {
+        return repositorio.creadosEntre(desde, hasta, estadoPedido).stream().map(PersistenceMapper::aDominio).toList();
+    }
+
+    @Override
+    public List<Pedido> pagadosEntre(LocalDateTime desde, LocalDateTime hasta) {
+        return repositorio.pagadosEntre(desde, hasta).stream().map(PersistenceMapper::aDominio).toList();
     }
 }

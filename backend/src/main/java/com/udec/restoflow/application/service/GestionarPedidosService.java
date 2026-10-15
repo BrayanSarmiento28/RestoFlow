@@ -1,5 +1,6 @@
 package com.udec.restoflow.application.service;
 
+import com.udec.restoflow.application.port.in.DescontarInventarioUseCase;
 import com.udec.restoflow.application.port.in.GestionarPedidosUseCase;
 import com.udec.restoflow.application.port.out.PedidoRepositoryPort;
 import com.udec.restoflow.application.port.out.ProductoRepositoryPort;
@@ -29,13 +30,15 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
     private final PedidoRepositoryPort pedidos;
     private final ProductoRepositoryPort productos;
     private final UsuarioRepositoryPort usuarios;
+    private final DescontarInventarioUseCase inventario;
     private final Clock reloj;
 
     public GestionarPedidosService(PedidoRepositoryPort pedidos, ProductoRepositoryPort productos,
-                                   UsuarioRepositoryPort usuarios, Clock reloj) {
+                                   UsuarioRepositoryPort usuarios, DescontarInventarioUseCase inventario, Clock reloj) {
         this.pedidos = pedidos;
         this.productos = productos;
         this.usuarios = usuarios;
+        this.inventario = inventario;
         this.reloj = reloj;
     }
 
@@ -69,8 +72,10 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
     public Pedido registrarVenta(Long pedidoId) {
         Pedido pedido = obtener(pedidoId);
         pedido.registrarVenta(LocalDateTime.now(reloj));
-        // El descuento automático de inventario (RF-06) se agrega aquí en el sprint de inventario.
-        return pedidos.guardar(pedido);
+        Pedido vendido = pedidos.guardar(pedido);
+        // RF-06 · Descuento automático según las recetas, en la misma transacción (RES-35)
+        inventario.descontarPorVenta(vendido);
+        return vendido;
     }
 
     @Override

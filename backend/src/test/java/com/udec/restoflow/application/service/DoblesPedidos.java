@@ -8,6 +8,7 @@ import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Pedido;
 import com.udec.restoflow.domain.model.Producto;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -93,6 +94,24 @@ final class DoblesPedidos {
             return datos.values().stream()
                     .filter(Pedido::estaPendienteEnCocina)
                     .sorted(Comparator.comparing(Pedido::getFechaCreacion))
+                    .toList();
+        }
+
+        @Override
+        public List<Pedido> creadosEntre(LocalDateTime desde, LocalDateTime hasta, EstadoPedido estadoPedido) {
+            return datos.values().stream()
+                    .filter(p -> !p.getFechaCreacion().isBefore(desde) && p.getFechaCreacion().isBefore(hasta))
+                    .filter(p -> estadoPedido == null || p.getEstadoPedido() == estadoPedido)
+                    .sorted(Comparator.comparing(Pedido::getFechaCreacion).reversed())
+                    .toList();
+        }
+
+        @Override
+        public List<Pedido> pagadosEntre(LocalDateTime desde, LocalDateTime hasta) {
+            return datos.values().stream()
+                    .filter(p -> p.getEstadoPedido() == EstadoPedido.PAGADO)
+                    .filter(p -> !p.getFechaCierre().isBefore(desde) && p.getFechaCierre().isBefore(hasta))
+                    .sorted(Comparator.comparing(Pedido::getFechaCierre).reversed())
                     .toList();
         }
     }

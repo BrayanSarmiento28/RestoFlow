@@ -14,8 +14,16 @@ public class RecetaIngrediente {
     private final Long productoId;
     private final Long ingredienteId;
     private final BigDecimal cantidad;
+    /** Datos del ingrediente solo para mostrar (pueden venir vacíos). */
+    private final String ingredienteNombre;
+    private final UnidadMedida unidad;
 
     public RecetaIngrediente(Long id, Long productoId, Long ingredienteId, BigDecimal cantidad) {
+        this(id, productoId, ingredienteId, cantidad, null, null);
+    }
+
+    public RecetaIngrediente(Long id, Long productoId, Long ingredienteId, BigDecimal cantidad,
+                             String ingredienteNombre, UnidadMedida unidad) {
         if (productoId == null || ingredienteId == null) {
             throw new DomainException("La receta debe indicar el producto y el ingrediente");
         }
@@ -26,6 +34,8 @@ public class RecetaIngrediente {
         this.productoId = productoId;
         this.ingredienteId = ingredienteId;
         this.cantidad = cantidad;
+        this.ingredienteNombre = ingredienteNombre;
+        this.unidad = unidad;
     }
 
     /** Cantidad total del ingrediente que se consume al vender varias unidades del producto. */
@@ -37,4 +47,6 @@ public class RecetaIngrediente {
     public Long getProductoId() { return productoId; }
     public Long getIngredienteId() { return ingredienteId; }
     public BigDecimal getCantidad() { return cantidad; }
+    public String getIngredienteNombre() { return ingredienteNombre; }
+    public UnidadMedida getUnidad() { return unidad; }
 }
