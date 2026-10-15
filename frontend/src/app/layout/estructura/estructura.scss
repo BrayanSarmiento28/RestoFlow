@@ -1,6 +1,9 @@
+// Menú lateral con el estilo de la maqueta "Cocina en flujo":
+// fondo tinta, enlaces en crema suave, el activo en crema con texto tinta,
+// títulos de grupo en mono y la tarjeta del usuario abajo.
 .app {
   display: grid;
-  grid-template-columns: 258px 1fr;
+  grid-template-columns: 260px 1fr;
   min-height: 100vh;
 }
 
@@ -10,125 +13,166 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  color: #fff;
-  background: var(--rf-azul-oscuro);
+  gap: 16px;
+  padding: 24px 16px 16px;
+  color: var(--rf-crema);
+  background: var(--rf-tinta);
 }
 
 .marca {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  &__icono {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    color: #fff;
-    border-radius: 11px;
-    background: linear-gradient(135deg, var(--rf-primario), var(--rf-acento));
-    box-shadow: 0 6px 18px rgba(29, 92, 255, 0.45);
+  gap: 10px;
+  padding: 0 8px;
+  &__icono { width: 40px; height: 40px; flex: 0 0 auto; }
+  strong {
+    display: block;
+    font-family: var(--rf-fuente-titulo);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    span { display: inline-block; transform: skewX(-10deg); color: var(--rf-brasa); }
   }
-  strong { display: block; font-size: 18px; span { color: var(--rf-acento); } }
-  small { font-size: 10px; letter-spacing: 0.18em; color: #8fa0c2; }
+  small {
+    font-family: var(--rf-fuente-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: #8F8A7E;
+  }
 }
 
 .entorno {
-  margin: 14px 14px 0;
   padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 600;
+  font-family: var(--rf-fuente-mono);
+  font-size: 11px;
+  font-weight: 500;
   text-align: center;
-  color: #86efac;
-  border: 1px solid rgba(134, 239, 172, 0.35);
-  border-radius: 8px;
-  background: rgba(34, 197, 94, 0.08);
-  &--preprod { color: #fcd34d; border-color: rgba(252, 211, 77, 0.35); background: rgba(245, 158, 11, 0.08); }
+  color: var(--rf-listo-vivo);
+  border: 1px solid rgba(95, 191, 149, 0.35);
+  border-radius: var(--rf-radio-s);
+  background: rgba(95, 191, 149, 0.08);
+  &--preprod { color: var(--rf-ambar); border-color: rgba(242, 180, 107, 0.4); background: rgba(242, 180, 107, 0.08); }
 }
 
 .menu {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 20px 14px;
+  gap: 16px;
   overflow-y: auto;
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  &__titulo {
+    margin: 0 0 6px;
+    padding: 0 12px;
+    font-family: var(--rf-fuente-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8F8A7E;
+  }
 }
 
 .item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  min-height: 42px;
+  padding: 0 12px;
   font-size: 15px;
-  color: #c3cde3;
-  border-radius: 10px;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--rf-texto-claro);
+  border-radius: 12px;
   text-decoration: none;
-  transition: background 0.15s;
-  &:hover { background: rgba(255, 255, 255, 0.06); }
-  &--ai { color: var(--rf-acento); }
-  &--activo {
-    color: #fff;
+  transition: background 0.15s, color 0.15s;
+  svg { flex: 0 0 auto; }
+  &:hover { color: var(--rf-crema); background: var(--rf-tinta-2); }
+  &--ai { color: var(--rf-ambar); }
+  &--activo,
+  &--activo:hover {
+    color: var(--rf-tinta);
     font-weight: 600;
-    background: var(--rf-primario);
-    box-shadow: 0 6px 18px rgba(29, 92, 255, 0.35);
-    &:hover { background: var(--rf-primario); }
+    background: var(--rf-crema);
   }
-  &--pronto { cursor: default; opacity: 0.55; &:hover { background: none; } }
+  &--pronto { cursor: default; opacity: 0.6; &:hover { color: var(--rf-texto-claro); background: none; } }
+  &--pronto.item--ai:hover { color: var(--rf-ambar); }
 }
 
 .pronto {
   margin-left: auto;
-  padding: 2px 8px;
-  font-size: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1px 7px;
+  font-family: var(--rf-fuente-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--rf-tinta-3);
   border-radius: 999px;
 }
 
 .perfil {
-  padding: 18px 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: var(--rf-radio-m);
+  background: var(--rf-tinta-2);
   &__usuario {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0 10px 14px;
-    strong { display: block; font-size: 15px; }
-    small { font-size: 13px; color: #8fa0c2; }
+  }
+  &__datos {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    strong { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    small { font-size: 12px; color: #A9A497; }
   }
 }
 
+/* Cada rol tiene su color de avatar, como en la maqueta */
 .avatar {
   display: grid;
   place-items: center;
   width: 36px;
   height: 36px;
+  flex: 0 0 auto;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--rf-tinta);
   border-radius: 50%;
-  background: var(--rf-primario);
+  background: var(--rf-brasa);
+  &--mesero { background: var(--rf-ambar); }
+  &--cocina { background: var(--rf-listo-vivo); }
+  &--inventario { background: #B9C6E0; }
 }
 
 .salir {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 10px 12px;
-  font-size: 15px;
-  color: #c3cde3;
+  min-height: 40px;
+  padding: 0 10px;
+  font-size: 14px;
+  color: var(--rf-texto-claro);
   border: 0;
   border-radius: 10px;
   background: none;
   cursor: pointer;
-  &:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+  &:hover { color: var(--rf-crema); background: var(--rf-tinta-3); }
 }
 
-.contenido { min-width: 0; background: #f1f5f9; }
+.contenido { min-width: 0; background: var(--rf-crema); }
 
 @media (max-width: 900px) {
   .app { grid-template-columns: 1fr; }
-  .lateral { position: static; height: auto; }
-  .menu { flex-direction: row; flex-wrap: wrap; }
-}
+  .lateral { position: static; height: auto; padding: 16px; gap: 16px; }
+  .menu { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+  .grupo { flex-direction: row; flex-wrap: wrap; &__titulo { display: none; } }
+}

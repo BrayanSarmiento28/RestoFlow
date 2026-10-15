@@ -24,7 +24,14 @@
         </h2>
 
         @for (p of deEstado(col.estado); track p.id) {
-          <article class="comanda" [class.comanda--demorada]="col.estado !== 'LISTO' && minutos(p) >= 20">
+          <article class="comanda" [class.comanda--demorada]="col.estado !== 'LISTO' && minutos(p) >= 20"
+                   [class.comanda--lista]="col.estado === 'LISTO'">
+            @if (col.estado !== 'LISTO') {
+              <div class="comanda__tiempo" aria-hidden="true">
+                <span [style.width.%]="minutos(p) >= 20 ? 100 : minutos(p) * 5"></span>
+              </div>
+            }
+            <div class="comanda__cuerpo">
             <header class="comanda__cabecera">
               <span class="mesa">Mesa {{ p.numeroMesa }}</span>
               <span class="tiempo">{{ minutos(p) }} min</span>
@@ -47,6 +54,7 @@
                     [disabled]="procesando() === p.id" (click)="avanzar(p)">
               {{ procesando() === p.id ? 'Guardando...' : accion(p) }}
             </button>
+            </div>
           </article>
         } @empty {
           <p class="vacio">Sin comandas</p>

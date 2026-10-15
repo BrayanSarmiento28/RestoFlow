@@ -1,102 +1,157 @@
-// Pantalla pensada para verse de lejos en la cocina: fondo oscuro, letra grande y colores por estado.
+// Pantalla de cocina en "modo noche" de la maqueta "Cocina en flujo":
+// se ve de lejos, no encandila y cada estado tiene su color.
 .cocina {
   min-height: 100vh;
-  padding: 28px 32px 48px;
-  color: #e2e8f0;
-  background: #0b1220;
+  padding: 32px 32px 48px;
+  color: var(--rf-crema);
+  background: var(--rf-noche);
 }
 
 .cabecera {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   gap: 16px;
-  margin-bottom: 24px;
-  h1 { margin: 0; font-size: 30px; color: #fff; }
-  p { margin: 4px 0 0; color: #94a3b8; }
-  &__derecha { display: flex; align-items: center; gap: 14px; }
+  margin-bottom: 28px;
+  h1 { margin: 0; font-size: 40px; font-weight: 700; color: var(--rf-crema); }
+  p { margin: 6px 0 0; color: var(--rf-texto-claro); }
+  &__derecha { display: flex; align-items: center; gap: 12px; }
 }
 
-.vivo { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8; }
-.punto { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2); }
+/* Indicador "en vivo": píldora verde oscura con punto verde */
+.vivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-family: var(--rf-fuente-mono);
+  font-size: 12px;
+  color: #A9C9BC;
+  border-radius: 999px;
+  background: var(--rf-noche-verde);
+}
+.punto { width: 8px; height: 8px; border-radius: 50%; background: var(--rf-listo-vivo); }
 
 .refrescar {
-  padding: 8px 16px;
+  min-height: 44px;
+  padding: 0 18px;
   font: inherit;
   font-weight: 600;
-  color: #fff;
+  color: var(--rf-crema);
   cursor: pointer;
-  border: 1px solid #334155;
-  border-radius: 10px;
-  background: #1e293b;
+  border: 1.5px solid var(--rf-tinta-3);
+  border-radius: var(--rf-radio-m);
+  background: transparent;
+  &:hover { background: var(--rf-tinta-2); }
 }
 
 .aviso {
   padding: 12px 14px;
   margin-bottom: 18px;
-  color: #fecaca;
-  border: 1px solid #7f1d1d;
-  border-radius: 10px;
-  background: #450a0a;
+  color: #F29B6E;
+  border: 1px solid var(--rf-brasa);
+  border-radius: var(--rf-radio-m);
+  background: #3A2318;
 }
 
 .tablero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
 
 .columna { display: flex; flex-direction: column; gap: 14px; }
 
+/* Título de columna: mayúsculas pequeñas, contador en mono y una línea del color del estado */
 .columna__titulo {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin: 0;
-  padding: 10px 14px;
-  font-size: 16px;
-  border-radius: 10px;
-  span { font-weight: 800; }
-  &--pendiente { color: #fde68a; background: rgba(245, 158, 11, 0.15); }
-  &--en_preparacion { color: #bfdbfe; background: rgba(59, 130, 246, 0.18); }
-  &--listo { color: #bbf7d0; background: rgba(34, 197, 94, 0.15); }
+  padding: 0 4px 10px;
+  font-family: var(--rf-fuente-texto);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rf-texto-claro);
+  border-bottom: 3px solid var(--rf-noche-borde);
+  span {
+    padding: 4px 10px;
+    font-family: var(--rf-fuente-mono);
+    font-size: 14px;
+    letter-spacing: 0;
+    color: var(--rf-crema);
+    border-radius: var(--rf-radio-s);
+    background: #262B28;
+  }
+  &--pendiente { border-color: var(--rf-ambar); }
+  &--en_preparacion { border-color: var(--rf-brasa); }
+  &--listo { border-color: var(--rf-listo-vivo); }
 }
 
 .comanda {
-  padding: 16px;
-  border: 2px solid #1e293b;
-  border-radius: 14px;
-  background: #111a2e;
-  &--demorada { border-color: #dc2626; }
-  &__cabecera { display: flex; justify-content: space-between; align-items: baseline; }
-  &__meta { margin: 4px 0 12px; font-size: 13px; color: #94a3b8; }
+  overflow: hidden;
+  border: 1.5px solid var(--rf-noche-borde);
+  border-radius: var(--rf-radio-l);
+  background: var(--rf-noche-tarjeta);
+  &__tiempo {
+    height: 6px;
+    background: var(--rf-noche-borde);
+    span { display: block; height: 6px; background: var(--rf-ambar); transition: width 0.3s; }
+  }
+  &__cuerpo { padding: 20px; }
+  &__cabecera { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  &__meta { margin: 4px 0 14px; font-family: var(--rf-fuente-mono); font-size: 13px; color: #A9A497; }
   &__lineas {
-    margin: 0 0 12px;
+    margin: 0 0 14px;
     padding: 0;
     list-style: none;
-    li { padding: 6px 0; font-size: 18px; color: #fff; border-bottom: 1px dashed #1e293b; }
-    strong { color: #93c5fd; }
-    em { display: block; font-size: 14px; color: #fcd34d; }
+    li { padding: 8px 0; font-size: 18px; color: var(--rf-crema); border-bottom: 1px dashed var(--rf-noche-borde); }
+    li:last-child { border-bottom: 0; }
+    strong { margin-right: 6px; font-family: var(--rf-fuente-mono); color: var(--rf-ambar); }
+    em { display: block; font-size: 14px; font-style: normal; color: #A9A497; }
   }
-  &__obs { margin: 0 0 12px; font-size: 14px; color: #fca5a5; }
+  &__obs { margin: 0 0 14px; font-size: 14px; color: var(--rf-ambar); }
+
+  /* Más de 20 minutos: borde y barra en brasa */
+  &--demorada {
+    border-color: var(--rf-brasa);
+    .comanda__tiempo { background: #3A2318; span { background: var(--rf-brasa); } }
+    .tiempo { color: #F29B6E; }
+  }
+  /* Ya lista: tarjeta verde oscura */
+  &--lista { border-color: #2E4A3E; background: var(--rf-noche-verde); }
 }
 
-.mesa { font-size: 24px; font-weight: 800; color: #fff; }
-.tiempo { font-size: 15px; font-weight: 700; color: #cbd5e1; }
+.mesa { font-family: var(--rf-fuente-titulo); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: var(--rf-crema); }
+.tiempo { font-family: var(--rf-fuente-mono); font-size: 20px; font-weight: 700; color: var(--rf-texto-claro); }
 
+/* Botón grande para tocar con prisa; el color dice qué pasa al tocarlo */
 .avanzar {
   width: 100%;
-  height: 48px;
+  min-height: 56px;
   font: inherit;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
-  color: #fff;
   cursor: pointer;
   border: none;
-  border-radius: 10px;
-  &--pendiente { background: #2563eb; }
-  &--en_preparacion { background: #16a34a; }
-  &--listo { background: #475569; }
+  border-radius: var(--rf-radio-m);
+  &--pendiente { color: var(--rf-noche); background: var(--rf-brasa); }
+  &--en_preparacion { color: var(--rf-noche); background: var(--rf-listo-vivo); }
+  &--listo { color: var(--rf-crema); border: 1.5px solid var(--rf-tinta-3); background: transparent; }
   &:disabled { opacity: 0.6; cursor: wait; }
 }
 
-.vacio { padding: 24px 0; text-align: center; color: #475569; }
+.vacio {
+  padding: 28px 0;
+  text-align: center;
+  color: #8A8F8B;
+  border: 1.5px dashed var(--rf-noche-borde);
+  border-radius: var(--rf-radio-l);
+}
 
 @media (max-width: 1100px) {
   .tablero { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .cocina { padding: 20px 16px 40px; }
+  .cabecera h1 { font-size: 32px; }
 }
