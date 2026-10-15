@@ -1,23 +1,40 @@
 package com.udec.restoflow.infrastructure.config;
 
+import com.udec.restoflow.application.port.in.ConsultarHistorialUseCase;
+import com.udec.restoflow.application.port.in.ConsultarPanelUseCase;
+import com.udec.restoflow.application.port.in.DescontarInventarioUseCase;
+import com.udec.restoflow.application.port.in.GestionarAlertasUseCase;
 import com.udec.restoflow.application.port.in.GestionarCatalogoUseCase;
 import com.udec.restoflow.application.port.in.GestionarCocinaUseCase;
 import com.udec.restoflow.application.port.in.GestionarCuentasUseCase;
+import com.udec.restoflow.application.port.in.GestionarInventarioUseCase;
 import com.udec.restoflow.application.port.in.GestionarPedidosUseCase;
+import com.udec.restoflow.application.port.in.GestionarRecetasUseCase;
 import com.udec.restoflow.application.port.in.IniciarSesionUseCase;
 import com.udec.restoflow.application.port.in.RecuperarContrasenaUseCase;
+import com.udec.restoflow.application.port.out.AlertaRepositoryPort;
 import com.udec.restoflow.application.port.out.CategoriaRepositoryPort;
 import com.udec.restoflow.application.port.out.CifradoContrasenaPort;
 import com.udec.restoflow.application.port.out.CodigoRecuperacionRepositoryPort;
 import com.udec.restoflow.application.port.out.EnviarCorreoPort;
 import com.udec.restoflow.application.port.out.GeneradorTokenPort;
+import com.udec.restoflow.application.port.out.IngredienteRepositoryPort;
+import com.udec.restoflow.application.port.out.MovimientoRepositoryPort;
 import com.udec.restoflow.application.port.out.PedidoRepositoryPort;
 import com.udec.restoflow.application.port.out.ProductoRepositoryPort;
+import com.udec.restoflow.application.port.out.RecetaRepositoryPort;
 import com.udec.restoflow.application.port.out.UsuarioRepositoryPort;
+import com.udec.restoflow.application.service.ConsultarHistorialService;
+import com.udec.restoflow.application.service.ConsultarPanelService;
+import com.udec.restoflow.application.service.ControlAlertas;
+import com.udec.restoflow.application.service.DescontarInventarioService;
+import com.udec.restoflow.application.service.GestionarAlertasService;
 import com.udec.restoflow.application.service.GestionarCatalogoService;
 import com.udec.restoflow.application.service.GestionarCocinaService;
 import com.udec.restoflow.application.service.GestionarCuentasService;
+import com.udec.restoflow.application.service.GestionarInventarioService;
 import com.udec.restoflow.application.service.GestionarPedidosService;
+import com.udec.restoflow.application.service.GestionarRecetasService;
 import com.udec.restoflow.application.service.IniciarSesionService;
 import com.udec.restoflow.application.service.RecuperarContrasenaService;
 import org.springframework.context.annotation.Bean;
@@ -67,12 +84,58 @@ public class BeanConfig {
 
     @Bean
     public GestionarPedidosUseCase gestionarPedidosUseCase(PedidoRepositoryPort pedidos, ProductoRepositoryPort productos,
-                                                           UsuarioRepositoryPort usuarios, Clock reloj) {
-        return new GestionarPedidosService(pedidos, productos, usuarios, reloj);
+                                                           UsuarioRepositoryPort usuarios,
+                                                           DescontarInventarioUseCase inventario, Clock reloj) {
+        return new GestionarPedidosService(pedidos, productos, usuarios, inventario, reloj);
     }
 
     @Bean
     public GestionarCocinaUseCase gestionarCocinaUseCase(PedidoRepositoryPort pedidos, Clock reloj) {
         return new GestionarCocinaService(pedidos, reloj);
+    }
+
+    // ---------- Inventario, panel e historial (Sprint 4: RF-05 a RF-08 y RF-12) ----------
+
+    @Bean
+    public ControlAlertas controlAlertas(AlertaRepositoryPort alertas, Clock reloj) {
+        return new ControlAlertas(alertas, reloj);
+    }
+
+    @Bean
+    public GestionarInventarioUseCase gestionarInventarioUseCase(IngredienteRepositoryPort ingredientes,
+                                                                 MovimientoRepositoryPort movimientos,
+                                                                 ControlAlertas control, Clock reloj) {
+        return new GestionarInventarioService(ingredientes, movimientos, control, reloj);
+    }
+
+    @Bean
+    public DescontarInventarioUseCase descontarInventarioUseCase(RecetaRepositoryPort recetas,
+                                                                 IngredienteRepositoryPort ingredientes,
+                                                                 MovimientoRepositoryPort movimientos,
+                                                                 ControlAlertas control, Clock reloj) {
+        return new DescontarInventarioService(recetas, ingredientes, movimientos, control, reloj);
+    }
+
+    @Bean
+    public GestionarRecetasUseCase gestionarRecetasUseCase(RecetaRepositoryPort recetas, ProductoRepositoryPort productos,
+                                                           IngredienteRepositoryPort ingredientes) {
+        return new GestionarRecetasService(recetas, productos, ingredientes);
+    }
+
+    @Bean
+    public GestionarAlertasUseCase gestionarAlertasUseCase(AlertaRepositoryPort alertas, Clock reloj) {
+        return new GestionarAlertasService(alertas, reloj);
+    }
+
+    @Bean
+    public ConsultarPanelUseCase consultarPanelUseCase(PedidoRepositoryPort pedidos,
+                                                       IngredienteRepositoryPort ingredientes,
+                                                       AlertaRepositoryPort alertas) {
+        return new ConsultarPanelService(pedidos, ingredientes, alertas);
+    }
+
+    @Bean
+    public ConsultarHistorialUseCase consultarHistorialUseCase(PedidoRepositoryPort pedidos) {
+        return new ConsultarHistorialService(pedidos);
     }
 }

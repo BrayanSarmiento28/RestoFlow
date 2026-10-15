@@ -17,9 +17,16 @@ public class Alerta {
     private boolean atendida;
     private final LocalDateTime fechaCreacion;
     private LocalDateTime fechaAtencion;
+    /** Nombre del insumo solo para mostrar (puede venir vacío). */
+    private final String ingredienteNombre;
 
     public Alerta(Long id, Long ingredienteId, String mensaje, PrioridadAlerta prioridad, boolean atendida,
                   LocalDateTime fechaCreacion, LocalDateTime fechaAtencion) {
+        this(id, ingredienteId, mensaje, prioridad, atendida, fechaCreacion, fechaAtencion, null);
+    }
+
+    public Alerta(Long id, Long ingredienteId, String mensaje, PrioridadAlerta prioridad, boolean atendida,
+                  LocalDateTime fechaCreacion, LocalDateTime fechaAtencion, String ingredienteNombre) {
         if (mensaje == null || mensaje.isBlank()) {
             throw new DomainException("La alerta debe tener un mensaje");
         }
@@ -33,6 +40,7 @@ public class Alerta {
         this.atendida = atendida;
         this.fechaCreacion = fechaCreacion;
         this.fechaAtencion = fechaAtencion;
+        this.ingredienteNombre = ingredienteNombre;
     }
 
     public static Alerta nueva(Long ingredienteId, String mensaje, PrioridadAlerta prioridad, LocalDateTime ahora) {
@@ -53,4 +61,5 @@ public class Alerta {
     public boolean isAtendida() { return atendida; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public LocalDateTime getFechaAtencion() { return fechaAtencion; }
+    public String getIngredienteNombre() { return ingredienteNombre; }
 }
