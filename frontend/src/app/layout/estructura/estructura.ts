@@ -37,12 +37,12 @@ export class Estructura {
     { etiqueta: 'Dashboard', grupo: 'Operación', ruta: '/inicio', icono: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' },
     { etiqueta: 'Pedidos', grupo: 'Operación', ruta: '/pedidos', roles: ['MESERO', 'ADMIN'], icono: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6' },
     { etiqueta: 'Cocina', grupo: 'Operación', ruta: '/cocina', roles: ['COCINA', 'ADMIN'], icono: 'M4 14h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3zM8 10c0-2 2-2 2-4M12 10c0-2 2-2 2-4M16 10c0-2 2-2 2-4' },
-    { etiqueta: 'Inventario', grupo: 'Gestión', icono: 'M4 7l8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10' },
+    { etiqueta: 'Inventario', grupo: 'Gestión', ruta: '/inventario', roles: ['INVENTARIO', 'ADMIN'], icono: 'M4 7l8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10' },
     { etiqueta: 'Productos', grupo: 'Gestión', ruta: '/productos', roles: ['ADMIN'], icono: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' },
     { etiqueta: 'Usuarios', grupo: 'Gestión', ruta: '/usuarios', roles: ['ADMIN'], icono: 'M9 4.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .8 3 3 3 6' },
     { etiqueta: 'Configuración', grupo: 'Gestión', icono: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1' },
     { etiqueta: 'RestoFlow AI', grupo: 'Análisis', ai: true, icono: 'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z' },
-    { etiqueta: 'Reportes', grupo: 'Análisis', icono: 'M3 3v18h18M8 17v-5M13 17V8M18 17v-9' },
+    { etiqueta: 'Reportes', grupo: 'Análisis', ruta: '/reportes', roles: ['ADMIN'], icono: 'M3 3v18h18M8 17v-5M13 17V8M18 17v-9' },
   ];
 
   /** Cada rol ve solo los módulos que puede usar (los "Pronto" los ven todos). */

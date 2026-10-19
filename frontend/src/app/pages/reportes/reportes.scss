@@ -1,0 +1,37 @@
+// Estilos propios de Reportes; el resto viene de las clases rf-* globales.
+.rango { align-items: flex-end; }
+.filtros { flex-wrap: wrap; }
+.rf-pildora--chica { min-height: 36px; }
+.rf-select--chico { width: auto; }
+.mono { font-family: var(--rf-fuente-mono); font-size: 13px; white-space: nowrap; }
+.productos { max-width: 320px; font-size: 14px; color: var(--rf-texto-2); }
+.vacio { padding: 20px 0; text-align: center; color: var(--rf-texto-2); }
+
+/* Gráfico de ventas por día: una columna por día con su total encima */
+.dias {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  height: 240px;
+  padding-top: 24px;
+  overflow-x: auto;
+  border-bottom: 1.5px solid var(--rf-borde);
+}
+.dia {
+  flex: 1 0 56px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  gap: 6px;
+  &__valor, &__etiqueta {
+    font-family: var(--rf-fuente-mono);
+    font-size: 11px;
+    text-align: center;
+    color: var(--rf-texto-2);
+    white-space: nowrap;
+  }
+  &__etiqueta { order: 3; }
+  &:last-child .rf-barra { background: var(--rf-brasa-oscura); }
+}

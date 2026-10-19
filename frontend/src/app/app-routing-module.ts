@@ -8,6 +8,8 @@ import { Estructura } from './layout/estructura/estructura';
 import { Pedidos } from './pages/pedidos/pedidos';
 import { Cocina } from './pages/cocina/cocina';
 import { Productos } from './pages/productos/productos';
+import { Inventario } from './pages/inventario/inventario';
+import { Reportes } from './pages/reportes/reportes';
 import { adminGuard, authGuard, rolGuard } from './core/guards/auth.guard';
 
 const routes: Routes = [
@@ -30,6 +32,11 @@ const routes: Routes = [
         data: { roles: ['COCINA', 'ADMIN'] }, title: 'Cocina · RestoFlow',
       },
       { path: 'productos', component: Productos, canActivate: [adminGuard], title: 'Productos · RestoFlow' },
+      {
+        path: 'inventario', component: Inventario, canActivate: [rolGuard],
+        data: { roles: ['INVENTARIO', 'ADMIN'] }, title: 'Inventario · RestoFlow',
+      },
+      { path: 'reportes', component: Reportes, canActivate: [adminGuard], title: 'Reportes · RestoFlow' },
     ],
   },
   { path: '**', redirectTo: 'inicio' },

@@ -4,6 +4,7 @@ import com.udec.restoflow.application.port.out.AlertaRepositoryPort;
 import com.udec.restoflow.domain.model.Alerta;
 import com.udec.restoflow.domain.model.Ingrediente;
 import com.udec.restoflow.domain.model.PrioridadAlerta;
+import com.udec.restoflow.domain.model.UnidadMedida;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -50,20 +51,31 @@ public class ControlAlertas {
             a.marcarAtendida(ahora);
             alertas.guardar(a);
         });
-        String unidad = ingrediente.getUnidad().name().toLowerCase();
+        String unidad = abreviatura(ingrediente.getUnidad());
         String mensaje = ingrediente.estaAgotado()
                 ? "Se agotó " + ingrediente.getNombre() + ". Registre una entrada de mercancía."
                 : "Quedan " + numero(ingrediente.getStockActual()) + " " + unidad + " de " + ingrediente.getNombre()
-                  + " (mínimo " + numero(ingrediente.getStockMinimo()) + ").";
+                  + " (mínimo " + numero(ingrediente.getStockMinimo()) + " " + unidad + ").";
         alertas.guardar(Alerta.nueva(ingrediente.getId(), mensaje, prioridad, ahora));
     }
 
     /** RF-06 · Se vendió más de lo que había registrado: hay una diferencia en el inventario. */
     public void faltante(Ingrediente ingrediente, BigDecimal faltante, Long pedidoId) {
         String mensaje = "La venta del pedido #" + pedidoId + " necesitaba " + numero(faltante) + " "
-                + ingrediente.getUnidad().name().toLowerCase() + " más de " + ingrediente.getNombre()
+                + abreviatura(ingrediente.getUnidad()) + " más de " + ingrediente.getNombre()
                 + " de lo registrado. Revise el inventario con un conteo físico.";
         alertas.guardar(Alerta.nueva(ingrediente.getId(), mensaje, PrioridadAlerta.ALTA, LocalDateTime.now(reloj)));
+    }
+
+    /** 600 g, 2 und, 1,5 l: igual que en las pantallas. */
+    static String abreviatura(UnidadMedida unidad) {
+        return switch (unidad) {
+            case GRAMO -> "g";
+            case KILOGRAMO -> "kg";
+            case MILILITRO -> "ml";
+            case LITRO -> "l";
+            case UNIDAD -> "und";
+        };
     }
 
     static String numero(BigDecimal valor) {

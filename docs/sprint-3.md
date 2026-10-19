@@ -9,8 +9,8 @@ panel cómo va el día y el historial de pedidos, ventas y movimientos.
 En Jira es el **Sprint 4** (17 al 26 de octubre): épicas *Gestión de Inventario* (RES-4) y *Panel de Administración
 y Reportes* (RES-5), tareas RES-29 a RES-35.
 
-> Este documento cubre la **parte 1: backend**. Las pantallas (Inventario, Dashboard e Historial) se agregan en la
-> parte 2.
+El sprint se hizo en dos partes: **parte 1, backend** (rama `backend/inventario`) y **parte 2, pantallas**
+(rama `frontend/inventario`).
 
 ## Decisiones del sprint
 
@@ -116,6 +116,27 @@ inventario.
     comprueba quién puede hacer qué.
 - Se comprobó que los datos de ejemplo se cargan: 16 insumos y una receta para cada producto del menú.
 
+## Parte 2 · Pantallas
+
+Todas siguen la maqueta aprobada "Cocina en flujo" (clases `rf-*` de `styles.scss`).
+
+| Pantalla | Ruta | Roles | Qué muestra |
+|---|---|---|---|
+| **Inventario** (nueva) | `/inventario` | INVENTARIO, ADMIN | Aviso del insumo más urgente; indicadores (activos, bajo el mínimo, alcanzan para 3 días o menos, movimientos de hoy); tabla de insumos con barra de stock, "alcanza para" en días y estado; entradas, salidas y ajustes; crear, editar, activar y desactivar insumos; últimos movimientos; alertas pendientes con "Marcar atendida" |
+| **Dashboard** | `/inicio` | Todos | ADMIN: ventas de hoy y comparación con ayer, ticket promedio, pedidos activos, alertas, ventas por hora, lo más vendido, insumos que necesitan atención y mesas con pedido abierto. INVENTARIO: alertas e insumos bajo el mínimo. Todos: accesos directos según el rol |
+| **Reportes** (nueva) | `/reportes` | ADMIN | Historial por rango de fechas (hoy, 7 o 30 días, o fechas propias) en tres pestañas: ventas (totales y gráfico por día), pedidos (filtro por estado) y movimientos de inventario (filtro por insumo y tipo) |
+| **Productos** | `/productos` | ADMIN | Botón **Receta** en cada producto para definir qué insumos y cuánto lleva una unidad |
+
+**Cómo se calcula "Alcanza para".** Stock actual ÷ consumo promedio diario por ventas de los últimos 7 días. Ese
+consumo sale de las salidas que generó el sistema al vender (las que tienen número de pedido). Si un insumo no se
+vendió en esa semana se muestra "—".
+
+**Estados de un insumo en la tabla:** Agotado (stock 0) · Bajo el mínimo · Por agotarse (alcanza para 3 días o
+menos) · Revisar pronto (stock hasta 1,5 veces el mínimo) · Suficiente.
+
+**Menú lateral.** *Inventario* y *Reportes* dejan de ser "Pronto": Inventario lo ven INVENTARIO y ADMIN, y Reportes
+solo ADMIN, igual que el resto de módulos que ya funcionan. *RestoFlow AI* y *Configuración* siguen como "Pronto".
+
 ## Cómo probarlo (Swagger)
 
 1. Arrancar el backend en desarrollo. Si la base no tiene insumos, se cargan los de ejemplo con sus recetas.
@@ -125,3 +146,13 @@ inventario.
 5. Volver a consultar los insumos: el arroz bajó 300 g y los huevos 2 unidades. En
    **GET /api/inventario/movimientos?tipo=SALIDA** aparece la salida firmada por el Sistema con el número del pedido.
 6. **GET /api/panel/resumen**: ventas del día, la bandeja entre los más vendidos y los insumos en su mínimo.
+
+## Cómo probarlo (pantallas)
+
+1. `npm start` dentro de `frontend/` y entrar como administrador.
+2. **Dashboard**: ventas del día, gráfico por hora, lo más vendido y mesas abiertas.
+3. **Inventario**: registrar una entrada, una salida (merma) y un ajuste. Cada uno aparece en *Historial de
+   movimientos* y cambia la barra del insumo. Bajar un insumo por debajo de su mínimo crea la alerta de la derecha.
+4. **Productos → Receta**: cambiar la receta de un producto y venderlo; el descuento usa la receta nueva.
+5. **Reportes**: revisar ventas, pedidos y movimientos de los últimos 7 días.
+6. Crear una cuenta con rol INVENTARIO: ve el Dashboard con sus alertas e Inventario, pero no Reportes ni Productos.

@@ -1,41 +1,45 @@
+// Dashboard con la paleta "Cocina en flujo"; KPIs, gráfica, ranking y mesas usan las clases rf-* globales.
+.fecha { &::first-letter { text-transform: uppercase; } }
+
 .estado {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  font-size: 14px;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
+  font-family: var(--rf-fuente-mono);
+  font-size: 12px;
+  color: var(--rf-listo-texto);
+  border: 1px solid var(--rf-listo-borde);
   border-radius: 999px;
-  background: #f0fdf4;
+  background: var(--rf-listo-fondo);
 }
 
-.punto { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+.punto { width: 8px; height: 8px; border-radius: 50%; background: var(--rf-listo-vivo); }
 
 .bienvenida {
-  padding: 32px;
-  color: #fff;
-  border-radius: 16px;
-  background: linear-gradient(120deg, var(--rf-azul-oscuro), var(--rf-azul-medio));
-  h2 { margin: 0 0 8px; font-size: 24px; }
-  p { max-width: 620px; margin: 0 0 20px; line-height: 1.6; color: #b6c2dc; }
+  padding: 28px 32px;
+  color: var(--rf-crema);
+  border-radius: var(--rf-radio-xl);
+  background:
+    radial-gradient(circle at 85% 20%, rgba(232, 100, 58, 0.18), transparent 55%),
+    var(--rf-tinta);
+  h2 { margin: 0 0 8px; font-size: 26px; color: var(--rf-crema); }
+  p { max-width: 640px; margin: 0; line-height: 1.6; color: var(--rf-texto-claro); }
 }
 
-.boton-claro {
-  display: inline-block;
-  padding: 10px 18px;
-  font-weight: 600;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 10px;
-  background: var(--rf-primario);
-  &:hover { background: var(--rf-primario-hover); }
-}
+.enlace-kpi { color: inherit; text-decoration: none; }
+.ver-mas { font-size: 14px; font-weight: 500; }
+.vacio { margin: 0; padding: 16px 0; color: var(--rf-texto-2); }
+.pronto { margin-left: auto; }
+.rf-grafica__area, .rf-grafica__horas { gap: 6px; }
+.rf-leyenda i.cerrada { background: var(--rf-tinta); border-color: var(--rf-tinta); }
+.rf-leyenda i.en-curso { background: var(--rf-brasa-oscura); border-color: var(--rf-brasa-oscura); }
+.rf-mini-mesa.pendiente { border-color: var(--rf-tinta); }
+
 .accesos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 16px;
-  margin-top: 24px;
 }
 
 .acceso {
@@ -43,14 +47,14 @@
   flex-direction: column;
   gap: 6px;
   padding: 20px;
-  color: var(--rf-texto);
+  color: var(--rf-tinta);
   text-decoration: none;
-  border: 1px solid var(--rf-borde);
-  border-radius: 14px;
-  background: #fff;
+  border: 1.5px solid var(--rf-linea);
+  border-radius: var(--rf-radio-l);
+  background: var(--rf-papel);
   transition: border-color 0.15s, transform 0.15s;
-  &:hover { border-color: var(--rf-primario); transform: translateY(-2px); }
-  strong { font-size: 16px; }
-  span { font-size: 14px; line-height: 1.5; color: var(--rf-texto-suave); }
-  em { margin-top: 6px; font-size: 14px; font-style: normal; font-weight: 600; color: var(--rf-primario); }
+  &:hover { color: var(--rf-tinta); border-color: var(--rf-tinta); transform: translateY(-2px); }
+  strong { font-family: var(--rf-fuente-titulo); font-size: 17px; }
+  span { font-size: 14px; line-height: 1.5; color: var(--rf-texto-2); }
+  em { margin-top: 6px; font-size: 14px; font-style: normal; font-weight: 600; color: var(--rf-brasa-oscura); }
 }

@@ -1,20 +1,174 @@
-<div class="pagina">
-  <header class="encabezado">
+<div class="rf-main">
+  <header class="rf-encabezado">
     <div>
-      <h1>Dashboard</h1>
-      <p class="fecha">{{ hoy }}</p>
+      <p class="rf-eyebrow fecha">{{ hoy }}</p>
+      <h1 class="rf-titulo">Dashboard</h1>
     </div>
-    <span class="estado"><span class="punto"></span> Sistema activo</span>
+    <div class="rf-encabezado__acciones">
+      <span class="estado"><span class="punto"></span> Sistema activo</span>
+      @if (esAdmin) {
+        <a class="rf-btn rf-btn--secundario" routerLink="/inventario">Ver inventario</a>
+        <a class="rf-btn rf-btn--primario" routerLink="/pedidos">Nuevo pedido</a>
+      }
+    </div>
   </header>
 
   <section class="bienvenida">
     <h2>Hola, {{ usuario?.nombre }} 👋</h2>
-    <p>Bienvenido a RestoFlow. Ya están disponibles los módulos de pedidos y cocina; inventario, reportes y
-      RestoFlow AI llegan en los próximos sprints.</p>
+    <p>Bienvenido a RestoFlow. Pedidos, cocina e inventario ya trabajan conectados: cada venta descuenta sus
+      insumos y el sistema avisa cuando algo se está acabando. RestoFlow AI llega en el próximo sprint.</p>
   </section>
 
+  @if (error()) {
+    <div class="alerta" role="alert">{{ error() }}</div>
+  }
+
+  @if (esAdmin && resumen(); as r) {
+    <section class="rf-kpis" aria-label="Resumen del día">
+      <div class="rf-kpi">
+        <span class="rf-kpi__etiqueta">Ventas de hoy</span>
+        <span class="rf-kpi__valor">{{ pesos(r.ventas) }}</span>
+        <span class="rf-kpi__nota">
+          {{ r.pedidosPagados }} pedidos cobrados
+          @if (r.ventas > 0 && variacion() !== null) { · {{ variacion()! >= 0 ? '+' : '' }}{{ variacion() }} % vs. ayer }
+          @else if (r.ventasDiaAnterior > 0) { · ayer: {{ pesos(r.ventasDiaAnterior) }} }
+        </span>
+      </div>
+      <div class="rf-kpi">
+        <span class="rf-kpi__etiqueta">Ticket promedio</span>
+        <span class="rf-kpi__valor">{{ pesos(r.ticketPromedio) }}</span>
+        <span class="rf-kpi__nota">Por pedido cobrado</span>
+      </div>
+      <div class="rf-kpi">
+        <span class="rf-kpi__etiqueta">Pedidos activos</span>
+        <span class="rf-kpi__valor">{{ r.pedidosAbiertos }}</span>
+        <span class="rf-kpi__nota">{{ r.pedidosEnCocina }} en cocina · {{ r.pedidosCancelados }} cancelados hoy</span>
+      </div>
+      <a class="rf-kpi enlace-kpi" routerLink="/inventario" [class.rf-kpi--alerta]="r.alertasPendientes > 0">
+        <span class="rf-kpi__etiqueta">Alertas de inventario</span>
+        <span class="rf-kpi__valor">{{ r.alertasPendientes }}</span>
+        <span class="rf-kpi__nota">{{ r.insumosEnMinimo.length }} insumos bajo el mínimo →</span>
+      </a>
+    </section>
+
+    <div class="rf-fila">
+      <div class="rf-principal">
+        <section class="rf-tarjeta" aria-labelledby="t-ventas">
+          <div class="rf-tarjeta__titulo">
+            <h2 id="t-ventas">Ventas por hora</h2>
+            <span class="rf-chip rf-chip--neutro rf-chip--mono">HOY</span>
+          </div>
+          @if (horas().length) {
+            <div class="rf-grafica" role="img" [attr.aria-label]="'Ventas por hora de hoy. Máximo ' + pesos(maximoHora())">
+              <div class="rf-grafica__eje" aria-hidden="true">
+                <span>{{ pesos(maximoHora()) }}</span><span>{{ pesos(maximoHora() * 2 / 3) }}</span>
+                <span>{{ pesos(maximoHora() / 3) }}</span><span>$ 0</span>
+              </div>
+              <div class="rf-grafica__area" aria-hidden="true" [style.grid-template-columns]="'repeat(' + horas().length + ', minmax(0, 1fr))'">
+                @for (h of horas(); track h.hora) {
+                  <div class="rf-barra" [class.rf-barra--actual]="h.actual" [style.height.%]="h.alto"
+                       [attr.data-valor]="h.hora + 'h · ' + pesos(h.total) + ' · ' + h.pedidos + ' pedidos'"></div>
+                }
+              </div>
+              <div class="rf-grafica__horas" aria-hidden="true" [style.grid-template-columns]="'repeat(' + horas().length + ', minmax(0, 1fr))'">
+                @for (h of horas(); track h.hora) { <span>{{ h.hora }}</span> }
+              </div>
+            </div>
+            <div class="rf-leyenda">
+              <span><i class="cerrada"></i>Hora cerrada</span>
+              <span><i class="en-curso"></i>Hora en curso</span>
+            </div>
+          } @else {
+            <p class="vacio">Todavía no hay ventas hoy. Aparecerán aquí cuando se cobre el primer pedido.</p>
+          }
+        </section>
+
+        <section class="rf-tarjeta" aria-labelledby="t-top">
+          <div class="rf-tarjeta__titulo">
+            <h2 id="t-top">Lo más vendido hoy</h2>
+            <a routerLink="/productos" class="ver-mas">Ver menú</a>
+          </div>
+          <ol class="rf-ranking">
+            @for (p of r.masVendidos; track p.productoId; let i = $index) {
+              <li>
+                <span class="rf-ranking__pos">{{ i + 1 }}</span>
+                <span class="rf-ranking__nombre"><strong>{{ p.nombre }}</strong><span>{{ p.cantidad }} vendidos</span></span>
+                <span class="rf-ranking__valor">{{ pesos(p.total) }}</span>
+              </li>
+            } @empty {
+              <li class="vacio">Sin ventas todavía</li>
+            }
+          </ol>
+        </section>
+      </div>
+
+      <aside class="rf-lateral">
+        <section class="rf-ia" aria-labelledby="t-ia">
+          <div class="rf-ia__cabeza">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+            <h2 id="t-ia">RestoFlow AI</h2>
+            <span class="rf-chip rf-chip--aviso pronto">Pronto</span>
+          </div>
+          <p class="rf-ia__sub">Mientras llega el análisis inteligente, estos son los insumos que necesitan atención:</p>
+          <ul class="rf-ia__lista">
+            @for (i of r.insumosEnMinimo.slice(0, 4); track i.id) {
+              <li class="rf-ia__item">
+                <div class="rf-ia__fila">
+                  <span class="rf-ia__nombre">{{ i.nombre }}</span>
+                  <span class="rf-ia__cantidad">{{ numero(i.stockActual) }} {{ abreviatura[i.unidad] }}</span>
+                </div>
+                <div class="rf-ia__datos"><span>Mínimo {{ numero(i.stockMinimo) }} {{ abreviatura[i.unidad] }}</span></div>
+              </li>
+            } @empty {
+              <li class="rf-ia__item">Todos los insumos están por encima de su mínimo.</li>
+            }
+          </ul>
+          <a class="rf-btn rf-btn--brasa rf-btn--bloque" routerLink="/inventario">Ir al inventario</a>
+        </section>
+
+        <section class="rf-tarjeta" aria-labelledby="t-mesas">
+          <div class="rf-tarjeta__titulo"><h2 id="t-mesas">Mesas</h2><span class="rf-ayuda">{{ mesas().length }} con pedido abierto</span></div>
+          @if (mesas().length) {
+            <div class="rf-mini-mesas">
+              @for (m of mesas(); track $index) {
+                <div class="rf-mini-mesa" [class.rf-mini-mesa--cocina]="m.estado === 'EN_PREPARACION'"
+                     [class.rf-mini-mesa--listo]="m.estado === 'LISTO' || m.estado === 'ENTREGADO'"
+                     [class.pendiente]="m.estado === 'PENDIENTE'">
+                  <strong>M{{ m.mesa }}</strong><span>{{ nombresCocina[m.estado] }}</span>
+                </div>
+              }
+            </div>
+            <div class="rf-leyenda">
+              <span><i></i>Pendiente</span><span><i class="cocina"></i>En cocina</span><span><i class="listo"></i>Listo o servido</span>
+            </div>
+          } @else {
+            <p class="vacio">No hay mesas con pedidos abiertos.</p>
+          }
+        </section>
+      </aside>
+    </div>
+  }
+
+  @if (esInventario) {
+    <section class="rf-kpis" aria-label="Estado del inventario">
+      <a class="rf-kpi enlace-kpi" routerLink="/inventario" [class.rf-kpi--alerta]="alertasPendientes() > 0">
+        <span class="rf-kpi__etiqueta">Alertas pendientes</span>
+        <span class="rf-kpi__valor">{{ alertasPendientes() }}</span>
+        <span class="rf-kpi__nota">Revisar en Inventario →</span>
+      </a>
+      <div class="rf-kpi" [class.rf-kpi--aviso]="insumosBajos().length > 0">
+        <span class="rf-kpi__etiqueta">Insumos bajo el mínimo</span>
+        <span class="rf-kpi__valor">{{ insumosBajos().length }}</span>
+        <span class="rf-kpi__nota">
+          @for (i of insumosBajos().slice(0, 3); track i.id; let ultimo = $last) { {{ i.nombre }}{{ ultimo ? '' : ', ' }} }
+          @empty { Todo en orden }
+        </span>
+      </div>
+    </section>
+  }
+
   @if (accesos.length > 0) {
-    <section class="accesos">
+    <section class="accesos" aria-label="Accesos directos">
       @for (a of accesos; track a.ruta) {
         <a class="acceso" [routerLink]="a.ruta">
           <strong>{{ a.titulo }}</strong>

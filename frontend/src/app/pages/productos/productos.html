@@ -54,6 +54,37 @@
         }
       </form>
 
+      @if (recetaDe(); as p) {
+        <div class="receta">
+          <h3>Receta de {{ p.nombre }}</h3>
+          <p class="ayuda">Cantidad de cada insumo por <strong>una</strong> unidad vendida. Se descuenta del inventario al
+            registrar la venta.</p>
+          @for (l of lineas(); track $index; let i = $index) {
+            <div class="receta__fila">
+              <select [attr.aria-label]="'Insumo ' + (i + 1)" (change)="cambiarLinea(i, 'ingredienteId', $any($event.target).value)">
+                <option value="" [selected]="!l.ingredienteId">Insumo…</option>
+                @for (ins of insumos(); track ins.id) {
+                  <option [value]="ins.id" [selected]="ins.id === l.ingredienteId">{{ ins.nombre }}</option>
+                }
+              </select>
+              <input type="number" min="0" step="any" [value]="l.cantidad ?? ''" [attr.aria-label]="'Cantidad ' + (i + 1)"
+                     (input)="cambiarLinea(i, 'cantidad', $any($event.target).value)" />
+              <span class="unidad">{{ unidadDe(l.ingredienteId) }}</span>
+              <button type="button" class="accion accion--peligro" [attr.aria-label]="'Quitar línea ' + (i + 1)" (click)="quitarLinea(i)">✕</button>
+            </div>
+          } @empty {
+            <p class="ayuda">Sin receta: las ventas de este producto no descuentan inventario.</p>
+          }
+          <div class="receta__botones">
+            <button type="button" class="accion" (click)="agregarLinea()">+ Agregar insumo</button>
+            <button type="button" class="boton" [disabled]="guardando()" (click)="guardarReceta()">
+              {{ guardando() ? 'Guardando...' : 'Guardar receta' }}
+            </button>
+            <button type="button" class="boton-secundario" (click)="recetaDe.set(null)">Cerrar</button>
+          </div>
+        </div>
+      }
+
       <div class="nueva-categoria">
         <h3>Nueva categoría</h3>
         <div class="nueva-categoria__fila">
@@ -86,6 +117,7 @@
                 </td>
                 <td class="acciones">
                   <button type="button" class="accion" (click)="editar(p)">Editar</button>
+                  <button type="button" class="accion" (click)="abrirReceta(p)">Receta</button>
                   <button type="button" class="accion" [class.accion--peligro]="p.activo" (click)="alternar(p)">
                     {{ p.activo ? 'Desactivar' : 'Activar' }}
                   </button>
