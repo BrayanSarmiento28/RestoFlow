@@ -106,7 +106,7 @@ class GestionarInventarioServiceTest {
         List<Alerta> pendientes = alertas.pendientes();
         assertEquals(1, pendientes.size());
         assertEquals(PrioridadAlerta.MEDIA, pendientes.get(0).getPrioridad());
-        assertEquals("Quedan 800 gramo de Arroz (mínimo 1000).".replace("800", "900"), pendientes.get(0).getMensaje());
+        assertEquals("Quedan 900 g de Arroz (mínimo 1000 g).", pendientes.get(0).getMensaje());
 
         servicio.ajustar(id, BigDecimal.ZERO, null, USUARIO);                       // se agotó
         pendientes = alertas.pendientes();

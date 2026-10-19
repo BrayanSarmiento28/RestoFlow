@@ -1,0 +1,41 @@
+// Casi todo el estilo viene de las clases rf-* globales (styles.scss, maqueta "Cocina en flujo").
+.filtros { flex-wrap: wrap; }
+.rf-pildora--chica { min-height: 36px; }
+.nota { margin: 16px 0 0; }
+.ver-todo { font-size: 14px; font-weight: 500; }
+.vacio { padding: 20px 0; text-align: center; color: var(--rf-texto-2); }
+
+.inicial {
+  display: grid;
+  place-items: center;
+  font-family: var(--rf-fuente-titulo);
+  font-weight: 700;
+  color: var(--rf-tinta);
+  background: var(--rf-suave);
+}
+
+.rf-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  h2 { font-size: 20px; }
+  .rf-ayuda { margin: 0; }
+}
+.botones { display: flex; flex-wrap: wrap; gap: 8px; }
+.con-error { border-color: var(--rf-error); }
+.error-campo { font-size: 13px; color: var(--rf-error); }
+
+.mensaje { margin: 0; font-size: 14px; color: var(--rf-crema); }
+.atender {
+  margin-left: auto;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rf-ambar);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  &:hover { text-decoration: underline; }
+}
+.pronto { font-size: 12px; }

@@ -2,9 +2,16 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CatalogoService } from '../../core/services/catalogo.service';
+import { InventarioService } from '../../core/services/inventario.service';
 import { mensajeDeError } from '../../core/services/errores';
 import { pesos } from '../../core/util/formato';
-import { Categoria, Producto } from '../../core/entities';
+import { ABREVIATURA_UNIDAD, Categoria, Ingrediente, Producto } from '../../core/entities';
+
+/** Una línea de la receta mientras se edita (puede estar incompleta). */
+interface LineaEditable {
+  ingredienteId: number | null;
+  cantidad: number | null;
+}
 
 /** Menú del restaurante: el administrador crea categorías y productos, cambia precios y los activa o desactiva. */
 @Component({
@@ -16,6 +23,7 @@ import { Categoria, Producto } from '../../core/entities';
 export class Productos implements OnInit {
   private fb = inject(FormBuilder);
   private catalogoApi = inject(CatalogoService);
+  private inventarioApi = inject(InventarioService);
 
   protected readonly pesos = pesos;
   protected readonly productos = signal<Producto[]>([]);
@@ -24,6 +32,12 @@ export class Productos implements OnInit {
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly exito = signal<string | null>(null);
+
+  // RF-06 · Receta: qué insumos y cuánto de cada uno se descuentan al vender una unidad del producto
+  protected readonly abreviatura = ABREVIATURA_UNIDAD;
+  protected readonly insumos = signal<Ingrediente[]>([]);
+  protected readonly recetaDe = signal<Producto | null>(null);
+  protected readonly lineas = signal<LineaEditable[]>([]);
 
   protected readonly form = this.fb.group({
     nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
@@ -110,6 +124,69 @@ export class Productos implements OnInit {
   protected invalido(campo: 'nombre' | 'descripcion' | 'precio' | 'categoriaId'): boolean {
     const control = this.form.controls[campo];
     return control.invalid && control.touched;
+  }
+
+  // ---------- Receta (RF-06) ----------
+
+  protected abrirReceta(p: Producto): void {
+    this.limpiarMensajes();
+    this.recetaDe.set(p);
+    this.lineas.set([]);
+    if (this.insumos().length === 0) {
+      this.inventarioApi.ingredientes(true).subscribe({
+        next: (lista) => this.insumos.set(lista),
+        error: (err: HttpErrorResponse) => this.error.set(mensajeDeError(err)),
+      });
+    }
+    this.inventarioApi.receta(p.id).subscribe({
+      next: (receta) => this.lineas.set(receta.map((r) => ({ ingredienteId: r.ingredienteId, cantidad: r.cantidad }))),
+      error: (err: HttpErrorResponse) => this.error.set(mensajeDeError(err)),
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  protected agregarLinea(): void {
+    this.lineas.update((l) => [...l, { ingredienteId: null, cantidad: null }]);
+  }
+
+  protected quitarLinea(indice: number): void {
+    this.lineas.update((l) => l.filter((_, i) => i !== indice));
+  }
+
+  protected cambiarLinea(indice: number, campo: keyof LineaEditable, valor: string): void {
+    const numero = valor === '' ? null : Number(valor);
+    this.lineas.update((l) => l.map((linea, i) => (i === indice ? { ...linea, [campo]: numero } : linea)));
+  }
+
+  protected unidadDe(ingredienteId: number | null): string {
+    const insumo = this.insumos().find((i) => i.id === ingredienteId);
+    return insumo ? this.abreviatura[insumo.unidad] : '';
+  }
+
+  protected guardarReceta(): void {
+    const producto = this.recetaDe();
+    if (!producto) return;
+    const lineas = this.lineas();
+    if (lineas.some((l) => !l.ingredienteId || !l.cantidad || l.cantidad <= 0)) {
+      this.error.set('Completa cada línea: elige el insumo y una cantidad mayor que cero.');
+      return;
+    }
+    this.guardando.set(true);
+    this.limpiarMensajes();
+    this.inventarioApi.definirReceta(producto.id,
+      lineas.map((l) => ({ ingredienteId: l.ingredienteId!, cantidad: l.cantidad! }))).subscribe({
+      next: (receta) => {
+        this.guardando.set(false);
+        this.recetaDe.set(null);
+        this.exito.set(receta.length
+          ? `Receta de ${producto.nombre} guardada: ${receta.length} insumos se descontarán en cada venta.`
+          : `${producto.nombre} quedó sin receta: sus ventas no descuentan inventario.`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardando.set(false);
+        this.error.set(mensajeDeError(err));
+      },
+    });
   }
 
   private cargar(): void {

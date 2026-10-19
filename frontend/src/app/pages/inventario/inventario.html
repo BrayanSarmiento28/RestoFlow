@@ -1,0 +1,297 @@
+<div class="rf-main">
+  <header class="rf-encabezado">
+    <div>
+      <p class="rf-eyebrow">Insumos · actualizado {{ actualizado() ? hora(actualizado()!.toISOString()) : '…' }}</p>
+      <h1 class="rf-titulo">Inventario</h1>
+    </div>
+    <div class="rf-encabezado__acciones">
+      <button type="button" class="rf-btn rf-btn--texto" (click)="abrirInsumo()">Nuevo insumo</button>
+      <button type="button" class="rf-btn rf-btn--secundario" (click)="abrirMovimiento('AJUSTE')">Registrar ajuste</button>
+      <button type="button" class="rf-btn rf-btn--primario" (click)="abrirMovimiento('ENTRADA')">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Registrar entrada
+      </button>
+    </div>
+  </header>
+
+  @if (exito()) {
+    <div class="alerta alerta--exito" role="status">{{ exito() }}</div>
+  }
+  @if (error()) {
+    <div class="alerta" role="alert">{{ error() }}</div>
+  }
+
+  @if (urgente(); as u) {
+    <div class="rf-aviso" role="status">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <p>
+        <strong>{{ u.insumo.nombre }} {{ u.estado === 'agotado' ? 'se agotó' : 'está por debajo del mínimo' }}</strong>
+        ({{ numero(u.insumo.stockActual) }} de {{ numero(u.insumo.stockMinimo) }} {{ abreviatura[u.insumo.unidad] }}).
+        Se descuenta solo con cada venta, así que en los próximos pedidos puede faltar.
+      </p>
+      <button type="button" class="rf-btn rf-btn--primario rf-btn--chico" (click)="abrirMovimiento('ENTRADA', u.insumo)">
+        Registrar compra
+      </button>
+    </div>
+  }
+
+  <section class="rf-kpis" aria-label="Resumen de inventario">
+    <div class="rf-kpi">
+      <span class="rf-kpi__etiqueta">Insumos activos</span>
+      <span class="rf-kpi__valor">{{ filas().length }}</span>
+      <span class="rf-kpi__nota">{{ inactivos().length }} desactivados</span>
+    </div>
+    <div class="rf-kpi" [class.rf-kpi--alerta]="bajoMinimo().length > 0">
+      <span class="rf-kpi__etiqueta">Bajo el mínimo</span>
+      <span class="rf-kpi__valor">{{ bajoMinimo().length }}</span>
+      <span class="rf-kpi__nota">{{ bajoMinimo().length ? nombres(bajoMinimo()) : 'Todo en orden' }}</span>
+    </div>
+    <div class="rf-kpi" [class.rf-kpi--aviso]="porAgotarse().length > 0">
+      <span class="rf-kpi__etiqueta">Alcanzan para 3 días o menos</span>
+      <span class="rf-kpi__valor">{{ porAgotarse().length }}</span>
+      <span class="rf-kpi__nota">{{ porAgotarse().length ? nombres(porAgotarse()) : 'Según las ventas de 7 días' }}</span>
+    </div>
+    <div class="rf-kpi">
+      <span class="rf-kpi__etiqueta">Movimientos hoy</span>
+      <span class="rf-kpi__valor">{{ movimientosHoy().total }}</span>
+      <span class="rf-kpi__nota">{{ movimientosHoy().ventas }} salidas por venta · {{ movimientosHoy().entradas }} entradas</span>
+    </div>
+  </section>
+
+  <div class="rf-fila">
+    <div class="rf-principal">
+      <section class="rf-tarjeta" aria-labelledby="t-insumos">
+        <div class="rf-tarjeta__titulo filtros">
+          <h2 id="t-insumos">Insumos</h2>
+          <div class="rf-pildoras">
+            <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="filtro() === 'todos'"
+                    (click)="filtro.set('todos')">Todos</button>
+            <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="filtro() === 'alerta'"
+                    (click)="filtro.set('alerta')">
+              Con alerta <span class="rf-pildora__cuenta">{{ conAlerta().length }}</span>
+            </button>
+          </div>
+        </div>
+        <div class="rf-tabla-caja">
+          <table class="rf-tabla">
+            <thead>
+              <tr>
+                <th scope="col">Insumo</th>
+                <th scope="col">Stock · mínimo</th>
+                <th scope="col" class="rf-num">Alcanza para</th>
+                <th scope="col">Estado</th>
+                <th scope="col"><span class="rf-oculto-visual">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (f of visibles(); track f.insumo.id) {
+                <tr>
+                  <td>
+                    <div class="rf-celda-item">
+                      @if (f.icono) {
+                        <img class="rf-icono-insumo" [src]="f.icono" alt="" />
+                      } @else {
+                        <span class="rf-icono-insumo inicial" aria-hidden="true">{{ f.insumo.nombre.charAt(0) }}</span>
+                      }
+                      <div><strong>{{ f.insumo.nombre }}</strong><span>{{ nombresUnidad[f.insumo.unidad] }}</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="rf-stock" [class.rf-stock--alta]="f.estado === 'agotado' || f.estado === 'minimo' || f.estado === 'pronto'"
+                         [class.rf-stock--media]="f.estado === 'revisar'">
+                      <span class="rf-stock__valor">
+                        {{ numero(f.insumo.stockActual) }} {{ abreviatura[f.insumo.unidad] }}
+                        <small>· mín. {{ numero(f.insumo.stockMinimo) }}</small>
+                      </span>
+                      <div class="rf-stock__barra"><span [style.width.%]="f.barra"></span><i></i></div>
+                    </div>
+                  </td>
+                  <td class="rf-num">{{ f.dias === null ? '—' : numero(f.dias, 1) + ' días' }}</td>
+                  <td>
+                    @switch (f.estado) {
+                      @case ('agotado') { <span class="rf-chip rf-chip--alerta">Agotado</span> }
+                      @case ('minimo') { <span class="rf-chip rf-chip--alerta">Bajo el mínimo</span> }
+                      @case ('pronto') { <span class="rf-chip rf-chip--aviso">Por agotarse</span> }
+                      @case ('revisar') { <span class="rf-chip rf-chip--neutro">Revisar pronto</span> }
+                      @default { <span class="rf-chip rf-chip--listo">Suficiente</span> }
+                    }
+                  </td>
+                  <td>
+                    <div class="rf-acciones">
+                      <button type="button" class="rf-icono-btn" title="Registrar entrada"
+                              [attr.aria-label]="'Registrar entrada de ' + f.insumo.nombre"
+                              (click)="abrirMovimiento('ENTRADA', f.insumo)">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                      </button>
+                      <button type="button" class="rf-icono-btn" title="Registrar salida (merma)"
+                              [attr.aria-label]="'Registrar salida de ' + f.insumo.nombre"
+                              (click)="abrirMovimiento('SALIDA', f.insumo)">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+                      </button>
+                      <button type="button" class="rf-icono-btn" title="Editar insumo"
+                              [attr.aria-label]="'Editar ' + f.insumo.nombre" (click)="abrirInsumo(f.insumo)">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="vacio">{{ filtro() === 'alerta' ? 'Ningún insumo con alerta' : 'Aún no hay insumos' }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="rf-ayuda nota">
+          La raya negra en cada barra marca el stock mínimo. "Alcanza para" = stock actual ÷ consumo promedio
+          diario por ventas de los últimos 7 días.
+        </p>
+        @if (inactivos().length) {
+          <p class="rf-ayuda">
+            Desactivados:
+            @for (i of inactivos(); track i.id) {
+              <button type="button" class="rf-btn rf-btn--texto rf-btn--chico" (click)="abrirInsumo(i)">{{ i.nombre }}</button>
+            }
+          </p>
+        }
+      </section>
+
+      <section class="rf-tarjeta" aria-labelledby="t-historial">
+        <div class="rf-tarjeta__titulo">
+          <h2 id="t-historial">Historial de movimientos</h2>
+          @if (esAdmin) { <a routerLink="/reportes" class="ver-todo">Ver todo</a> }
+        </div>
+        <ul class="rf-movimientos">
+          @for (m of recientes(); track m.id) {
+            <li class="rf-movimiento">
+              <span class="rf-movimiento__hora">{{ hora(m.fecha) }}</span>
+              <span class="rf-chip rf-chip--mono" [class.rf-chip--listo]="m.tipo === 'ENTRADA'"
+                    [class.rf-chip--aviso]="m.tipo === 'AJUSTE'" [class.rf-chip--neutro]="m.tipo === 'SALIDA'">{{ m.tipo }}</span>
+              <span class="rf-movimiento__texto">{{ m.ingredienteNombre }}<span>{{ detalleMovimiento(m) }}</span></span>
+              <span class="rf-movimiento__cant">{{ cantidadMovimiento(m) }}</span>
+            </li>
+          } @empty {
+            <li class="vacio">Sin movimientos en los últimos 7 días</li>
+          }
+        </ul>
+      </section>
+    </div>
+
+    <aside class="rf-lateral">
+      @if (accion(); as a) {
+        <section class="rf-tarjeta" aria-labelledby="t-movimiento">
+          <form class="rf-formulario" [formGroup]="formMovimiento" (ngSubmit)="guardarMovimiento()" novalidate>
+            <h2 id="t-movimiento">
+              {{ a === 'ENTRADA' ? 'Registrar entrada' : a === 'SALIDA' ? 'Registrar salida' : 'Ajuste por conteo' }}
+            </h2>
+            <p class="rf-ayuda">
+              @switch (a) {
+                @case ('ENTRADA') { Compra o mercancía que llega: se suma al stock. }
+                @case ('SALIDA') { Merma, daño o vencimiento: se resta del stock. Las ventas se descuentan solas. }
+                @default { Escribe lo que contaste físicamente: el stock queda en ese valor. }
+              }
+            </p>
+            <div class="rf-campo">
+              <label for="m-insumo">Insumo</label>
+              <select id="m-insumo" class="rf-select" formControlName="ingredienteId" [class.con-error]="invalido('movimiento', 'ingredienteId')">
+                <option [ngValue]="null" disabled>Selecciona el insumo</option>
+                @for (f of filas(); track f.insumo.id) {
+                  <option [ngValue]="f.insumo.id">{{ f.insumo.nombre }} ({{ numero(f.insumo.stockActual) }} {{ abreviatura[f.insumo.unidad] }})</option>
+                }
+              </select>
+            </div>
+            <div class="rf-campo">
+              <label for="m-cantidad">
+                {{ a === 'AJUSTE' ? 'Cantidad contada' : a === 'ENTRADA' ? 'Cantidad que entra' : 'Cantidad que sale' }}
+                @if (unidadSeleccionada()) { ({{ unidadSeleccionada() }}) }
+              </label>
+              <input id="m-cantidad" class="rf-input" type="number" min="0" step="any" formControlName="cantidad"
+                     [class.con-error]="invalido('movimiento', 'cantidad')" />
+            </div>
+            <div class="rf-campo">
+              <label for="m-motivo">Motivo {{ a === 'SALIDA' ? '' : '(opcional)' }}</label>
+              <input id="m-motivo" class="rf-input" type="text" formControlName="motivo" maxlength="120"
+                     [placeholder]="a === 'ENTRADA' ? 'Compra en la plaza' : a === 'SALIDA' ? 'Se dañó, se venció…' : 'Conteo semanal'"
+                     [class.con-error]="invalido('movimiento', 'motivo')" />
+              @if (invalido('movimiento', 'motivo')) { <small class="error-campo">Indica el motivo de la salida</small> }
+            </div>
+            <div class="botones">
+              <button type="submit" class="rf-btn rf-btn--primario" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Guardar' }}</button>
+              <button type="button" class="rf-btn rf-btn--texto" (click)="cancelar()">Cancelar</button>
+            </div>
+          </form>
+        </section>
+      }
+
+      @if (editando()) {
+        <section class="rf-tarjeta" aria-labelledby="t-insumo">
+          <form class="rf-formulario" [formGroup]="formInsumo" (ngSubmit)="guardarInsumo()" novalidate>
+            <h2 id="t-insumo">{{ esEdicion() ? 'Editar ' + nombreInsumo() : 'Nuevo insumo' }}</h2>
+            <div class="rf-campo">
+              <label for="i-nombre">Nombre</label>
+              <input id="i-nombre" class="rf-input" type="text" formControlName="nombre" placeholder="Arroz"
+                     [class.con-error]="invalido('insumo', 'nombre')" />
+            </div>
+            <div class="rf-campo">
+              <label for="i-unidad">Unidad de medida</label>
+              <select id="i-unidad" class="rf-select" formControlName="unidad">
+                @for (u of unidades; track u) { <option [ngValue]="u">{{ nombresUnidad[u] }} ({{ abreviatura[u] }})</option> }
+              </select>
+            </div>
+            <div class="rf-campo">
+              <label for="i-minimo">Stock mínimo</label>
+              <input id="i-minimo" class="rf-input" type="number" min="0" step="any" formControlName="stockMinimo"
+                     [class.con-error]="invalido('insumo', 'stockMinimo')" />
+              <span class="rf-ayuda">Al llegar aquí se crea una alerta.</span>
+            </div>
+            @if (!esEdicion()) {
+              <div class="rf-campo">
+                <label for="i-inicial">Stock inicial (opcional)</label>
+                <input id="i-inicial" class="rf-input" type="number" min="0" step="any" formControlName="stockInicial" />
+                <span class="rf-ayuda">Queda registrado como una entrada.</span>
+              </div>
+            }
+            <div class="botones">
+              <button type="submit" class="rf-btn rf-btn--primario" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Guardar' }}</button>
+              <button type="button" class="rf-btn rf-btn--texto" (click)="cancelar()">Cancelar</button>
+            </div>
+            @if (editando(); as e) {
+              @if (e !== 'nuevo') {
+                <button type="button" class="rf-btn rf-btn--secundario rf-btn--chico" (click)="alternarEstado(e)">
+                  {{ e.activo ? 'Desactivar insumo' : 'Activar insumo' }}
+                </button>
+              }
+            }
+          </form>
+        </section>
+      }
+
+      <section class="rf-ia" aria-labelledby="t-alertas">
+        <div class="rf-ia__cabeza">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
+          <h2 id="t-alertas">Alertas de inventario</h2>
+        </div>
+        <p class="rf-ia__sub">Se crean solas al llegar al mínimo y se cierran al reabastecer.</p>
+        <ul class="rf-ia__lista">
+          @for (a of alertas(); track a.id) {
+            <li class="rf-ia__item">
+              <div class="rf-ia__fila">
+                <span class="rf-ia__nombre">{{ a.ingredienteNombre ?? 'Inventario' }}</span>
+                <span class="rf-chip" [class.rf-chip--alerta]="a.prioridad === 'ALTA'" [class.rf-chip--aviso]="a.prioridad !== 'ALTA'">
+                  {{ a.prioridad === 'ALTA' ? 'Alta' : a.prioridad === 'MEDIA' ? 'Media' : 'Baja' }}
+                </span>
+              </div>
+              <p class="mensaje">{{ a.mensaje }}</p>
+              <div class="rf-ia__datos">
+                <span>{{ fechaHora(a.fechaCreacion) }}</span>
+                <button type="button" class="atender" (click)="atender(a)">Marcar atendida</button>
+              </div>
+            </li>
+          } @empty {
+            <li class="rf-ia__item">Sin alertas pendientes 🎉</li>
+          }
+        </ul>
+        <p class="rf-ia__sub pronto">Las sugerencias de compra de RestoFlow AI llegan en el próximo sprint.</p>
+      </section>
+    </aside>
+  </div>
+</div>

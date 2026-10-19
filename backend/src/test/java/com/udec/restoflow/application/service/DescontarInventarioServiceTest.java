@@ -128,7 +128,7 @@ class DescontarInventarioServiceTest {
         assertEquals(1, deHuevo.size());                          // una sola alerta ALTA: no se repite "se agotó"
         assertEquals(PrioridadAlerta.ALTA, deHuevo.get(0).getPrioridad());
         assertTrue(deHuevo.get(0).getMensaje().startsWith("La venta del pedido #" + venta.getId()
-                + " necesitaba 2 unidad más de Huevo"));
+                + " necesitaba 2 und más de Huevo"));
         // El arroz bajó de 1000 a 250: queda por debajo de su mínimo (300) → alerta media
         assertTrue(alertas.pendientes().stream().anyMatch(a -> a.getIngredienteId().equals(arrozId)
                 && a.getPrioridad() == PrioridadAlerta.MEDIA));

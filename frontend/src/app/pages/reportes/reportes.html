@@ -1,0 +1,164 @@
+<div class="rf-main">
+  <header class="rf-encabezado">
+    <div>
+      <p class="rf-eyebrow">Historial · ventas, pedidos e inventario</p>
+      <h1 class="rf-titulo">Reportes</h1>
+    </div>
+    <div class="rf-encabezado__acciones rango">
+      <div class="rf-campo">
+        <label for="desde" class="rf-etiqueta">Desde</label>
+        <input id="desde" class="rf-input rf-input--chico" type="date" [value]="desde()" [max]="hasta()"
+               (change)="desde.set($any($event.target).value); consultar()" />
+      </div>
+      <div class="rf-campo">
+        <label for="hasta" class="rf-etiqueta">Hasta</label>
+        <input id="hasta" class="rf-input rf-input--chico" type="date" [value]="hasta()" [min]="desde()"
+               (change)="hasta.set($any($event.target).value); consultar()" />
+      </div>
+      <div class="rf-pildoras">
+        <button type="button" class="rf-pildora rf-pildora--chica" (click)="rangoRapido(1)">Hoy</button>
+        <button type="button" class="rf-pildora rf-pildora--chica" (click)="rangoRapido(7)">7 días</button>
+        <button type="button" class="rf-pildora rf-pildora--chica" (click)="rangoRapido(30)">30 días</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="rf-pildoras" aria-label="Tipo de reporte">
+    <button type="button" class="rf-pildora" [attr.aria-pressed]="pestana() === 'ventas'" (click)="cambiarPestana('ventas')">Ventas</button>
+    <button type="button" class="rf-pildora" [attr.aria-pressed]="pestana() === 'pedidos'" (click)="cambiarPestana('pedidos')">Pedidos</button>
+    <button type="button" class="rf-pildora" [attr.aria-pressed]="pestana() === 'movimientos'" (click)="cambiarPestana('movimientos')">Movimientos de inventario</button>
+  </nav>
+
+  @if (error()) {
+    <div class="alerta" role="alert">{{ error() }}</div>
+  }
+
+  @switch (pestana()) {
+    @case ('ventas') {
+      @if (ventas(); as v) {
+        <section class="rf-kpis" aria-label="Resumen de ventas">
+          <div class="rf-kpi"><span class="rf-kpi__etiqueta">Ventas del periodo</span><span class="rf-kpi__valor">{{ pesos(v.total) }}</span><span class="rf-kpi__nota">{{ v.cantidad }} pedidos cobrados</span></div>
+          <div class="rf-kpi"><span class="rf-kpi__etiqueta">Ticket promedio</span><span class="rf-kpi__valor">{{ pesos(v.ticketPromedio) }}</span><span class="rf-kpi__nota">Por pedido cobrado</span></div>
+          <div class="rf-kpi"><span class="rf-kpi__etiqueta">Días con ventas</span><span class="rf-kpi__valor">{{ v.porDia.length }}</span><span class="rf-kpi__nota">Del {{ v.desde }} al {{ v.hasta }}</span></div>
+        </section>
+
+        <section class="rf-tarjeta" aria-labelledby="t-dias">
+          <div class="rf-tarjeta__titulo"><h2 id="t-dias">Ventas por día</h2></div>
+          @if (barras().length) {
+            <div class="dias" role="img" [attr.aria-label]="'Ventas por día, ' + barras().length + ' días con ventas'">
+              @for (b of barras(); track b.dia) {
+                <div class="dia">
+                  <span class="dia__valor">{{ pesos(b.total) }}</span>
+                  <div class="rf-barra" [style.height.%]="b.alto" [attr.data-valor]="b.cantidad + ' pedidos'"></div>
+                  <span class="dia__etiqueta">{{ b.etiqueta }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="vacio">No hubo ventas en este periodo</p>
+          }
+        </section>
+
+        <section class="rf-tarjeta" aria-labelledby="t-ventas">
+          <div class="rf-tarjeta__titulo"><h2 id="t-ventas">Detalle de ventas</h2></div>
+          <div class="rf-tabla-caja">
+            <table class="rf-tabla">
+              <thead><tr><th scope="col">Cobrado</th><th scope="col">Pedido</th><th scope="col">Mesero</th><th scope="col">Productos</th><th scope="col" class="rf-num">Total</th></tr></thead>
+              <tbody>
+                @for (p of v.ventas; track p.id) {
+                  <tr>
+                    <td class="mono">{{ fechaHora(p.fechaCierre) }}</td>
+                    <td>#{{ p.id }} · Mesa {{ p.numeroMesa }}</td>
+                    <td>{{ p.meseroNombre }}</td>
+                    <td class="productos">{{ productos(p) }}</td>
+                    <td class="rf-num">{{ pesos(p.total) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5" class="vacio">Sin ventas</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    }
+
+    @case ('pedidos') {
+      <section class="rf-tarjeta" aria-labelledby="t-pedidos">
+        <div class="rf-tarjeta__titulo filtros">
+          <h2 id="t-pedidos">Pedidos ({{ pedidos().length }} · {{ pesos(totalPedidos()) }})</h2>
+          <div class="rf-pildoras">
+            <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="estado() === null" (click)="estado.set(null); consultar()">Todos</button>
+            <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="estado() === 'ABIERTO'" (click)="estado.set('ABIERTO'); consultar()">Abiertos</button>
+            <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="estado() === 'PAGADO'" (click)="estado.set('PAGADO'); consultar()">Pagados</button>
+            <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="estado() === 'CANCELADO'" (click)="estado.set('CANCELADO'); consultar()">Cancelados</button>
+          </div>
+        </div>
+        <div class="rf-tabla-caja">
+          <table class="rf-tabla">
+            <thead><tr><th scope="col">Creado</th><th scope="col">Pedido</th><th scope="col">Mesero</th><th scope="col">Productos</th><th scope="col">Estado</th><th scope="col" class="rf-num">Total</th></tr></thead>
+            <tbody>
+              @for (p of pedidos(); track p.id) {
+                <tr [class.rf-inactivo]="p.estadoPedido === 'CANCELADO'">
+                  <td class="mono">{{ fechaHora(p.fechaCreacion) }}</td>
+                  <td>#{{ p.id }} · Mesa {{ p.numeroMesa }}</td>
+                  <td>{{ p.meseroNombre }}</td>
+                  <td class="productos">{{ productos(p) }}</td>
+                  <td>
+                    <span class="rf-chip" [class.rf-chip--listo]="p.estadoPedido === 'PAGADO'"
+                          [class.rf-chip--alerta]="p.estadoPedido === 'CANCELADO'"
+                          [class.rf-chip--cocina]="p.estadoPedido === 'ABIERTO'">
+                      {{ p.estadoPedido === 'ABIERTO' ? nombresCocina[p.estadoCocina] : nombresPedido[p.estadoPedido] }}
+                    </span>
+                  </td>
+                  <td class="rf-num">{{ pesos(p.total) }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="vacio">Sin pedidos en este periodo</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @default {
+      <section class="rf-tarjeta" aria-labelledby="t-movimientos">
+        <div class="rf-tarjeta__titulo filtros">
+          <h2 id="t-movimientos">Movimientos ({{ movimientos().length }})</h2>
+          <div class="rf-pildoras">
+            <select class="rf-select rf-select--chico" aria-label="Insumo" (change)="insumoId.set(+$any($event.target).value || null); consultar()">
+              <option value="">Todos los insumos</option>
+              @for (i of insumos(); track i.id) { <option [value]="i.id">{{ i.nombre }}</option> }
+            </select>
+            <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="tipo() === null" (click)="tipo.set(null); consultar()">Todos</button>
+            <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="tipo() === 'ENTRADA'" (click)="tipo.set('ENTRADA'); consultar()">Entradas</button>
+            <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="tipo() === 'SALIDA'" (click)="tipo.set('SALIDA'); consultar()">Salidas</button>
+            <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="tipo() === 'AJUSTE'" (click)="tipo.set('AJUSTE'); consultar()">Ajustes</button>
+          </div>
+        </div>
+        <div class="rf-tabla-caja">
+          <table class="rf-tabla">
+            <thead><tr><th scope="col">Fecha</th><th scope="col">Tipo</th><th scope="col">Insumo</th><th scope="col" class="rf-num">Cantidad</th><th scope="col">Motivo</th><th scope="col">Registró</th></tr></thead>
+            <tbody>
+              @for (m of movimientos(); track m.id) {
+                <tr>
+                  <td class="mono">{{ fechaHora(m.fecha) }}</td>
+                  <td><span class="rf-chip rf-chip--mono" [class.rf-chip--listo]="m.tipo === 'ENTRADA'" [class.rf-chip--aviso]="m.tipo === 'AJUSTE'" [class.rf-chip--neutro]="m.tipo === 'SALIDA'">{{ m.tipo }}</span></td>
+                  <td>{{ m.ingredienteNombre }}</td>
+                  <td class="rf-num">{{ cantidad(m) }}</td>
+                  <td class="productos">{{ m.motivo ?? '—' }}</td>
+                  <td>{{ m.usuarioNombre }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="vacio">Sin movimientos en este periodo</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+
+  @if (cargando()) { <p class="rf-ayuda" role="status">Consultando…</p> }
+</div>
