@@ -48,7 +48,9 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", meseroId));
         Pedido pedido = Pedido.registrar(comando.numeroMesa(), mesero, detalles(comando), comando.observaciones(),
                 LocalDateTime.now(reloj));
-        return pedidos.guardar(pedido);
+        Pedido guardado = pedidos.guardar(pedido);
+        Auditoria.pedidoRegistrado(guardado.getId(), guardado.getNumeroMesa(), meseroId, guardado.getTotal());
+        return guardado;
     }
 
     @Override
@@ -65,7 +67,9 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
     public Pedido cancelar(Long pedidoId) {
         Pedido pedido = obtener(pedidoId);
         pedido.cancelar(LocalDateTime.now(reloj));
-        return pedidos.guardar(pedido);
+        Pedido cancelado = pedidos.guardar(pedido);
+        Auditoria.pedidoCancelado(cancelado.getId());
+        return cancelado;
     }
 
     @Override
@@ -75,6 +79,7 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
         Pedido vendido = pedidos.guardar(pedido);
         // RF-06 · Descuento automático según las recetas, en la misma transacción (RES-35)
         inventario.descontarPorVenta(vendido);
+        Auditoria.ventaRegistrada(vendido.getId(), vendido.getNumeroMesa(), vendido.getTotal());
         return vendido;
     }
 

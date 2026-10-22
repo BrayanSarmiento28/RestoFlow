@@ -6,7 +6,9 @@ import com.udec.restoflow.domain.exception.CredencialesInvalidasException;
 import com.udec.restoflow.domain.exception.CuentaInactivaException;
 import com.udec.restoflow.domain.exception.DomainException;
 import com.udec.restoflow.domain.exception.OperacionNoPermitidaException;
+import com.udec.restoflow.domain.exception.ProductoExternoNoEncontradoException;
 import com.udec.restoflow.domain.exception.RecursoNoEncontradoException;
+import com.udec.restoflow.domain.exception.ServicioExternoNoDisponibleException;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.ErrorResponse;
 import com.udec.restoflow.infrastructure.adapter.out.mail.CorreoNoEnviadoException;
 import org.slf4j.Logger;
@@ -54,6 +56,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OperacionNoPermitidaException.class)
     public ResponseEntity<ErrorResponse> operacionNoPermitida(OperacionNoPermitidaException e) {
         return respuesta(HttpStatus.CONFLICT, e.getMessage(), null);              // 409
+    }
+
+    /** El catálogo externo (Open Food Facts) no tiene ese código de barras. */
+    @ExceptionHandler(ProductoExternoNoEncontradoException.class)
+    public ResponseEntity<ErrorResponse> productoExternoNoEncontrado(ProductoExternoNoEncontradoException e) {
+        return respuesta(HttpStatus.NOT_FOUND, e.getMessage(), null);             // 404
+    }
+
+    /** Un servicio de terceros no respondió: no es culpa del usuario. */
+    @ExceptionHandler(ServicioExternoNoDisponibleException.class)
+    public ResponseEntity<ErrorResponse> servicioExterno(ServicioExternoNoDisponibleException e) {
+        return respuesta(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), null);   // 503
     }
 
     @ExceptionHandler(RecursoNoEncontradoException.class)

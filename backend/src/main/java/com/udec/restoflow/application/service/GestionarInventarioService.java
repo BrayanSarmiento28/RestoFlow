@@ -59,6 +59,8 @@ public class GestionarInventarioService implements GestionarInventarioUseCase {
         Ingrediente guardado = ingredientes.guardar(nuevo);
         if (guardado.getStockActual().signum() > 0) {
             registrar(guardado, TipoMovimiento.ENTRADA, guardado.getStockActual(), "Stock inicial", usuarioId);
+            Auditoria.movimientoInventario("ENTRADA", guardado.getNombre(), guardado.getStockActual(),
+                    guardado.getStockActual(), usuarioId);
         }
         control.revisar(guardado);
         return guardado;
@@ -131,6 +133,7 @@ public class GestionarInventarioService implements GestionarInventarioUseCase {
                                              String motivo, Long usuarioId) {
         Ingrediente guardado = ingredientes.guardar(ingrediente);
         registrar(guardado, tipo, cantidad, motivo, usuarioId);
+        Auditoria.movimientoInventario(tipo.name(), guardado.getNombre(), cantidad, guardado.getStockActual(), usuarioId);
         control.revisar(guardado);
         return guardado;
     }

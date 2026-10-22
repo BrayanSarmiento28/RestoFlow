@@ -23,3 +23,31 @@ restoflow:
     nombre: Administrador Pruebas
     email: admin@pruebas.com
     contrasena: Admin2026*
+  # Las pruebas nunca llaman a internet: el adaptador se prueba con un servidor simulado
+  apis-externas:
+    tiempo-espera-segundos: 1
+    open-food-facts:
+      url: http://localhost:9
+
+# Igual que en application.yml: Actuator con salud (liveness/readiness) e información
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    mail:
+      enabled: false
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    nombre: RestoFlow
+    version: pruebas

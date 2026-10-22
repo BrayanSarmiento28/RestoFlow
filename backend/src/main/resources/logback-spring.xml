@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  =====================================================================
+  RestoFlow · Configuración de logs (Logback, el motor de logs de Spring Boot)
+
+  Dónde salen los logs:
+    1. CONSOLA (siempre; en JSON con el perfil "json"). Es la salida principal, como pide el factor XI:
+       la aplicación solo escribe un flujo de eventos y es el entorno (Docker, el servidor) quien lo guarda.
+       Ver en Docker:  docker compose logs -f backend
+    2. logs/restoflow.log: todo lo de la aplicación, un archivo por día, se guardan 30 días.
+    3. logs/auditoria.log: SOLO la auditoría (quién hizo qué: sesiones, pedidos, ventas, inventario).
+       Se guardan 90 días, porque sirve para aclarar problemas con el inventario o con la caja.
+    Los archivos se crean en los perfiles dev, preprod y prod (en las pruebas automáticas, solo consola).
+    La carpeta se cambia con la variable de entorno LOG_DIR (por defecto "logs").
+
+  Cada línea muestra el id de la petición y el usuario, por ejemplo:
+    2026-10-20 10:15:02.341  INFO [a1b2c3d4] [mesero@restoflow.com] restoflow.auditoria : evento=PEDIDO_REGISTRADO pedido=15 ...
+
+  Niveles (de más a menos grave): ERROR · WARN · INFO · DEBUG. El nivel de cada entorno está en
+  application-dev.yml (DEBUG), application-preprod.yml (INFO) y application-prod.yml (WARN, RestoFlow en INFO).
+  =====================================================================
+-->
+<configuration>
+
+    <springProperty scope="context" name="DIRECTORIO" source="restoflow.logs.directorio" defaultValue="logs"/>
+
+    <!-- [id-de-petición] [usuario]: vacíos ("-") en lo que no viene de una petición, como el arranque -->
+    <property name="PATRON"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5level [%X{requestId:--}] [%X{usuario:--}] %logger{36} : %msg%n"/>
+
+    <!-- 1. Consola, con colores para leerla mejor en la terminal -->
+    <springProfile name="!json">
+        <appender name="CONSOLA" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %highlight(%5level) [%X{requestId:--}] [%X{usuario:--}] %cyan(%logger{36}) : %msg%n</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- 1b. Consola en JSON (formato ECS), una línea por evento, para herramientas como Elastic, Grafana Loki o
+         Azure Monitor. Se activa agregando el perfil "json": SPRING_PROFILES_ACTIVE=prod,json
+         Cada línea incluye @timestamp, log.level, message, requestId y usuario (del contexto de la petición). -->
+    <springProfile name="json">
+        <appender name="CONSOLA" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+                <format>ecs</format>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <springProfile name="dev | preprod | prod">
+        <!-- 2. Archivo general con rotación: un archivo por día (o antes si pasa de 10 MB) -->
+        <appender name="ARCHIVO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${DIRECTORIO}/restoflow.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${DIRECTORIO}/restoflow-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>10MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>500MB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${PATRON}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <!-- 3. Archivo de auditoría, separado de los mensajes técnicos -->
+        <appender name="AUDITORIA" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${DIRECTORIO}/auditoria.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${DIRECTORIO}/auditoria-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+                <maxHistory>90</maxHistory>
+                <totalSizeCap>200MB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${PATRON}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <!-- La escritura en disco no frena las peticiones: se hace en segundo plano -->
+        <appender name="ARCHIVO_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="ARCHIVO"/>
+        </appender>
+
+        <logger name="restoflow.auditoria" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLA"/>
+            <appender-ref ref="ARCHIVO_ASYNC"/>
+            <appender-ref ref="AUDITORIA"/>
+        </logger>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLA"/>
+            <appender-ref ref="ARCHIVO_ASYNC"/>
+        </root>
+    </springProfile>
+
+    <!-- Pruebas automáticas (sin perfil): solo consola -->
+    <springProfile name="!(dev | preprod | prod)">
+        <logger name="restoflow.auditoria" level="INFO"/>
+        <root level="INFO">
+            <appender-ref ref="CONSOLA"/>
+        </root>
+    </springProfile>
+
+</configuration>

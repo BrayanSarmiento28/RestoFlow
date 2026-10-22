@@ -39,6 +39,9 @@ public class ControlAlertas {
                 a.marcarAtendida(ahora);
                 alertas.guardar(a);
             });
+            if (!pendientes.isEmpty()) {
+                Auditoria.alertaCerrada(ingrediente.getNombre(), pendientes.size());
+            }
             return;
         }
         PrioridadAlerta prioridad = ingrediente.estaAgotado() ? PrioridadAlerta.ALTA : PrioridadAlerta.MEDIA;
@@ -57,6 +60,7 @@ public class ControlAlertas {
                 : "Quedan " + numero(ingrediente.getStockActual()) + " " + unidad + " de " + ingrediente.getNombre()
                   + " (mínimo " + numero(ingrediente.getStockMinimo()) + " " + unidad + ").";
         alertas.guardar(Alerta.nueva(ingrediente.getId(), mensaje, prioridad, ahora));
+        Auditoria.alertaCreada(ingrediente.getNombre(), prioridad.name());
     }
 
     /** RF-06 · Se vendió más de lo que había registrado: hay una diferencia en el inventario. */
@@ -65,6 +69,7 @@ public class ControlAlertas {
                 + abreviatura(ingrediente.getUnidad()) + " más de " + ingrediente.getNombre()
                 + " de lo registrado. Revise el inventario con un conteo físico.";
         alertas.guardar(Alerta.nueva(ingrediente.getId(), mensaje, PrioridadAlerta.ALTA, LocalDateTime.now(reloj)));
+        Auditoria.alertaCreada(ingrediente.getNombre(), PrioridadAlerta.ALTA.name());
     }
 
     /** 600 g, 2 und, 1,5 l: igual que en las pantallas. */

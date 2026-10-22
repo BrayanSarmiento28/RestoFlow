@@ -42,11 +42,65 @@ spring:
     open-in-view: false
     show-sql: false
 
+  # Factor IX (desechabilidad): al detener el contenedor se terminan las peticiones en curso
+  # (máximo 20 s) antes de apagar, en vez de cortarlas a la mitad
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
 server:
-  port: 8080
+  # Factor VII: el API se publica en un puerto; se puede cambiar con la variable PORT
+  port: ${PORT:8080}
+  shutdown: graceful
+
+# ---------- Actuator: salud y datos de la aplicación (factores IX y XII) ----------
+# /actuator/health           estado general (lo usa el healthcheck de Docker)
+# /actuator/health/liveness  ¿el proceso está vivo?  ·  /actuator/health/readiness  ¿puede recibir peticiones?
+# /actuator/info             versión, fecha de compilación, Java y entorno
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never        # no se publican detalles internos (base de datos, disco)
+  health:
+    mail:
+      enabled: false             # Gmail no debe marcar el sistema como caído
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: false             # no se publica la versión exacta de Java (información útil para un atacante)
+
+# Datos que muestra /actuator/info (Maven reemplaza @project.version@ al compilar)
+info:
+  app:
+    nombre: RestoFlow
+    version: '@project.version@'
+    entorno: ${restoflow.entorno:desarrollo}
+    instancia: ${HOSTNAME:local}   # en Docker, el contenedor que respondió (útil al escalar, factor VIII)
+
+# ---------- Logs (formato y archivos en logback-spring.xml) ----------
+logging:
+  level:
+    # restoflow.peticiones (una línea por petición) y restoflow.auditoria (quién hizo qué)
+    restoflow: INFO
+  # Datos que acompañan cada línea cuando los logs salen en JSON (perfil "json", ver logback-spring.xml)
+  structured:
+    ecs:
+      service:
+        name: restoflow-backend
+        version: '@project.version@'
+        environment: ${restoflow.entorno:desarrollo}
 
 # ---------- Configuración propia de RestoFlow ----------
 restoflow:
+  logs:
+    # Carpeta de los archivos de log; en Docker es /app/logs (montada en un volumen)
+    directorio: ${LOG_DIR:logs}
   jwt:
     # Clave para firmar los tokens (mínimo 32 caracteres). En producción debe venir de la variable JWT_SECRET.
     secret: ${JWT_SECRET:restoflow-udec-2026-clave-de-desarrollo-cambiar-en-produccion}
@@ -62,3 +116,9 @@ restoflow:
     nombre: Administrador RestoFlow
     email: ${ADMIN_EMAIL:admin@restoflow.com}
     contrasena: ${ADMIN_PASSWORD:Admin2026*}
+  # ---------- API externa: Open Food Facts (gratuita y sin clave) ----------
+  apis-externas:
+    tiempo-espera-segundos: ${APIS_TIEMPO_ESPERA:4}   # si no responde en 4 s, se avisa y se escribe a mano
+    open-food-facts:
+      url: ${OPENFOODFACTS_URL:https://world.openfoodfacts.org}
+      user-agent: RestoFlow/@project.version@ (Proyecto Integrador UdeC)

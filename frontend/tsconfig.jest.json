@@ -1,0 +1,12 @@
+/* Pruebas unitarias con Jest (archivos *.test.ts). Sirve para que VS Code reconozca describe/it/expect
+   y para revisar los tipos con "npm run test:jest:tipos" (Jest compila con @swc/jest, que no revisa tipos). */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest"],
+    "noEmit": true
+  },
+  "include": [
+    "src/**/*.test.ts"
+  ]
+}

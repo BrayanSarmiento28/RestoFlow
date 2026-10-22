@@ -226,6 +226,31 @@
         <section class="rf-tarjeta" aria-labelledby="t-insumo">
           <form class="rf-formulario" [formGroup]="formInsumo" (ngSubmit)="guardarInsumo()" novalidate>
             <h2 id="t-insumo">{{ esEdicion() ? 'Editar ' + nombreInsumo() : 'Nuevo insumo' }}</h2>
+            @if (!esEdicion()) {
+              <div class="rf-campo">
+                <label for="i-codigo">Código de barras (opcional)</label>
+                <div class="buscar-codigo">
+                  <input id="i-codigo" class="rf-input" type="text" inputmode="numeric" maxlength="20"
+                         placeholder="7702011012340" [value]="codigoBarras()"
+                         (input)="codigoBarras.set($any($event.target).value)"
+                         (keydown.enter)="$event.preventDefault(); buscarCodigo()" />
+                  <button type="button" class="rf-btn rf-btn--secundario" (click)="buscarCodigo()"
+                          [disabled]="buscandoCodigo() || !codigoListo()">{{ buscandoCodigo() ? 'Buscando…' : 'Buscar' }}</button>
+                </div>
+                <span class="rf-ayuda">Se consulta en Open Food Facts y se llenan el nombre y la unidad.</span>
+              </div>
+              @if (productoExterno(); as p) {
+                <div class="producto-externo">
+                  @if (p.imagenUrl) { <img [src]="p.imagenUrl" alt="" loading="lazy" referrerpolicy="no-referrer" /> }
+                  <div>
+                    <strong>{{ p.nombre ?? p.nombreSugerido }}</strong>
+                    <span>{{ p.marca ?? 'Sin marca' }}{{ p.cantidad ? ' · ' + p.cantidad : '' }}</span>
+                    <span class="rf-ayuda">Fuente: {{ p.fuente }} · revise los datos antes de guardar</span>
+                  </div>
+                </div>
+              }
+              @if (avisoCodigo()) { <p class="aviso-codigo" role="status">{{ avisoCodigo() }}</p> }
+            }
             <div class="rf-campo">
               <label for="i-nombre">Nombre</label>
               <input id="i-nombre" class="rf-input" type="text" formControlName="nombre" placeholder="Arroz"
@@ -287,7 +312,7 @@
               </div>
             </li>
           } @empty {
-            <li class="rf-ia__item">Sin alertas pendientes 🎉</li>
+            <li class="rf-ia__item">Sin alertas pendientes.</li>
           }
         </ul>
         <p class="rf-ia__sub pronto">Las sugerencias de compra de RestoFlow AI llegan en el próximo sprint.</p>

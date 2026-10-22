@@ -22,14 +22,16 @@ public class OpenApiConfig {
     public static final String ESQUEMA_JWT = "bearerAuth";
 
     @Bean
-    public OpenAPI restoFlowOpenApi(@Value("${restoflow.entorno:desarrollo}") String entorno) {
+    public OpenAPI restoFlowOpenApi(RestoFlowProperties propiedades,
+                                    @Value("${info.app.version:desarrollo}") String version) {
+        String entorno = propiedades.entorno();
         return new OpenAPI()
                 .info(new Info()
                         .title("RestoFlow API")
-                        .version("0.2.0")
+                        .version(version)
                         .description("API REST de RestoFlow · Sprint 1 (RF-01 Autenticación), Sprint 2 (RF-02 Pedidos, "
                                 + "RF-03 Estados de cocina, RF-04 Comandas y menú) y Sprint 3 (RF-05 Inventario, "
-                                + "RF-06 Descuento automático por venta, RF-07 Alertas, RF-08 Panel y RF-12 Historial). "
+                                + "RF-06 Descuento automático por venta, RF-07 Alertas, RF-08 Panel y RF-12 Historial) y Sprint 4 (logs, API externa Open Food Facts). "
                                 + "Entorno: " + entorno + ". "
                                 + "Para probar las rutas protegidas: ejecute POST /api/auth/login, copie el token "
                                 + "y péguelo en el botón Authorize.")

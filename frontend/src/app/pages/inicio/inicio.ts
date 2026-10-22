@@ -7,6 +7,7 @@ import { InventarioService } from '../../core/services/inventario.service';
 import { mensajeDeError } from '../../core/services/errores';
 import { environment } from '../../../environments/environment';
 import { numero, pesos } from '../../core/util/formato';
+import { columnasPorHora, variacionPorcentual } from '../../core/util/graficas';
 import { ResumenPanel } from '../../core/models/inventario.models';
 import { ABREVIATURA_UNIDAD, Ingrediente, NOMBRES_ESTADO_COCINA, Pedido, Rol } from '../../core/entities';
 
@@ -60,29 +61,14 @@ export class Inicio implements OnInit, OnDestroy {
   /** Accesos directos según el rol de quien inició sesión. */
   protected readonly accesos = this.todos.filter((a) => this.auth.tieneRol(...a.roles));
 
-  /** Ventas por hora, desde la primera hora con ventas hasta la hora actual (mínimo 6 columnas). */
-  protected readonly horas = computed(() => {
-    const r = this.resumen();
-    if (!r || r.ventasPorHora.length === 0) return [];
-    const ahora = new Date().getHours();
-    const primera = Math.min(...r.ventasPorHora.map((v) => v.hora));
-    const ultima = Math.max(ahora, ...r.ventasPorHora.map((v) => v.hora));
-    const desde = Math.max(0, Math.min(primera, ultima - 5));
-    const maximo = Math.max(...r.ventasPorHora.map((v) => v.total), 1);
-    return Array.from({ length: ultima - desde + 1 }, (_, i) => {
-      const hora = desde + i;
-      const v = r.ventasPorHora.find((x) => x.hora === hora);
-      const total = v?.total ?? 0;
-      return { hora, total, pedidos: v?.pedidos ?? 0, alto: (total / maximo) * 100, actual: hora === ahora };
-    });
-  });
+  /** Ventas por hora, desde la primera hora con ventas hasta la hora actual (cálculo en core/util/graficas.ts). */
+  protected readonly horas = computed(() => columnasPorHora(this.resumen()?.ventasPorHora ?? [], new Date().getHours()));
   protected readonly maximoHora = computed(() => Math.max(...this.horas().map((h) => h.total), 0));
 
   /** Variación de las ventas frente a ayer, en %. */
   protected readonly variacion = computed(() => {
     const r = this.resumen();
-    if (!r || r.ventasDiaAnterior === 0) return null;
-    return Math.round(((r.ventas - r.ventasDiaAnterior) / r.ventasDiaAnterior) * 100);
+    return r ? variacionPorcentual(r.ventas, r.ventasDiaAnterior) : null;
   });
 
   /** Una mesa por pedido abierto, con el estado de cocina del pedido. */

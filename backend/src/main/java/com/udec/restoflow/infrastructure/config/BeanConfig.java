@@ -1,5 +1,6 @@
 package com.udec.restoflow.infrastructure.config;
 
+import com.udec.restoflow.application.port.in.BuscarProductoExternoUseCase;
 import com.udec.restoflow.application.port.in.ConsultarHistorialUseCase;
 import com.udec.restoflow.application.port.in.ConsultarPanelUseCase;
 import com.udec.restoflow.application.port.in.DescontarInventarioUseCase;
@@ -15,6 +16,7 @@ import com.udec.restoflow.application.port.in.RecuperarContrasenaUseCase;
 import com.udec.restoflow.application.port.out.AlertaRepositoryPort;
 import com.udec.restoflow.application.port.out.CategoriaRepositoryPort;
 import com.udec.restoflow.application.port.out.CifradoContrasenaPort;
+import com.udec.restoflow.application.port.out.CatalogoExternoPort;
 import com.udec.restoflow.application.port.out.CodigoRecuperacionRepositoryPort;
 import com.udec.restoflow.application.port.out.EnviarCorreoPort;
 import com.udec.restoflow.application.port.out.GeneradorTokenPort;
@@ -24,6 +26,7 @@ import com.udec.restoflow.application.port.out.PedidoRepositoryPort;
 import com.udec.restoflow.application.port.out.ProductoRepositoryPort;
 import com.udec.restoflow.application.port.out.RecetaRepositoryPort;
 import com.udec.restoflow.application.port.out.UsuarioRepositoryPort;
+import com.udec.restoflow.application.service.BuscarProductoExternoService;
 import com.udec.restoflow.application.service.ConsultarHistorialService;
 import com.udec.restoflow.application.service.ConsultarPanelService;
 import com.udec.restoflow.application.service.ControlAlertas;
@@ -137,5 +140,11 @@ public class BeanConfig {
     @Bean
     public ConsultarHistorialUseCase consultarHistorialUseCase(PedidoRepositoryPort pedidos) {
         return new ConsultarHistorialService(pedidos);
+    }
+
+    /** Catálogo externo (Open Food Facts): el adaptador de la API externa implementa CatalogoExternoPort. */
+    @Bean
+    public BuscarProductoExternoUseCase buscarProductoExternoUseCase(CatalogoExternoPort catalogo) {
+        return new BuscarProductoExternoService(catalogo);
     }
 }

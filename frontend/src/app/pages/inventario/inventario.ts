@@ -7,34 +7,15 @@ import { AuthService } from '../../core/services/auth.service';
 import { mensajeDeError } from '../../core/services/errores';
 import { fechaHora, fechaIso, hora, numero } from '../../core/util/formato';
 import {
+  DIAS_CONSUMO, DIAS_POR_AGOTARSE, FilaInsumo, cantidadMovimiento, filasOrdenadas, resumirNombres,
+} from '../../core/util/inventario-calculos';
+import { codigoCompleto, digitoDeControlValido, limpiarCodigo } from '../../core/util/codigo-barras';
+import { ProductoExterno } from '../../core/models/catalogo-externo.models';
+import {
   ABREVIATURA_UNIDAD, Alerta, Ingrediente, MovimientoInventario, NOMBRES_UNIDAD, UnidadMedida,
 } from '../../core/entities';
 
 type Accion = 'ENTRADA' | 'SALIDA' | 'AJUSTE';
-type Estado = 'agotado' | 'minimo' | 'pronto' | 'revisar' | 'ok';
-
-/** Fila de la tabla: el insumo más lo que se calcula para mostrarlo. */
-interface FilaInsumo {
-  insumo: Ingrediente;
-  estado: Estado;
-  /** Días que alcanza el stock con el consumo promedio por ventas de los últimos 7 días (null = sin ventas). */
-  dias: number | null;
-  /** Ancho de la barra: el mínimo queda en la marca negra (33 %). */
-  barra: number;
-  icono: string | null;
-}
-
-const DIAS_CONSUMO = 7;
-
-/** Imagen según el tipo de insumo (por palabras del nombre); sin coincidencia se muestra la inicial. */
-const ICONOS: [RegExp, string][] = [
-  [/pollo|pechuga|carne|res|cerdo|chicharr|chorizo|tocino/i, 'carnes'],
-  [/pescado|mojarra|trucha|camar|at[uú]n|salm[oó]n/i, 'pescados'],
-  [/arroz|fr[ií]jol|lenteja|harina|ma[ií]z|pasta|garbanzo|az[uú]car|sal\b/i, 'granos'],
-  [/leche|queso|crema|mantequilla|huevo|yogur/i, 'lacteos'],
-  [/papa|yuca|mazorca|pl[aá]tano|tomate|cebolla|aguacate|lechuga|zanahoria|ajo|verdura/i, 'verduras'],
-  [/lim[oó]n|naranja|mora|lulo|maracuy|pulpa|fruta|coco|fresa|mango/i, 'frutas'],
-];
 
 /** RF-05 a RF-07 · Pantalla del personal de inventario (y del administrador). */
 @Component({
@@ -66,27 +47,14 @@ export class Inventario implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly exito = signal<string | null>(null);
 
-  /** Consumo por ventas de cada insumo en los últimos 7 días (de los movimientos con pedido). */
-  private readonly consumoDiario = computed(() => {
-    const total = new Map<number, number>();
-    this.movimientos()
-      .filter((m) => m.tipo === 'SALIDA' && m.pedidoId !== null)
-      .forEach((m) => total.set(m.ingredienteId, (total.get(m.ingredienteId) ?? 0) + m.cantidad));
-    return new Map([...total].map(([id, cantidad]) => [id, cantidad / DIAS_CONSUMO]));
-  });
-
-  protected readonly filas = computed<FilaInsumo[]>(() =>
-    this.insumos()
-      .filter((i) => i.activo)
-      .map((i) => this.fila(i))
-      .sort((a, b) => this.urgencia(a) - this.urgencia(b) || a.insumo.nombre.localeCompare(b.insumo.nombre)),
-  );
+  /** Estado, días que alcanza, barra e ícono de cada insumo (cálculos en core/util/inventario-calculos.ts). */
+  protected readonly filas = computed<FilaInsumo[]>(() => filasOrdenadas(this.insumos(), this.movimientos()));
   protected readonly conAlerta = computed(() => this.filas().filter((f) => f.estado !== 'ok' && f.estado !== 'revisar'));
   protected readonly visibles = computed(() => (this.filtro() === 'alerta' ? this.conAlerta() : this.filas()));
   protected readonly inactivos = computed(() => this.insumos().filter((i) => !i.activo));
   protected readonly bajoMinimo = computed(() => this.filas().filter((f) => f.estado === 'agotado' || f.estado === 'minimo'));
   /** Alcanzan para 3 días o menos según las ventas (incluye los que ya están bajo el mínimo). */
-  protected readonly porAgotarse = computed(() => this.filas().filter((f) => f.dias !== null && f.dias <= 3));
+  protected readonly porAgotarse = computed(() => this.filas().filter((f) => f.dias !== null && f.dias <= DIAS_POR_AGOTARSE));
   /** El insumo más urgente, para el aviso de arriba. */
   protected readonly urgente = computed(() => this.bajoMinimo()[0] ?? null);
 
@@ -106,6 +74,13 @@ export class Inventario implements OnInit {
     cantidad: [null as number | null, [Validators.required, Validators.min(0)]],
     motivo: ['', Validators.maxLength(120)],
   });
+
+  // ---------- API externa: buscar el insumo por código de barras (Open Food Facts) ----------
+  protected readonly codigoBarras = signal('');
+  protected readonly buscandoCodigo = signal(false);
+  protected readonly productoExterno = signal<ProductoExterno | null>(null);
+  protected readonly avisoCodigo = signal<string | null>(null);
+  protected readonly codigoListo = computed(() => codigoCompleto(this.codigoBarras()));
 
   protected readonly formInsumo = this.fb.group({
     nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
@@ -196,6 +171,9 @@ export class Inventario implements OnInit {
     this.accion.set(null);
     this.editando.set(insumo ?? 'nuevo');
     this.limpiarMensajes();
+    this.codigoBarras.set('');
+    this.productoExterno.set(null);
+    this.avisoCodigo.set(null);
     this.formInsumo.reset({
       nombre: insumo?.nombre ?? '',
       unidad: insumo?.unidad ?? 'GRAMO',
@@ -203,6 +181,28 @@ export class Inventario implements OnInit {
       stockInicial: null,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /** Consulta Open Food Facts (a través del backend) y llena el nombre y la unidad; el usuario puede cambiarlos. */
+  protected buscarCodigo(): void {
+    const codigo = limpiarCodigo(this.codigoBarras());
+    if (!codigoCompleto(codigo)) return;
+    this.buscandoCodigo.set(true);
+    this.productoExterno.set(null);
+    this.avisoCodigo.set(digitoDeControlValido(codigo) ? null
+      : 'El último número del código no coincide; revíselo si no aparece el producto.');
+    this.inventarioApi.buscarPorCodigoBarras(codigo).subscribe({
+      next: (p) => {
+        this.buscandoCodigo.set(false);
+        this.productoExterno.set(p);
+        this.avisoCodigo.set(null);
+        this.formInsumo.patchValue({ nombre: p.nombreSugerido, unidad: p.unidadSugerida });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.buscandoCodigo.set(false);
+        this.avisoCodigo.set(mensajeDeError(err));
+      },
+    });
   }
 
   protected guardarInsumo(): void {
@@ -271,10 +271,7 @@ export class Inventario implements OnInit {
     return !!control && control.invalid && control.touched;
   }
 
-  protected cantidadMovimiento(m: MovimientoInventario): string {
-    const signo = m.tipo === 'ENTRADA' ? '+' : m.tipo === 'SALIDA' ? '−' : '= ';
-    return `${signo}${numero(m.cantidad)} ${this.abreviatura[m.unidad]}`;
-  }
+  protected readonly cantidadMovimiento = cantidadMovimiento;
 
   protected detalleMovimiento(m: MovimientoInventario): string {
     if (m.pedidoId !== null) return `Venta · pedido #${m.pedidoId}`;
@@ -283,8 +280,7 @@ export class Inventario implements OnInit {
 
   /** "Arroz, Huevo y 2 más" */
   protected nombres(filas: FilaInsumo[]): string {
-    const lista = filas.map((f) => f.insumo.nombre);
-    return lista.length <= 3 ? lista.join(', ') : `${lista.slice(0, 2).join(', ')} y ${lista.length - 2} más`;
+    return resumirNombres(filas.map((f) => f.insumo.nombre));
   }
 
   protected nombreInsumo(): string {
@@ -295,27 +291,6 @@ export class Inventario implements OnInit {
   protected esEdicion(): boolean {
     const actual = this.editando();
     return !!actual && actual !== 'nuevo';
-  }
-
-  private fila(i: Ingrediente): FilaInsumo {
-    const consumo = this.consumoDiario().get(i.id) ?? 0;
-    const dias = consumo > 0 ? i.stockActual / consumo : null;
-    let estado: Estado = 'ok';
-    if (i.agotado) estado = 'agotado';
-    else if (i.enMinimo) estado = 'minimo';
-    else if (dias !== null && dias <= 3) estado = 'pronto';
-    else if (i.stockActual <= i.stockMinimo * 1.5) estado = 'revisar';
-    const escala = i.stockMinimo > 0 ? i.stockMinimo * 3 : Math.max(i.stockActual, 1);
-    const icono = ICONOS.find(([patron]) => patron.test(i.nombre))?.[1] ?? null;
-    return {
-      insumo: i, estado, dias,
-      barra: Math.min(100, (i.stockActual / escala) * 100),
-      icono: icono ? `img/insumos/${icono}.svg` : null,
-    };
-  }
-
-  private urgencia(f: FilaInsumo): number {
-    return ['agotado', 'minimo', 'pronto', 'revisar', 'ok'].indexOf(f.estado);
   }
 
   private limpiarMensajes(): void {
