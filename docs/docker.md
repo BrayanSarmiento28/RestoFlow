@@ -47,7 +47,7 @@ La primera vez tarda varios minutos porque descarga las imágenes base y las dep
 |---|---|
 | Aplicación | http://localhost:4200 |
 | Swagger (perfil `preprod`) | http://localhost:8080/swagger-ui.html |
-| Estado del backend | http://localhost:8080/api/salud |
+| Estado del backend | http://localhost:8080/api/salud · http://localhost:8080/actuator/health |
 | SQL Server desde SSMS | servidor `localhost,14330`, usuario `sa` y la contraseña `MSSQL_SA_PASSWORD` del `.env` |
 
 Usuario inicial: `admin@restoflow.com` con la contraseña `ADMIN_PASSWORD` del `.env`.
@@ -70,8 +70,8 @@ docker compose build --no-cache    # reconstruir las imágenes desde cero
 | Aprovechar la caché de capas | Se copia primero `pom.xml` / `package.json` y se descargan las dependencias antes de copiar el código |
 | Archivo `.dockerignore` | Uno por imagen: excluye `target/`, `node_modules/`, `.git`, `.env` y `application-local.yml` |
 | Ejecutar como usuario sin privilegios | Backend con el usuario `restoflow` (`USER restoflow`); frontend con Nginx *unprivileged* (puerto 8080) |
-| Etiquetas versionadas, nunca `latest` | `restoflow-backend:0.2.0`, `restoflow-frontend:0.2.0`, SQL Server `2022-CU23-ubuntu-22.04` |
-| `HEALTHCHECK` | Backend (`/api/salud`), frontend (Nginx) y SQL Server (`sqlcmd`); Compose espera a que cada servicio esté sano antes de iniciar el siguiente |
+| Etiquetas versionadas, nunca `latest` | `restoflow-backend:0.3.0`, `restoflow-frontend:0.3.0`, SQL Server `2022-CU23-ubuntu-22.04` |
+| `HEALTHCHECK` | Backend (`/actuator/health/readiness`, Actuator), frontend (Nginx) y SQL Server (`sqlcmd`); Compose espera a que cada servicio esté sano antes de iniciar el siguiente |
 | Sin credenciales en las imágenes ni en el código | Todas las contraseñas llegan desde `.env`, que está en `.gitignore`; Compose se niega a arrancar si falta una (`${VAR:?}`) |
 | Persistencia de datos | Volumen `sqlserver_datos`: los datos sobreviven al reiniciar o recrear los contenedores |
 | Red propia | `restoflow-red`: los servicios se comunican por nombre (`db`, `backend`) |
@@ -92,3 +92,12 @@ El perfil del backend se elige con `SPRING_PROFILES_ACTIVE` en el `.env`:
 | `port is already allocated` en 8080 o 4200 | El backend o el `npm start` locales están abiertos: detenerlos o cambiar `BACKEND_PUERTO` / `FRONTEND_PUERTO` en el `.env` |
 | `db` no llega a *healthy* | La contraseña `MSSQL_SA_PASSWORD` no cumple la política de SQL Server (8+ caracteres con mayúsculas, minúsculas, números y símbolos) o Docker tiene poca memoria |
 | `db-init` termina con error | Ver `docker compose logs db-init`; si se cambió `MSSQL_SA_PASSWORD` después del primer arranque, borrar el volumen con `docker compose down -v` |
+
+## Escalar el backend (varias copias)
+
+Ver el factor VIII en `docs/doce-factores.md`:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.escalado.yml up -d --build
+1..6 | ForEach-Object { (Invoke-RestMethod http://localhost:4200/api/salud).instancia }
+```

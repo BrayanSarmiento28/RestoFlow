@@ -74,7 +74,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: restoflow-backend:${RESTOFLOW_VERSION:-0.2.0}
+    image: restoflow-backend:${RESTOFLOW_VERSION:-0.3.0}
     container_name: restoflow-backend
     depends_on:
       db-init:
@@ -94,6 +94,14 @@ services:
       CORREO_MODO: ${CORREO_MODO:-consola}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      LOG_DIR: /app/logs
+      # Hora de Colombia: sin esto el contenedor usa UTC y después de las 7 p. m. "hoy" sería mañana
+      TZ: ${TZ:-America/Bogota}
+      # API externa Open Food Facts (gratuita, sin clave): datos de un insumo por código de barras
+      OPENFOODFACTS_URL: ${OPENFOODFACTS_URL:-https://world.openfoodfacts.org}
+    volumes:
+      # Los archivos restoflow.log y auditoria.log sobreviven aunque se borre el contenedor
+      - backend_logs:/app/logs
     ports:
       # Expuesto solo para usar Swagger desde el navegador; el frontend llega por la red interna
       - "${BACKEND_PUERTO:-8080}:8080"
@@ -108,7 +116,7 @@ services:
       dockerfile: Dockerfile
       args:
         CONFIGURACION: production
-    image: restoflow-frontend:${RESTOFLOW_VERSION:-0.2.0}
+    image: restoflow-frontend:${RESTOFLOW_VERSION:-0.3.0}
     container_name: restoflow-frontend
     depends_on:
       backend:
@@ -121,6 +129,7 @@ services:
 
 volumes:
   sqlserver_datos:
+  backend_logs:
 
 networks:
   restoflow-red:

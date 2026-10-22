@@ -77,7 +77,9 @@ public class DescontarInventarioService implements DescontarInventarioUseCase {
             movimientos.guardar(MovimientoInventario.registrar(ingredienteId, TipoMovimiento.SALIDA, cantidad,
                     faltante.signum() > 0 ? motivo + " · faltaron " + ControlAlertas.numero(faltante) : motivo,
                     null, pedido.getId(), ahora));
+            Auditoria.movimientoInventario("SALIDA", guardado.getNombre(), cantidad, guardado.getStockActual(), null);
             if (faltante.signum() > 0) {
+                Auditoria.faltanteEnVenta(pedido.getId(), guardado.getNombre(), faltante);
                 control.faltante(guardado, faltante, pedido.getId());
             }
             control.revisar(guardado);

@@ -14,7 +14,7 @@
 
     <groupId>com.udec</groupId>
     <artifactId>restoflow-backend</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
     <name>RestoFlow Backend</name>
     <description>API REST de RestoFlow - Spring Boot 3 con arquitectura hexagonal</description>
 
@@ -83,6 +83,12 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Actuator: /actuator/health (liveness y readiness) y /actuator/info · factores IX y XII -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Pruebas (JUnit 5, AssertJ, Mockito) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -99,4 +105,83 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+          Perfil "calidad" (activo siempre por defecto):
+            · JaCoCo: cobertura de las pruebas JUnit.
+                mvn verify → ejecuta las pruebas, genera target/site/jacoco/index.html
+                             y FALLA si la cobertura de líneas baja del mínimo (70 %).
+            · build-info: guarda la versión y la fecha de compilación en el .jar (se ven en /actuator/info, factor V).
+          En un equipo sin internet que ya tenga las demás dependencias: mvn test -P '!calidad'
+        -->
+        <profile>
+            <id>calidad</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>build-info</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.13</version>
+                        <configuration>
+                            <excludes>
+                                <!-- Solo arranca Spring: no tiene lógica que probar -->
+                                <exclude>com/udec/restoflow/RestoFlowApplication.class</exclude>
+                            </excludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>preparar-agente</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>informe</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>minimo</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <rule>
+                                            <element>BUNDLE</element>
+                                            <limits>
+                                                <limit>
+                                                    <counter>LINE</counter>
+                                                    <value>COVEREDRATIO</value>
+                                                    <minimum>0.70</minimum>
+                                                </limit>
+                                            </limits>
+                                        </rule>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

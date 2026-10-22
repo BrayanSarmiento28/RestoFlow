@@ -1,6 +1,7 @@
 package com.udec.restoflow.infrastructure.adapter.out.mail;
 
 import com.udec.restoflow.application.port.out.EnviarCorreoPort;
+import com.udec.restoflow.infrastructure.config.RestoFlowProperties;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
@@ -31,10 +32,10 @@ public class GmailCorreoAdapter implements EnviarCorreoPort {
 
     public GmailCorreoAdapter(JavaMailSender mailSender,
                               @Value("${spring.mail.username}") String remitente,
-                              @Value("${restoflow.correo.remitente-nombre:RestoFlow}") String nombreRemitente) {
+                              RestoFlowProperties propiedades) {
         this.mailSender = mailSender;
         this.remitente = remitente;
-        this.nombreRemitente = nombreRemitente;
+        this.nombreRemitente = propiedades.correo().remitenteNombre();
     }
 
     @Override

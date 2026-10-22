@@ -6,7 +6,6 @@ import com.udec.restoflow.application.port.out.UsuarioRepositoryPort;
 import com.udec.restoflow.domain.model.Rol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -26,14 +25,12 @@ public class AdministradorInicialConfig implements CommandLineRunner {
     private final String contrasena;
 
     public AdministradorInicialConfig(UsuarioRepositoryPort usuarios, GestionarCuentasUseCase cuentas,
-                                      @Value("${restoflow.admin-inicial.nombre}") String nombre,
-                                      @Value("${restoflow.admin-inicial.email}") String email,
-                                      @Value("${restoflow.admin-inicial.contrasena}") String contrasena) {
+                                      RestoFlowProperties propiedades) {
         this.usuarios = usuarios;
         this.cuentas = cuentas;
-        this.nombre = nombre;
-        this.email = email;
-        this.contrasena = contrasena;
+        this.nombre = propiedades.adminInicial().nombre();
+        this.email = propiedades.adminInicial().email();
+        this.contrasena = propiedades.adminInicial().contrasena();
     }
 
     @Override

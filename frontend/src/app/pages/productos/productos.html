@@ -70,7 +70,7 @@
               <input type="number" min="0" step="any" [value]="l.cantidad ?? ''" [attr.aria-label]="'Cantidad ' + (i + 1)"
                      (input)="cambiarLinea(i, 'cantidad', $any($event.target).value)" />
               <span class="unidad">{{ unidadDe(l.ingredienteId) }}</span>
-              <button type="button" class="accion accion--peligro" [attr.aria-label]="'Quitar línea ' + (i + 1)" (click)="quitarLinea(i)">✕</button>
+              <button type="button" class="accion accion--peligro" [attr.aria-label]="'Quitar línea ' + (i + 1)" (click)="quitarLinea(i)"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
             </div>
           } @empty {
             <p class="ayuda">Sin receta: las ventas de este producto no descuentan inventario.</p>

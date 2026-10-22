@@ -11,7 +11,10 @@
     "build:preprod": "ng build --configuration preprod",
     "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:jest": "jest",
+    "test:jest:cobertura": "jest --coverage",
+    "test:jest:tipos": "tsc -p tsconfig.jest.json --noEmit"
   },
   "private": true,
   "packageManager": "npm@11.17.0",
@@ -29,6 +32,10 @@
     "@angular/build": "^22.2.0",
     "@angular/cli": "^22.2.0",
     "@angular/compiler-cli": "^22.2.0",
+    "@swc/core": "^1.11.0",
+    "@swc/jest": "^0.2.37",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.0",
     "jsdom": "^30.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",

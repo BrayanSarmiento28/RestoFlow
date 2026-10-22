@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.udec.restoflow.infrastructure.logging.RegistroPeticionesFilter;
+import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -36,6 +38,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 var permisos = List.of(new SimpleGrantedAuthority("ROLE_" + usuario.rol().name()));
                 var autenticacion = new UsernamePasswordAuthenticationToken(usuario, null, permisos);
                 SecurityContextHolder.getContext().setAuthentication(autenticacion);
+                // Para los logs: cada línea de esta petición mostrará quién la hizo (nunca el token)
+                MDC.put("usuario", usuario.email());
+                request.setAttribute(RegistroPeticionesFilter.ATRIBUTO_USUARIO, usuario.email());
             });
         }
         chain.doFilter(request, response);

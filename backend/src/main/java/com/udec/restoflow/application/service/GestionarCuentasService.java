@@ -38,7 +38,9 @@ public class GestionarCuentasService implements GestionarCuentasUseCase {
         }
         Usuario nuevo = Usuario.nuevo(comando.nombre(), email, cifrado.cifrar(comando.contrasena()),
                 comando.rol(), LocalDateTime.now(reloj));
-        return usuarios.guardar(nuevo);
+        Usuario guardado = usuarios.guardar(nuevo);
+        Auditoria.cuentaCreada(guardado.getEmail(), guardado.getRol().name());
+        return guardado;
     }
 
     @Override

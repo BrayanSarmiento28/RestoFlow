@@ -1,3 +1,4 @@
+import { ProductoExterno } from '../models/catalogo-externo.models';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -67,5 +68,10 @@ export class InventarioService {
 
   definirReceta(productoId: number, lineas: LineaRecetaRequest[]): Observable<RecetaIngrediente[]> {
     return this.http.put<RecetaIngrediente[]>(`${this.api}/productos/${productoId}/receta`, { lineas });
+  }
+
+  /** API externa Open Food Facts: datos de un producto por su código de barras (la consulta el backend). */
+  buscarPorCodigoBarras(codigo: string): Observable<ProductoExterno> {
+    return this.http.get<ProductoExterno>(`${this.api}/inventario/catalogo-externo/${encodeURIComponent(codigo)}`);
   }
 }

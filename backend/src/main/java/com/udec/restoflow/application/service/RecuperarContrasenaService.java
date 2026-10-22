@@ -42,6 +42,7 @@ public class RecuperarContrasenaService implements RecuperarContrasenaUseCase {
     @Override
     public void solicitarCodigo(String email) {
         Optional<Usuario> cuenta = usuarios.buscarPorEmail(Usuario.normalizarEmail(email)).filter(Usuario::isActivo);
+        Auditoria.recuperacionSolicitada(email, cuenta.isPresent());
         if (cuenta.isEmpty()) {
             return;
         }
@@ -73,6 +74,7 @@ public class RecuperarContrasenaService implements RecuperarContrasenaUseCase {
         if (comando.codigo() == null || !cifrado.coincide(comando.codigo().trim(), codigo.getCodigoHash())) {
             codigo.registrarIntentoFallido();
             codigos.guardar(codigo);
+            Auditoria.codigoRecuperacionInvalido(usuario.getEmail());
             throw new CodigoRecuperacionInvalidoException();
         }
 
@@ -81,6 +83,7 @@ public class RecuperarContrasenaService implements RecuperarContrasenaUseCase {
 
         usuario.cambiarContrasena(cifrado.cifrar(comando.nuevaContrasena()));
         usuarios.guardar(usuario);
+        Auditoria.contrasenaRestablecida(usuario.getEmail());
     }
 
     private LocalDateTime ahora() {

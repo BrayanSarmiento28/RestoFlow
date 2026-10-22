@@ -39,3 +39,11 @@
   &:hover { text-decoration: underline; }
 }
 .pronto { font-size: 12px; }
+
+// API externa: buscar el insumo por código de barras (Open Food Facts)
+.buscar-codigo { display: flex; gap: 8px; .rf-input { flex: 1; min-width: 0; } }
+.producto-externo { display: flex; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--rf-linea);
+  border-radius: var(--rf-radio-m); background: var(--rf-crema);
+  img { width: 56px; height: 56px; object-fit: contain; border-radius: var(--rf-radio-s); background: #fff; }
+  div { display: flex; flex-direction: column; gap: 2px; font-size: 14px; } }
+.aviso-codigo { margin: 0; font-size: 14px; color: var(--rf-aviso-texto); }

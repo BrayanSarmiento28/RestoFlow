@@ -5,6 +5,7 @@ import com.udec.restoflow.application.port.out.CifradoContrasenaPort;
 import com.udec.restoflow.application.port.out.GeneradorTokenPort;
 import com.udec.restoflow.application.port.out.UsuarioRepositoryPort;
 import com.udec.restoflow.domain.exception.CredencialesInvalidasException;
+import com.udec.restoflow.domain.exception.CuentaInactivaException;
 import com.udec.restoflow.domain.exception.DomainException;
 import com.udec.restoflow.domain.model.Usuario;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,12 +35,21 @@ public class IniciarSesionService implements IniciarSesionUseCase {
 
     @Override
     public ResultadoInicioSesion iniciarSesion(ComandoInicioSesion comando) {
-        Usuario usuario = usuarios.buscarPorEmail(emailNormalizado(comando.email()))
-                .filter(u -> comando.contrasena() != null && cifrado.coincide(comando.contrasena(), u.getPasswordHash()))
-                .orElseThrow(CredencialesInvalidasException::new);
+        Usuario usuario;
+        try {
+            usuario = usuarios.buscarPorEmail(emailNormalizado(comando.email()))
+                    .filter(u -> comando.contrasena() != null && cifrado.coincide(comando.contrasena(), u.getPasswordHash()))
+                    .orElseThrow(CredencialesInvalidasException::new);
+            usuario.validarPuedeIngresar();
+        } catch (CredencialesInvalidasException e) {
+            Auditoria.inicioSesionFallido(comando.email(), "credenciales");
+            throw e;
+        } catch (CuentaInactivaException e) {
+            Auditoria.inicioSesionFallido(comando.email(), "cuenta-inactiva");
+            throw e;
+        }
 
-        usuario.validarPuedeIngresar();
-
+        Auditoria.inicioSesion(usuario.getEmail(), usuario.getRol().name());
         return new ResultadoInicioSesion(generadorToken.generarToken(usuario), generadorToken.getVigenciaSegundos(), usuario);
     }
 

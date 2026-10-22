@@ -6,19 +6,13 @@ import { PedidoService } from '../../core/services/pedido.service';
 import { mensajeDeError } from '../../core/services/errores';
 import { hora, pesos } from '../../core/util/formato';
 import {
-  EstadoCocina, NOMBRES_ESTADO_COCINA, NOMBRES_ESTADO_PEDIDO, Pedido, Producto,
+  NOMBRES_ESTADO_COCINA, NOMBRES_ESTADO_PEDIDO, Pedido, Producto,
 } from '../../core/entities';
-import { FiltroPedidos } from '../../core/models/pedido.models';
 import { environment } from '../../../environments/environment';
-
-/** Una línea del pedido que el mesero está armando (todavía no se ha enviado). */
-interface ItemCarrito {
-  producto: Producto;
-  cantidad: number;
-  nota: string;
-}
-
-type FiltroEstado = 'ACTIVOS' | EstadoCocina | 'PAGADO' | 'CANCELADO' | 'TODOS';
+import {
+  FiltroEstado, ItemCarrito, aPedidoRequest, agregarProducto, cambiarCantidad, cambiarNota, carritoDesdePedido,
+  categoriasDe, filtrarProductos, filtroDePedidos, quitarItem, totalCarrito,
+} from '../../core/util/carrito';
 
 /**
  * RF-02 · Pantalla del mesero: arma el pedido de una mesa, lo envía a cocina
@@ -55,20 +49,15 @@ export class Pedidos implements OnInit, OnDestroy {
   protected readonly productos = signal<Producto[]>([]);
   protected readonly categoriaActiva = signal<string>('Todas');
   protected readonly busqueda = signal('');
-  protected readonly categorias = computed(() =>
-    ['Todas', ...new Set(this.productos().map((p) => p.categoriaNombre))]);
-  protected readonly productosVisibles = computed(() => {
-    const texto = this.busqueda().trim().toLowerCase();
-    return this.productos().filter((p) =>
-      (this.categoriaActiva() === 'Todas' || p.categoriaNombre === this.categoriaActiva())
-      && (!texto || p.nombre.toLowerCase().includes(texto)));
-  });
+  // Lógica del carrito y de los filtros en core/util/carrito.ts (probada con Jest)
+  protected readonly categorias = computed(() => categoriasDe(this.productos()));
+  protected readonly productosVisibles = computed(() =>
+    filtrarProductos(this.productos(), this.categoriaActiva(), this.busqueda()));
 
   // ---------- Pedido en construcción ----------
   protected readonly carrito = signal<ItemCarrito[]>([]);
   protected readonly editandoId = signal<number | null>(null);
-  protected readonly total = computed(() =>
-    this.carrito().reduce((suma, item) => suma + item.producto.precio * item.cantidad, 0));
+  protected readonly total = computed(() => totalCarrito(this.carrito()));
   protected readonly form = this.fb.group({
     mesa: [null as number | null, [Validators.required, Validators.min(1), Validators.max(999)]],
     observaciones: ['', Validators.maxLength(300)],
@@ -101,29 +90,19 @@ export class Pedidos implements OnInit, OnDestroy {
   // ---------- Armar el pedido ----------
 
   protected agregar(producto: Producto): void {
-    const existente = this.carrito().find((i) => i.producto.id === producto.id);
-    if (existente) {
-      this.cambiarCantidad(existente, 1);
-    } else {
-      this.carrito.update((items) => [...items, { producto, cantidad: 1, nota: '' }]);
-    }
+    this.carrito.update((items) => agregarProducto(items, producto));
   }
 
   protected cambiarCantidad(item: ItemCarrito, cambio: number): void {
-    const nueva = item.cantidad + cambio;
-    if (nueva < 1) {
-      this.quitar(item);
-      return;
-    }
-    this.carrito.update((items) => items.map((i) => (i === item ? { ...i, cantidad: Math.min(nueva, 99) } : i)));
+    this.carrito.update((items) => cambiarCantidad(items, item, cambio));
   }
 
   protected cambiarNota(item: ItemCarrito, nota: string): void {
-    this.carrito.update((items) => items.map((i) => (i === item ? { ...i, nota } : i)));
+    this.carrito.update((items) => cambiarNota(items, item, nota));
   }
 
   protected quitar(item: ItemCarrito): void {
-    this.carrito.update((items) => items.filter((i) => i !== item));
+    this.carrito.update((items) => quitarItem(items, item));
   }
 
   protected limpiar(): void {
@@ -144,11 +123,7 @@ export class Pedidos implements OnInit, OnDestroy {
       return;
     }
     const valores = this.form.getRawValue();
-    const datos = {
-      numeroMesa: Number(valores.mesa),
-      observaciones: valores.observaciones?.trim() || null,
-      lineas: this.carrito().map((i) => ({ productoId: i.producto.id, cantidad: i.cantidad, nota: i.nota.trim() || null })),
-    };
+    const datos = aPedidoRequest(valores.mesa, valores.observaciones, this.carrito());
     const id = this.editandoId();
     const peticion = id ? this.pedidosApi.modificar(id, datos) : this.pedidosApi.registrar(datos);
 
@@ -175,14 +150,10 @@ export class Pedidos implements OnInit, OnDestroy {
 
   /** Carga un pedido Pendiente en el formulario para cambiarlo. */
   protected editar(pedido: Pedido): void {
-    const items: ItemCarrito[] = [];
-    for (const linea of pedido.lineas) {
-      const producto = this.productos().find((p) => p.id === linea.productoId);
-      if (!producto) {
-        this.error.set(`El producto ${linea.productoNombre} ya no está disponible; registra un pedido nuevo.`);
-        return;
-      }
-      items.push({ producto, cantidad: linea.cantidad, nota: linea.nota ?? '' });
+    const { items, faltante } = carritoDesdePedido(pedido, this.productos());
+    if (faltante) {
+      this.error.set(`El producto ${faltante} ya no está disponible; registra un pedido nuevo.`);
+      return;
     }
     this.carrito.set(items);
     this.editandoId.set(pedido.id);
@@ -236,13 +207,8 @@ export class Pedidos implements OnInit, OnDestroy {
     return control.invalid && control.touched;
   }
 
-  private filtroActual(): FiltroPedidos {
-    const estado = this.filtroEstado();
-    const filtro: FiltroPedidos = { mesa: this.filtroMesa() };
-    if (estado === 'ACTIVOS') filtro.estadoPedido = 'ABIERTO';
-    else if (estado === 'PAGADO' || estado === 'CANCELADO') filtro.estadoPedido = estado;
-    else if (estado !== 'TODOS') filtro.estadoCocina = estado;
-    return filtro;
+  private filtroActual() {
+    return filtroDePedidos(this.filtroEstado(), this.filtroMesa());
   }
 
   private ejecutar(peticion: ReturnType<PedidoService['cancelar']>, mensaje: string): void {

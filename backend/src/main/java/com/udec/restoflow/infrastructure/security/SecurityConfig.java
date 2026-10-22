@@ -1,6 +1,6 @@
 package com.udec.restoflow.infrastructure.security;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.udec.restoflow.infrastructure.config.RestoFlowProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -38,6 +38,8 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 // Estado del servicio para el healthcheck de Docker
                 .requestMatchers(HttpMethod.GET, "/api/salud").permitAll()
+                // Actuator (factor IX): salud (liveness / readiness) e información de la versión; nada más se publica
+                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                 // Documentación Swagger (en producción se apaga desde application-prod.yml)
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Solo el administrador gestiona cuentas (HU-03)
@@ -50,7 +52,7 @@ public class SecurityConfig {
                 // Pedidos (RF-02): la cocina también puede consultarlos; solo mesero y admin los cambian
                 .requestMatchers(HttpMethod.GET, "/api/pedidos/**").hasAnyRole("MESERO", "COCINA", "ADMIN")
                 .requestMatchers("/api/pedidos/**").hasAnyRole("MESERO", "ADMIN")
-                // Inventario y alertas (RF-05 a RF-07): personal de inventario y administrador
+                // Inventario y alertas (RF-05 a RF-07), incluido el catálogo externo (Open Food Facts)
                 .requestMatchers("/api/inventario/**", "/api/alertas/**").hasAnyRole("INVENTARIO", "ADMIN")
                 // Panel e historial (RF-08, RF-12): solo el administrador
                 .requestMatchers("/api/panel/**", "/api/historial/**").hasRole("ADMIN")
@@ -63,7 +65,8 @@ public class SecurityConfig {
     /** Permite que el frontend Angular (otro puerto) llame al API desde el navegador. */
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
-            @Value("${restoflow.cors.origenes-permitidos}") List<String> origenes) {
+            RestoFlowProperties propiedades) {
+        List<String> origenes = propiedades.cors().origenesPermitidos();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(origenes);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
