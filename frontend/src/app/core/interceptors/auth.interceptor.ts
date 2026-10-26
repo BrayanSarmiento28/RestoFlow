@@ -9,8 +9,8 @@ import { debeAdjuntarToken, debeCerrarSesion } from '../util/acceso';
 /** Agrega "Authorization: Bearer <token>" a cada petición al API. Si el token vence, cierra la sesión. */
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  private auth = inject(AuthService);
-  private router = inject(Router);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     const token = this.auth.token;

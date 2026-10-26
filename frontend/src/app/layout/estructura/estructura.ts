@@ -23,8 +23,8 @@ interface ItemMenu {
   styleUrl: './estructura.scss',
 })
 export class Estructura {
-  private auth = inject(AuthService);
-  private router = inject(Router);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   protected readonly usuario = this.auth.usuario;
   /** Entorno en el que corre la app (desarrollo, pre-produccion o produccion). */

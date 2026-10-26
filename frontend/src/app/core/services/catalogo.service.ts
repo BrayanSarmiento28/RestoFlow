@@ -8,8 +8,8 @@ import { ProductoRequest } from '../models/pedido.models';
 /** Menú del restaurante: /api/categorias y /api/productos. */
 @Injectable({ providedIn: 'root' })
 export class CatalogoService {
-  private http = inject(HttpClient);
-  private api = environment.apiUrl;
+  private readonly http = inject(HttpClient);
+  private readonly api = environment.apiUrl;
 
   categorias(): Observable<Categoria[]> {
     return this.http.get<Categoria[]>(`${this.api}/categorias`);

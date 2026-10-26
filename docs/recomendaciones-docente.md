@@ -11,6 +11,8 @@ Antes del Sprint 5 (RestoFlow AI), el docente pidió:
 | 2 | Logs en el backend | [Sección 1](#1-logs-en-el-backend) |
 | 3 | Pruebas unitarias: JUnit en el backend y Jest en el frontend | [Sección 3](#3-pruebas-unitarias-con-junit-backend) y [sección 4](#4-pruebas-unitarias-con-jest-frontend) |
 | 4 | Implementar una API externa | [Sección 2](#2-api-externa-open-food-facts) |
+| 5 | Análisis de calidad con SonarQube (Docker) | [`docs/sonarqube.md`](sonarqube.md) |
+| 6 | Principios SOLID en el código | [`docs/principios-solid.md`](principios-solid.md) |
 
 ### Comandos para la sustentación
 
@@ -164,7 +166,7 @@ Inventario (Angular) ── GET /api/inventario/catalogo-externo/{codigo} ──
 
 ## 3. Pruebas unitarias con JUnit (backend)
 
-**176 pruebas** con JUnit 5, AssertJ y MockMvc, que corren en unos 15 segundos.
+**206 pruebas** con JUnit 5, AssertJ y MockMvc, que corren en unos 15 segundos.
 
 - Las **unitarias** no necesitan base de datos ni internet: usan **dobles de prueba** (implementaciones en memoria de
   los puertos). Esa es una ventaja de la arquitectura hexagonal.
@@ -187,6 +189,8 @@ Inventario (Angular) ── GET /api/inventario/catalogo-externo/{codigo} ──
 | | `SeguridadAdaptadoresTest` | JWT: token válido, alterado, de otro servidor, vencido; BCrypt |
 | | `RegistroPeticionesFilterTest`, `LogsIntegracionTest` | Logs: niveles, id de petición, la contraseña nunca aparece |
 | | `RestoFlowPropertiesTest` | Factor III: la configuración inválida impide arrancar |
+| **Arquitectura** | `ArquitecturaTest` | Principios SOLID y arquitectura hexagonal: el dominio no depende de frameworks, los controladores usan puertos, los puertos son interfaces pequeñas (ver `docs/principios-solid.md`) |
+| | `VentasTest` | Cálculos de ventas compartidos por el panel y el historial |
 | | `ActuatorIntegracionTest` | Factor IX: health, liveness y readiness |
 | **Integración** | `PedidoFlujoIntegracionTest`, `InventarioFlujoIntegracionTest` | Flujos completos con seguridad y base de datos |
 | | `CatalogoExternoIntegracionTest`, `DatosDemoIntegracionTest` | Permisos y errores de la API externa; datos iniciales |

@@ -4,6 +4,7 @@ import { PanelService } from '../../core/services/panel.service';
 import { InventarioService } from '../../core/services/inventario.service';
 import { mensajeDeError } from '../../core/services/errores';
 import { fechaHora, fechaIso, numero, pesos } from '../../core/util/formato';
+import { cantidadMovimiento } from '../../core/util/inventario-calculos';
 import { ResumenVentas } from '../../core/models/inventario.models';
 import {
   ABREVIATURA_UNIDAD, EstadoPedido, Ingrediente, MovimientoInventario, NOMBRES_ESTADO_COCINA, NOMBRES_ESTADO_PEDIDO,
@@ -20,8 +21,8 @@ type Pestana = 'ventas' | 'pedidos' | 'movimientos';
   styleUrl: './reportes.scss',
 })
 export class Reportes implements OnInit {
-  private panelApi = inject(PanelService);
-  private inventarioApi = inject(InventarioService);
+  private readonly panelApi = inject(PanelService);
+  private readonly inventarioApi = inject(InventarioService);
 
   protected readonly pesos = pesos;
   protected readonly numero = numero;
@@ -98,10 +99,8 @@ export class Reportes implements OnInit {
     return p.lineas.map((l) => `${l.cantidad}× ${l.productoNombre}`).join(', ');
   }
 
-  protected cantidad(m: MovimientoInventario): string {
-    const signo = m.tipo === 'ENTRADA' ? '+' : m.tipo === 'SALIDA' ? '−' : '= ';
-    return `${signo}${numero(m.cantidad)} ${this.abreviatura[m.unidad]}`;
-  }
+  /** Mismo formato que la pantalla de inventario (core/util/inventario-calculos.ts): sin código repetido. */
+  protected readonly cantidad = cantidadMovimiento;
 
   private diaCorto(iso: string): string {
     return new Date(iso + 'T12:00:00').toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric' });

@@ -17,7 +17,7 @@ import { environment } from '../../../environments/environment';
   styleUrl: './cocina.scss',
 })
 export class Cocina implements OnInit, OnDestroy {
-  private cocinaApi = inject(CocinaService);
+  private readonly cocinaApi = inject(CocinaService);
   private temporizador?: ReturnType<typeof setInterval>;
 
   protected readonly hora = hora;

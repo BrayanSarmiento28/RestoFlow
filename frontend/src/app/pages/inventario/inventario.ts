@@ -25,8 +25,8 @@ type Accion = 'ENTRADA' | 'SALIDA' | 'AJUSTE';
   styleUrl: './inventario.scss',
 })
 export class Inventario implements OnInit {
-  private fb = inject(FormBuilder);
-  private inventarioApi = inject(InventarioService);
+  private readonly fb = inject(FormBuilder);
+  private readonly inventarioApi = inject(InventarioService);
   protected readonly esAdmin = inject(AuthService).tieneRol('ADMIN');
 
   protected readonly abreviatura = ABREVIATURA_UNIDAD;
@@ -130,6 +130,18 @@ export class Inventario implements OnInit {
     return insumo ? this.abreviatura[insumo.unidad] : '';
   }
 
+  /** Entrada, salida o ajuste: cada acción llama a su operación del API. */
+  private peticionMovimiento(accion: Accion, id: number, cantidad: number, motivo: string | null) {
+    switch (accion) {
+      case 'ENTRADA':
+        return this.inventarioApi.entrada(id, { cantidad, motivo });
+      case 'SALIDA':
+        return this.inventarioApi.salida(id, { cantidad, motivo });
+      default:
+        return this.inventarioApi.ajuste(id, { stockContado: cantidad, motivo });
+    }
+  }
+
   protected guardarMovimiento(): void {
     const accion = this.accion();
     if (!accion || this.formMovimiento.invalid) {
@@ -144,11 +156,7 @@ export class Inventario implements OnInit {
       this.error.set('La cantidad debe ser mayor que cero.');
       return;
     }
-    const peticion = accion === 'ENTRADA'
-      ? this.inventarioApi.entrada(id, { cantidad, motivo })
-      : accion === 'SALIDA'
-        ? this.inventarioApi.salida(id, { cantidad, motivo })
-        : this.inventarioApi.ajuste(id, { stockContado: cantidad, motivo });
+    const peticion = this.peticionMovimiento(accion, id, cantidad, motivo);
     this.guardando.set(true);
     this.limpiarMensajes();
     peticion.subscribe({

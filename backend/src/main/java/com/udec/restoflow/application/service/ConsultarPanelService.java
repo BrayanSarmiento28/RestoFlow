@@ -8,6 +8,7 @@ import com.udec.restoflow.domain.model.DetallePedido;
 import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Ingrediente;
 import com.udec.restoflow.domain.model.Pedido;
+import com.udec.restoflow.domain.model.Ventas;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -46,8 +47,8 @@ public class ConsultarPanelService implements ConsultarPanelUseCase {
         LocalDateTime inicio = dia.atStartOfDay();
         LocalDateTime fin = dia.plusDays(1).atStartOfDay();
         List<Pedido> ventas = pedidos.pagadosEntre(inicio, fin);
-        BigDecimal total = sumar(ventas);
-        BigDecimal ayer = sumar(pedidos.pagadosEntre(inicio.minusDays(1), inicio));
+        BigDecimal total = Ventas.total(ventas);
+        BigDecimal ayer = Ventas.total(pedidos.pagadosEntre(inicio.minusDays(1), inicio));
         int cancelados = pedidos.creadosEntre(inicio, fin, EstadoPedido.CANCELADO).size();
 
         List<InsumoBajo> bajos = ingredientes.listar(true).stream()
@@ -57,7 +58,7 @@ public class ConsultarPanelService implements ConsultarPanelUseCase {
                         i.getUnidad().name()))
                 .toList();
 
-        return new ResumenPanel(dia, total, ventas.size(), promedio(total, ventas.size()), ayer,
+        return new ResumenPanel(dia, total, ventas.size(), Ventas.ticketPromedio(total, ventas.size()), ayer,
                 pedidos.buscar(null, null, EstadoPedido.ABIERTO).size(), pedidos.pendientesEnCocina().size(),
                 cancelados, porHora(ventas), masVendidos(ventas), bajos, (int) alertas.contarPendientes());
     }
@@ -69,19 +70,11 @@ public class ConsultarPanelService implements ConsultarPanelUseCase {
                 : i.getStockActual().divide(i.getStockMinimo(), 4, RoundingMode.HALF_UP);
     }
 
-    static BigDecimal sumar(List<Pedido> lista) {
-        return lista.stream().map(Pedido::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    static BigDecimal promedio(BigDecimal total, int cantidad) {
-        return cantidad == 0 ? BigDecimal.ZERO : total.divide(BigDecimal.valueOf(cantidad), 0, RoundingMode.HALF_UP);
-    }
-
     private static List<VentaPorHora> porHora(List<Pedido> ventas) {
         Map<Integer, List<Pedido>> grupos = new TreeMap<>();
         ventas.forEach(p -> grupos.computeIfAbsent(p.getFechaCierre().getHour(), h -> new ArrayList<>()).add(p));
         return grupos.entrySet().stream()
-                .map(e -> new VentaPorHora(e.getKey(), sumar(e.getValue()), e.getValue().size()))
+                .map(e -> new VentaPorHora(e.getKey(), Ventas.total(e.getValue()), e.getValue().size()))
                 .toList();
     }
 

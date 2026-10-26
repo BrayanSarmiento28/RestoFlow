@@ -8,8 +8,8 @@ import { ResumenPanel, ResumenVentas } from '../models/inventario.models';
 /** RF-08 y RF-12 · /api/panel y /api/historial (solo ADMIN). */
 @Injectable({ providedIn: 'root' })
 export class PanelService {
-  private http = inject(HttpClient);
-  private api = environment.apiUrl;
+  private readonly http = inject(HttpClient);
+  private readonly api = environment.apiUrl;
 
   /** Sin fecha: el día de hoy. */
   resumen(fecha?: string): Observable<ResumenPanel> {

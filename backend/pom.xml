@@ -21,6 +21,15 @@
     <properties>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- SonarQube (análisis de calidad): ver docs/sonarqube.md y analizar-calidad.ps1 -->
+        <sonar.projectKey>restoflow-backend</sonar.projectKey>
+        <sonar.projectName>RestoFlow · Backend</sonar.projectName>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <!-- Cobertura de las pruebas JUnit que genera JaCoCo en "mvn verify" -->
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <!-- Solo arranca Spring: no tiene lógica que analizar ni probar -->
+        <sonar.coverage.exclusions>**/RestoFlowApplication.java</sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
@@ -98,6 +107,16 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Escáner de SonarQube con versión fija: mvn verify sonar:sonar -->
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>5.8.0.7211</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

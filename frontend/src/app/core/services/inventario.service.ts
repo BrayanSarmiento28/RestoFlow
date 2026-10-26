@@ -11,8 +11,8 @@ import {
 /** RF-05 a RF-07 · /api/inventario, /api/alertas y /api/productos/{id}/receta. */
 @Injectable({ providedIn: 'root' })
 export class InventarioService {
-  private http = inject(HttpClient);
-  private api = environment.apiUrl;
+  private readonly http = inject(HttpClient);
+  private readonly api = environment.apiUrl;
 
   ingredientes(soloActivos = false): Observable<Ingrediente[]> {
     const params = new HttpParams().set('soloActivos', soloActivos);

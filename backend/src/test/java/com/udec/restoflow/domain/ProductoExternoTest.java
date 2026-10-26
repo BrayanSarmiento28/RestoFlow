@@ -49,7 +49,8 @@ class ProductoExternoTest {
             "500 g, GRAMO", "500g, GRAMO", "250 gr, GRAMO", "454 gramos, GRAMO",
             "1 L, LITRO", "1.5l, LITRO", "3 litros, LITRO", "1 lt, LITRO",
             "250 ml, MILILITRO", "350 cc, MILILITRO",
-            "30 unidades, UNIDAD", "x 12, UNIDAD", "75 cl, UNIDAD"})
+            "30 unidades, UNIDAD", "x 12, UNIDAD", "75 cl, UNIDAD",
+            "Peso neto 500 g, GRAMO", "2 x 1 kg, KILOGRAMO", "1 lata, UNIDAD", "500gx, UNIDAD", "'', UNIDAD"})
     @DisplayName("Sugiere la unidad del inventario según lo que dice el empaque")
     void unidadSugerida(String cantidad, UnidadMedida esperada) {
         assertThat(producto("Arroz", null, cantidad).unidadSugerida()).isEqualTo(esperada);

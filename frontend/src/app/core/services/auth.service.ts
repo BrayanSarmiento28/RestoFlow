@@ -8,9 +8,9 @@ import { AlmacenSesion } from '../util/sesion';
 /** Habla con /api/auth del backend; la sesión la guarda AlmacenSesion (core/util/sesion.ts) en el navegador. */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private http = inject(HttpClient);
-  private api = `${environment.apiUrl}/auth`;
-  private sesion = new AlmacenSesion(localStorage, sessionStorage);
+  private readonly http = inject(HttpClient);
+  private readonly api = `${environment.apiUrl}/auth`;
+  private readonly sesion = new AlmacenSesion(localStorage, sessionStorage);
 
   /** HU-01: inicia sesión. Con "Recordarme" la sesión sobrevive al cerrar el navegador. */
   login(datos: LoginRequest, recordarme: boolean): Observable<LoginResponse> {

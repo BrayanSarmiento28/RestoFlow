@@ -10,7 +10,6 @@ import com.udec.restoflow.domain.exception.ProductoExternoNoEncontradoException;
 import com.udec.restoflow.domain.exception.RecursoNoEncontradoException;
 import com.udec.restoflow.domain.exception.ServicioExternoNoDisponibleException;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.ErrorResponse;
-import com.udec.restoflow.infrastructure.adapter.out.mail.CorreoNoEnviadoException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -24,6 +23,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -36,6 +36,13 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /** Reloj de la aplicación (zona horaria de Colombia en Docker); en las pruebas se puede fijar. */
+    private final Clock reloj;
+
+    public GlobalExceptionHandler(Clock reloj) {
+        this.reloj = reloj;
+    }
 
     @ExceptionHandler(CredencialesInvalidasException.class)
     public ResponseEntity<ErrorResponse> credenciales(CredencialesInvalidasException e) {
@@ -64,7 +71,7 @@ public class GlobalExceptionHandler {
         return respuesta(HttpStatus.NOT_FOUND, e.getMessage(), null);             // 404
     }
 
-    /** Un servicio de terceros no respondió: no es culpa del usuario. */
+    /** Un servicio de terceros no respondió (Open Food Facts, Gmail...): no es culpa del usuario. */
     @ExceptionHandler(ServicioExternoNoDisponibleException.class)
     public ResponseEntity<ErrorResponse> servicioExterno(ServicioExternoNoDisponibleException e) {
         return respuesta(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), null);   // 503
@@ -78,11 +85,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({CodigoRecuperacionInvalidoException.class, DomainException.class})
     public ResponseEntity<ErrorResponse> reglaDeNegocio(DomainException e) {
         return respuesta(HttpStatus.BAD_REQUEST, e.getMessage(), null);           // 400
-    }
-
-    @ExceptionHandler(CorreoNoEnviadoException.class)
-    public ResponseEntity<ErrorResponse> correoNoEnviado(CorreoNoEnviadoException e) {
-        return respuesta(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), null);   // 503
     }
 
     /** Errores de validación de los DTO (@NotBlank, @Email...): se indica qué campo falló. */
@@ -118,6 +120,6 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ErrorResponse> respuesta(HttpStatus status, String mensaje, Map<String, String> campos) {
         return ResponseEntity.status(status)
-                .body(new ErrorResponse(LocalDateTime.now(), status.value(), status.getReasonPhrase(), mensaje, campos));
+                .body(new ErrorResponse(LocalDateTime.now(reloj), status.value(), status.getReasonPhrase(), mensaje, campos));
     }
 }

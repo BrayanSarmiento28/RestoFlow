@@ -2,7 +2,7 @@
 // Funciones puras: se prueban con Jest (codigo-barras.test.ts).
 
 /** Largos que existen: EAN-8, UPC-A (12), EAN-13 y GTIN-14. */
-const LARGOS_VALIDOS = [8, 12, 13, 14];
+const LARGOS_VALIDOS = new Set([8, 12, 13, 14]);
 
 /** Deja solo los números: "7702 011-012345" → "7702011012345". */
 export function limpiarCodigo(texto: string | null | undefined): string {
@@ -12,7 +12,7 @@ export function limpiarCodigo(texto: string | null | undefined): string {
 /** Tiene solo números y un largo de código de barras real (se puede buscar). */
 export function codigoCompleto(texto: string | null | undefined): boolean {
   const codigo = limpiarCodigo(texto);
-  return /^\d+$/.test(codigo) && LARGOS_VALIDOS.includes(codigo.length);
+  return /^\d+$/.test(codigo) && LARGOS_VALIDOS.has(codigo.length);
 }
 
 /**
@@ -24,6 +24,7 @@ export function digitoDeControlValido(texto: string | null | undefined): boolean
   if (!codigoCompleto(texto)) return false;
   const digitos = limpiarCodigo(texto).split('').map(Number);
   const control = digitos.pop()!;
-  const suma = digitos.reverse().reduce((total, d, i) => total + d * (i % 2 === 0 ? 3 : 1), 0);
+  digitos.reverse();
+  const suma = digitos.reduce((total, d, i) => total + d * (i % 2 === 0 ? 3 : 1), 0);
   return (10 - (suma % 10)) % 10 === control;
 }

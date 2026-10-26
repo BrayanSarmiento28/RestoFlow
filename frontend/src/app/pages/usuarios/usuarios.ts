@@ -12,8 +12,8 @@ import { Rol, Usuario } from '../../core/models/auth.models';
   styleUrl: './usuarios.scss',
 })
 export class Usuarios implements OnInit {
-  private fb = inject(FormBuilder);
-  private usuariosApi = inject(UsuarioService);
+  private readonly fb = inject(FormBuilder);
+  private readonly usuariosApi = inject(UsuarioService);
 
   protected readonly roles: { valor: Rol; etiqueta: string }[] = [
     { valor: 'MESERO', etiqueta: 'Mesero' },

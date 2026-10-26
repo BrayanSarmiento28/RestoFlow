@@ -25,9 +25,9 @@ import {
   styleUrl: './pedidos.scss',
 })
 export class Pedidos implements OnInit, OnDestroy {
-  private fb = inject(FormBuilder);
-  private catalogoApi = inject(CatalogoService);
-  private pedidosApi = inject(PedidoService);
+  private readonly fb = inject(FormBuilder);
+  private readonly catalogoApi = inject(CatalogoService);
+  private readonly pedidosApi = inject(PedidoService);
   private temporizador?: ReturnType<typeof setInterval>;
 
   protected readonly pesos = pesos;
@@ -176,6 +176,14 @@ export class Pedidos implements OnInit, OnDestroy {
   protected pagar(pedido: Pedido): void {
     if (!confirm(`¿Registrar la venta del pedido #${pedido.id} por ${pesos(pedido.total)}?`)) return;
     this.ejecutar(this.pedidosApi.pagar(pedido.id), `Venta del pedido #${pedido.id} registrada.`);
+  }
+
+  /** Accesibilidad: con el teclado (Enter o Espacio) la fila se abre igual que con un clic. */
+  protected teclaEnFila(evento: KeyboardEvent, id: number): void {
+    if (evento.key === 'Enter' || evento.key === ' ') {
+      evento.preventDefault();
+      this.alternarDetalle(id);
+    }
   }
 
   protected alternarDetalle(id: number): void {

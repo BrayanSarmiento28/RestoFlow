@@ -14,6 +14,8 @@ frontend/dist/
 frontend/.angular/
 frontend/out-tsc/
 frontend/coverage/
+# Archivos temporales del escáner de SonarQube
+.scannerwork/
 npm-debug.log*
 
 # ===== Configuración local y secretos (NUNCA subir contraseñas) =====

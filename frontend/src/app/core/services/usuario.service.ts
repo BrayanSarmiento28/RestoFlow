@@ -7,8 +7,8 @@ import { CrearUsuarioRequest, Usuario } from '../models/auth.models';
 /** HU-03: habla con /api/usuarios (solo ADMIN). */
 @Injectable({ providedIn: 'root' })
 export class UsuarioService {
-  private http = inject(HttpClient);
-  private api = `${environment.apiUrl}/usuarios`;
+  private readonly http = inject(HttpClient);
+  private readonly api = `${environment.apiUrl}/usuarios`;
 
   listar(): Observable<Usuario[]> {
     return this.http.get<Usuario[]>(this.api);

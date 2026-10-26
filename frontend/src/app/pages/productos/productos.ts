@@ -21,9 +21,9 @@ interface LineaEditable {
   styleUrl: './productos.scss',
 })
 export class Productos implements OnInit {
-  private fb = inject(FormBuilder);
-  private catalogoApi = inject(CatalogoService);
-  private inventarioApi = inject(InventarioService);
+  private readonly fb = inject(FormBuilder);
+  private readonly catalogoApi = inject(CatalogoService);
+  private readonly inventarioApi = inject(InventarioService);
 
   protected readonly pesos = pesos;
   protected readonly productos = signal<Producto[]>([]);

@@ -190,7 +190,7 @@
   td { padding: 12px; border-bottom: 1px solid var(--rf-borde); }
 }
 
-.fila { cursor: pointer; &:hover { background: var(--rf-fondo); } }
+.fila { cursor: pointer; &:hover { background: var(--rf-fondo); } &:focus-visible { outline: 2px solid var(--rf-tinta); outline-offset: -2px; } }
 
 .detalle {
   background: var(--rf-fondo);
