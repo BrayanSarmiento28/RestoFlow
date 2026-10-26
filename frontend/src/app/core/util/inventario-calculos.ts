@@ -4,7 +4,7 @@
 import { ABREVIATURA_UNIDAD } from '../entities/ingrediente';
 import { numero } from './formato';
 import type { Ingrediente } from '../entities/ingrediente';
-import type { MovimientoInventario } from '../entities/movimiento-inventario';
+import type { MovimientoInventario, TipoMovimiento } from '../entities/movimiento-inventario';
 
 /** agotado → minimo → pronto (alcanza ≤ 3 días) → revisar (cerca del mínimo) → ok */
 export type EstadoInsumo = 'agotado' | 'minimo' | 'pronto' | 'revisar' | 'ok';
@@ -107,8 +107,10 @@ export function resumirNombres(nombres: string[]): string {
   return nombres.length <= 3 ? nombres.join(', ') : `${nombres.slice(0, 2).join(', ')} y ${nombres.length - 2} más`;
 }
 
+/** Signo con el que se muestra cada tipo de movimiento. */
+const SIGNO_MOVIMIENTO: Record<TipoMovimiento, string> = { ENTRADA: '+', SALIDA: '−', AJUSTE: '= ' };
+
 /** "+30 und" (entrada), "−6 und" (salida), "= 12 kg" (ajuste al valor contado). */
 export function cantidadMovimiento(m: Pick<MovimientoInventario, 'tipo' | 'cantidad' | 'unidad'>): string {
-  const signo = m.tipo === 'ENTRADA' ? '+' : m.tipo === 'SALIDA' ? '−' : '= ';
-  return `${signo}${numero(m.cantidad)} ${ABREVIATURA_UNIDAD[m.unidad]}`;
+  return `${SIGNO_MOVIMIENTO[m.tipo]}${numero(m.cantidad)} ${ABREVIATURA_UNIDAD[m.unidad]}`;
 }

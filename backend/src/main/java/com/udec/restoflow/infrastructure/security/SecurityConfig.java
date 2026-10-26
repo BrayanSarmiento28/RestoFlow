@@ -24,7 +24,13 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
+    /**
+     * CSRF desactivado a propósito (regla java:S4502 de SonarQube revisada): el ataque CSRF aprovecha que el
+     * navegador envía solo las cookies de sesión. RestoFlow no usa cookies ni sesión en el servidor: cada petición
+     * lleva el token JWT en el encabezado Authorization, que el navegador nunca agrega por su cuenta.
+     */
     @Bean
+    @SuppressWarnings("java:S4502")
     public SecurityFilterChain reglasDeSeguridad(HttpSecurity http, JwtTokenAdapter jwt) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)            // API sin sesión de navegador: no aplica CSRF

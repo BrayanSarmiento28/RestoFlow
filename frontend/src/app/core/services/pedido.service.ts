@@ -8,8 +8,8 @@ import { FiltroPedidos, PedidoRequest } from '../models/pedido.models';
 /** RF-02 · Pedidos del mesero: /api/pedidos. */
 @Injectable({ providedIn: 'root' })
 export class PedidoService {
-  private http = inject(HttpClient);
-  private api = `${environment.apiUrl}/pedidos`;
+  private readonly http = inject(HttpClient);
+  private readonly api = `${environment.apiUrl}/pedidos`;
 
   consultar(filtro: FiltroPedidos = {}): Observable<Pedido[]> {
     let params = new HttpParams();

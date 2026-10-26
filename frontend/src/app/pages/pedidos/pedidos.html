@@ -17,7 +17,8 @@
     <!-- Menú: productos disponibles para la venta -->
     <section class="tarjeta">
       <h2>Menú</h2>
-      <input class="buscador" type="search" placeholder="Buscar producto..."
+      <label for="buscar-producto" class="rf-oculto-visual">Buscar producto</label>
+      <input id="buscar-producto" class="buscador" type="search" placeholder="Buscar producto..."
              [value]="busqueda()" (input)="busqueda.set($any($event.target).value)" />
       <div class="chips">
         @for (c of categorias(); track c) {
@@ -63,7 +64,9 @@
                 </div>
                 <strong class="linea__subtotal">{{ pesos(item.producto.precio * item.cantidad) }}</strong>
               </div>
-              <input class="linea__nota" type="text" maxlength="200" placeholder="Nota para cocina (opcional)"
+              <label [attr.for]="'nota-' + item.producto.id" class="rf-oculto-visual">Nota para cocina de {{ item.producto.nombre }}</label>
+              <input [id]="'nota-' + item.producto.id" class="linea__nota" type="text" maxlength="200"
+                     placeholder="Nota para cocina (opcional)" [attr.aria-label]="'Nota para cocina de ' + item.producto.nombre"
                      [value]="item.nota" (input)="cambiarNota(item, $any($event.target).value)" />
             </div>
           } @empty {
@@ -97,9 +100,11 @@
     <div class="lista__encabezado">
       <h2>Pedidos ({{ pedidos().length }})</h2>
       <div class="filtros">
-        <input type="number" min="1" placeholder="Mesa" class="filtro-mesa"
+        <label for="filtro-mesa" class="rf-oculto-visual">Filtrar por mesa</label>
+        <input id="filtro-mesa" type="number" min="1" placeholder="Mesa" class="filtro-mesa"
                (change)="cambiarFiltroMesa($any($event.target).value)" />
-        <select (change)="cambiarFiltroEstado($any($event.target).value)">
+        <label for="filtro-estado" class="rf-oculto-visual">Filtrar por estado</label>
+        <select id="filtro-estado" (change)="cambiarFiltroEstado($any($event.target).value)">
           @for (f of filtrosEstado; track f.valor) {
             <option [value]="f.valor" [selected]="f.valor === filtroEstado()">{{ f.etiqueta }}</option>
           }
@@ -114,7 +119,8 @@
         </thead>
         <tbody>
           @for (p of pedidos(); track p.id) {
-            <tr class="fila" (click)="alternarDetalle(p.id)">
+            <tr class="fila" tabindex="0" [attr.aria-expanded]="abierto() === p.id"
+                (click)="alternarDetalle(p.id)" (keydown)="teclaEnFila($event, p.id)">
               <td>{{ p.id }}</td>
               <td><strong>{{ p.numeroMesa }}</strong></td>
               <td>{{ hora(p.fechaCreacion) }}</td>
@@ -127,7 +133,7 @@
                   <span [class]="'estado estado--' + p.estadoPedido.toLowerCase()">{{ nombresEstadoPedido[p.estadoPedido] }}</span>
                 }
               </td>
-              <td class="acciones" (click)="$event.stopPropagation()">
+              <td class="acciones" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
                 @if (p.estadoPedido === 'ABIERTO' && p.estadoCocina === 'PENDIENTE') {
                   <button type="button" class="accion" (click)="editar(p)">Editar</button>
                   <button type="button" class="accion accion--peligro" (click)="cancelar(p)">Cancelar</button>

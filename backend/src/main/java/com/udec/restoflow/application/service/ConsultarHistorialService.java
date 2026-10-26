@@ -5,6 +5,7 @@ import com.udec.restoflow.application.port.out.PedidoRepositoryPort;
 import com.udec.restoflow.domain.exception.DomainException;
 import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Pedido;
+import com.udec.restoflow.domain.model.Ventas;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -41,11 +42,11 @@ public class ConsultarHistorialService implements ConsultarHistorialUseCase {
         Map<LocalDate, List<Pedido>> grupos = new TreeMap<>();
         ventas.forEach(p -> grupos.computeIfAbsent(p.getFechaCierre().toLocalDate(), d -> new ArrayList<>()).add(p));
         List<VentaPorDia> porDia = grupos.entrySet().stream()
-                .map(e -> new VentaPorDia(e.getKey(), ConsultarPanelService.sumar(e.getValue()), e.getValue().size()))
+                .map(e -> new VentaPorDia(e.getKey(), Ventas.total(e.getValue()), e.getValue().size()))
                 .toList();
-        BigDecimal total = ConsultarPanelService.sumar(ventas);
+        BigDecimal total = Ventas.total(ventas);
         return new ResumenVentas(desde, hasta, total, ventas.size(),
-                ConsultarPanelService.promedio(total, ventas.size()), porDia, ventas);
+                Ventas.ticketPromedio(total, ventas.size()), porDia, ventas);
     }
 
     private static void validar(LocalDate desde, LocalDate hasta) {

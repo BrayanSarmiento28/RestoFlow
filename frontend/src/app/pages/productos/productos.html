@@ -88,7 +88,8 @@
       <div class="nueva-categoria">
         <h3>Nueva categoría</h3>
         <div class="nueva-categoria__fila">
-          <input type="text" [formControl]="nuevaCategoria" placeholder="Ej: Bebidas calientes" maxlength="60" />
+          <label for="nueva-categoria" class="rf-oculto-visual">Nombre de la nueva categoría</label>
+          <input id="nueva-categoria" type="text" [formControl]="nuevaCategoria" placeholder="Ej: Bebidas calientes" maxlength="60" />
           <button type="button" class="accion" (click)="crearCategoria()">Agregar</button>
         </div>
       </div>

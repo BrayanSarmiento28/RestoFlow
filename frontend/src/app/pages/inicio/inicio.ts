@@ -26,10 +26,10 @@ interface Acceso {
   styleUrl: './inicio.scss',
 })
 export class Inicio implements OnInit, OnDestroy {
-  private auth = inject(AuthService);
-  private panelApi = inject(PanelService);
-  private pedidoApi = inject(PedidoService);
-  private inventarioApi = inject(InventarioService);
+  private readonly auth = inject(AuthService);
+  private readonly panelApi = inject(PanelService);
+  private readonly pedidoApi = inject(PedidoService);
+  private readonly inventarioApi = inject(InventarioService);
   private temporizador?: ReturnType<typeof setInterval>;
 
   protected readonly usuario = this.auth.usuario;

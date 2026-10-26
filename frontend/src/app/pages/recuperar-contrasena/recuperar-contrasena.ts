@@ -18,8 +18,8 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
   styleUrl: './recuperar-contrasena.scss',
 })
 export class RecuperarContrasena {
-  private fb = inject(FormBuilder);
-  private auth = inject(AuthService);
+  private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
 
   protected readonly paso = signal<1 | 2 | 3>(1);
   protected readonly cargando = signal(false);
@@ -104,4 +104,4 @@ export class RecuperarContrasena {
         : (err.error?.mensaje ?? 'No se pudo completar la solicitud. Intenta de nuevo.'),
     );
   }
-}
+}
