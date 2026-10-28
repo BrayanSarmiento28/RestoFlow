@@ -1,0 +1,38 @@
+# =====================================================================
+# RestoFlow · Docker usando la base de datos LOCAL del computador
+#
+# Por defecto, "docker compose up" levanta su PROPIA base de datos (el contenedor restoflow-db), con datos
+# distintos a los del SQL Server instalado en el computador (SQLEXPRESS). Este archivo cambia solo eso:
+# el backend y el frontend corren en Docker, pero se conectan al SQL Server local. Así, Docker y el modo
+# local (mvnw + npm start) trabajan sobre los MISMOS datos y las mismas cuentas.
+#
+# Es el factor IV de los 12 factores: la base de datos es un recurso conectable; se cambia por
+# configuración (DB_HOST), sin tocar el código.
+#
+# Uso:
+#   1. En el .env agregar DB_LOCAL_PASSWORD (la contraseña de restoflow_app del SQL Server local,
+#      la misma de application-local.yml). Opcional: DB_LOCAL_PUERTO (por defecto 1433).
+#   2. Detener el backend y el "npm start" locales si están abiertos (usan los puertos 8080 y 4200).
+#   3. docker compose -f docker-compose.yml -f docker-compose.bd-local.yml up -d --build
+#   Detener:
+#      docker compose -f docker-compose.yml -f docker-compose.bd-local.yml down
+#
+# Requiere Docker Compose 2.24 o superior (Docker Desktop reciente) por la etiqueta !reset.
+# =====================================================================
+services:
+  backend:
+    # No espera a la base de datos de Docker, porque no la usa
+    depends_on: !reset {}
+    environment:
+      # host.docker.internal = el computador, visto desde dentro del contenedor
+      DB_HOST: host.docker.internal
+      DB_PORT: ${DB_LOCAL_PUERTO:-1433}
+      DB_PASSWORD: ${DB_LOCAL_PASSWORD:?Defina DB_LOCAL_PASSWORD en el archivo .env (contraseña de restoflow_app en el SQL Server local)}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # La base de datos de Docker y su inicialización quedan apagadas: solo arrancan si se pide su perfil
+  db:
+    profiles: ["bd-docker"]
+  db-init:
+    profiles: ["bd-docker"]

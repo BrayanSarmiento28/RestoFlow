@@ -27,6 +27,7 @@ RestoFlow se ejecuta completo en contenedores: base de datos, backend y frontend
 | `frontend/nginx.conf` | Sirve Angular, redirige las rutas internas a `index.html` y reenvía `/api` al backend |
 | `backend/.dockerignore` · `frontend/.dockerignore` | Excluyen de la imagen compilados, `node_modules`, `.git` y archivos con secretos |
 | `docker-compose.yml` | Orquesta los 4 servicios: `db`, `db-init`, `backend` y `frontend` |
+| `docker-compose.bd-local.yml` | Variante: backend y frontend en Docker usando el SQL Server del computador |
 | `docker/sqlserver/00_inicializar.sql` | Crea la base de datos y el usuario de la aplicación con la contraseña del `.env` |
 | `.env.example` | Plantilla de variables para Compose (contraseñas, perfil, puertos) |
 
@@ -60,6 +61,31 @@ docker compose down                # detener todo (los datos se conservan en el 
 docker compose down -v             # detener y BORRAR la base de datos
 docker compose build --no-cache    # reconstruir las imágenes desde cero
 ```
+
+## Mantener Docker y el modo local iguales
+
+RestoFlow se puede ejecutar de dos formas. Las dos usan **el mismo código**; lo que puede cambiar es la base de datos.
+
+| Forma | Comando | Base de datos |
+|---|---|---|
+| Local | `cd backend; .\mvnw.cmd spring-boot:run` y `cd frontend; npm start` | SQL Server del computador (SQLEXPRESS) |
+| Docker con su propia base | `docker compose up -d --build` | Contenedor `restoflow-db` (datos aparte) |
+| **Docker con la base local** | `docker compose -f docker-compose.yml -f docker-compose.bd-local.yml up -d --build` | **SQL Server del computador**: mismas cuentas y datos que el modo local |
+
+Dos reglas para que todo vaya parejo:
+
+1. **Código:** Docker no lee el código cada vez; usa una imagen ya construida. Después de un `git pull` o de cualquier
+   cambio, levantar siempre con **`--build`**. Sin `--build` aparece la versión anterior.
+2. **Datos:** para ver las mismas cuentas en Docker y en local, usar `docker-compose.bd-local.yml`. Requiere en el
+   `.env` la variable `DB_LOCAL_PASSWORD` (la contraseña de `restoflow_app` del SQL Server local).
+
+No se pueden tener las dos formas abiertas al tiempo: las dos usan los puertos 8080 y 4200.
+
+| Síntoma con la base local | Causa y solución |
+|---|---|
+| El backend no arranca: `connect timed out` a `host.docker.internal:1433` | El firewall de Windows bloquea SQL Server. En PowerShell como administrador: `New-NetFirewallRule -DisplayName "SQL Server (Docker)" -Direction Inbound -Protocol TCP -LocalPort 1433 -Action Allow -Profile Private,Domain` |
+| `Login failed for user 'restoflow_app'` | `DB_LOCAL_PASSWORD` no coincide con la contraseña de `application-local.yml` |
+| Los cambios no aparecen | Faltó `--build`, o el navegador guardó la versión anterior: Ctrl + F5 |
 
 ## Buenas prácticas aplicadas
 
