@@ -10,6 +10,7 @@ import { Cocina } from './pages/cocina/cocina';
 import { Productos } from './pages/productos/productos';
 import { Inventario } from './pages/inventario/inventario';
 import { Reportes } from './pages/reportes/reportes';
+import { RestoFlowAI } from './pages/restoflow-ai/restoflow-ai';
 import { adminGuard, authGuard, rolGuard } from './core/guards/auth.guard';
 
 const routes: Routes = [
@@ -37,6 +38,10 @@ const routes: Routes = [
         data: { roles: ['INVENTARIO', 'ADMIN'] }, title: 'Inventario · RestoFlow',
       },
       { path: 'reportes', component: Reportes, canActivate: [adminGuard], title: 'Reportes · RestoFlow' },
+      {
+        path: 'restoflow-ai', component: RestoFlowAI, canActivate: [rolGuard],
+        data: { roles: ['INVENTARIO', 'ADMIN'] }, title: 'RestoFlow AI · RestoFlow',
+      },
     ],
   },
   { path: '**', redirectTo: 'inicio' },

@@ -1,0 +1,219 @@
+<div class="rf-main">
+  <header class="rf-encabezado">
+    <div>
+      <p class="rf-eyebrow">
+        Análisis de ventas e inventario
+        @if (analisis(); as a) {
+          · actualizado {{ hora(a.generadoEn) }}
+        }
+      </p>
+      <h1 class="rf-titulo">RestoFlow AI</h1>
+    </div>
+    <div class="rf-encabezado__acciones">
+      <button type="button" class="rf-btn rf-btn--secundario" (click)="cargar()" [disabled]="cargando()">
+        {{ cargando() ? 'Analizando...' : 'Actualizar análisis' }}
+      </button>
+      <button type="button" class="rf-btn rf-btn--primario" (click)="generarAlertas()" [disabled]="generando()">
+        {{ generando() ? 'Revisando...' : 'Generar alertas ahora' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="rf-ia intro" aria-label="Qué hace RestoFlow AI">
+    <div class="rf-ia__cabeza">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+      <h2>Tu asistente de análisis</h2>
+    </div>
+    <p class="rf-ia__sub">Revisa las ventas de las últimas 4 semanas y el consumo de cada insumo para decirte qué comprar,
+      qué demanda se espera mañana y qué está cambiando. Cada hora crea alertas cuando un insumo alcanza para 3 días o menos.</p>
+  </section>
+
+  @if (mensaje()) {
+    <div class="exito" role="status">{{ mensaje() }}</div>
+  }
+  @if (error()) {
+    <div class="alerta" role="alert">{{ error() }}</div>
+  }
+
+  @if (analisis(); as a) {
+    <section class="rf-kpis" aria-label="Resumen del análisis">
+      <div class="rf-kpi">
+        <span class="rf-kpi__etiqueta">Ventas de los últimos 7 días</span>
+        <span class="rf-kpi__valor">{{ pesos(a.ventas.ventasSemana) }}</span>
+        <span class="rf-kpi__nota">
+          <span class="tendencia" [class.tendencia--sube]="direccion(a.ventas.tendenciaVentas) === 'sube'"
+                [class.tendencia--baja]="direccion(a.ventas.tendenciaVentas) === 'baja'">{{ textoTendencia(a.ventas.tendenciaVentas) }}</span>
+          frente a la semana anterior
+        </span>
+      </div>
+      <div class="rf-kpi">
+        <span class="rf-kpi__etiqueta">Día más fuerte</span>
+        <span class="rf-kpi__valor capital">{{ a.ventas.diaMasFuerte ? nombreDia[a.ventas.diaMasFuerte] : 'Sin datos' }}</span>
+        <span class="rf-kpi__nota">Promedio de {{ pesos(promedioDiaFuerte()) }}</span>
+      </div>
+      <div class="rf-kpi">
+        <span class="rf-kpi__etiqueta">Hora pico</span>
+        <span class="rf-kpi__valor">{{ textoHora(a.ventas.horaPico) }}</span>
+        <span class="rf-kpi__nota">La hora con más pedidos</span>
+      </div>
+      <div class="rf-kpi" [class.rf-kpi--aviso]="porComprar().length > 0">
+        <span class="rf-kpi__etiqueta">Insumos por comprar</span>
+        <span class="rf-kpi__valor">{{ porComprar().length }}</span>
+        <span class="rf-kpi__nota">{{ conteo().ALTA }} con prioridad alta</span>
+      </div>
+    </section>
+
+    <div class="rf-fila">
+      <div class="rf-principal">
+        <section class="rf-tarjeta" aria-labelledby="t-recomendaciones">
+          <div class="rf-tarjeta__titulo">
+            <h2 id="t-recomendaciones">Recomendaciones</h2>
+            <span class="rf-ayuda">De la más a la menos urgente</span>
+          </div>
+          <div class="rf-pildoras filtros" role="group" aria-label="Filtrar por prioridad">
+            @for (f of filtros; track f) {
+              <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="filtro() === f"
+                      (click)="filtro.set(f)">{{ etiquetaFiltro(f) }}</button>
+            }
+          </div>
+          <ul class="recomendaciones">
+            @for (r of recomendaciones(); track $index) {
+              <li class="recomendacion" [class.recomendacion--alta]="r.prioridad === 'ALTA'"
+                  [class.recomendacion--media]="r.prioridad === 'MEDIA'">
+                <div class="recomendacion__chips">
+                  <span class="rf-chip {{ clasePrioridad[r.prioridad] }}">{{ nombrePrioridad[r.prioridad] }}</span>
+                  <span class="rf-chip rf-chip--mono">{{ etiquetaTipo[r.tipo] }}</span>
+                </div>
+                <h3>{{ r.titulo }}</h3>
+                <p>{{ r.detalle }}</p>
+              </li>
+            } @empty {
+              <li class="vacio">No hay recomendaciones con este filtro.</li>
+            }
+          </ul>
+        </section>
+
+        <section class="rf-tarjeta" aria-labelledby="t-insumos">
+          <div class="rf-tarjeta__titulo">
+            <h2 id="t-insumos">Insumos: consumo y cobertura</h2>
+            <span class="rf-ayuda">Consumo de los últimos 7 días completos</span>
+          </div>
+          <div class="rf-tabla-caja">
+            <table class="rf-tabla">
+              <thead>
+                <tr>
+                  <th scope="col">Insumo</th>
+                  <th scope="col" class="rf-num">Stock</th>
+                  <th scope="col" class="rf-num">Consumo diario</th>
+                  <th scope="col" class="rf-num">Tendencia</th>
+                  <th scope="col" class="rf-num">Alcanza para</th>
+                  <th scope="col">Prioridad</th>
+                  <th scope="col" class="rf-num">Sugerido comprar</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (i of a.insumos; track i.ingredienteId) {
+                  <tr>
+                    <td><strong>{{ i.nombre }}</strong></td>
+                    <td class="rf-num">{{ numero(i.stockActual) }} {{ abreviatura[i.unidad] }}</td>
+                    <td class="rf-num">{{ numero(i.consumoDiario) }} {{ abreviatura[i.unidad] }}</td>
+                    <td class="rf-num">
+                      <span class="tendencia" [class.tendencia--sube]="direccion(i.tendenciaPorcentaje) === 'sube'"
+                            [class.tendencia--baja]="direccion(i.tendenciaPorcentaje) === 'baja'">{{ textoTendencia(i.tendenciaPorcentaje) }}</span>
+                    </td>
+                    <td class="rf-num">{{ textoCobertura(i.diasCobertura) }}</td>
+                    <td>
+                      @if (i.prioridad) {
+                        <span class="rf-chip {{ clasePrioridad[i.prioridad] }}">{{ nombrePrioridad[i.prioridad] }}</span>
+                      } @else {
+                        <span class="rf-ayuda">Alcanza</span>
+                      }
+                    </td>
+                    <td class="rf-num">{{ i.cantidadSugerida > 0 ? numero(i.cantidadSugerida) + ' ' + abreviatura[i.unidad] : '—' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="7" class="vacio">No hay insumos activos.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <aside class="rf-lateral">
+        <section class="rf-ia" aria-labelledby="t-manana">
+          <div class="rf-ia__cabeza">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>
+            <h2 id="t-manana">Predicción de mañana</h2>
+          </div>
+          @if (a.ventas.prediccion; as p) {
+            <p class="rf-ia__sub">{{ fechaLarga(p.fecha) }}</p>
+            <p class="prediccion__valor">{{ pesos(p.ventasEsperadas) }}</p>
+            <p class="rf-ia__sub">
+              Unos {{ p.pedidosEsperados }} pedidos.
+              @if (p.variacionPromedio !== null) {
+                {{ textoTendencia(p.variacionPromedio) }} frente a un día promedio.
+              }
+              Basada en {{ p.basadoEnDias }} {{ p.basadoEnDias === 1 ? 'día parecido' : 'días parecidos' }} del historial.
+            </p>
+            <ul class="rf-ia__lista">
+              @for (d of p.productos; track d.productoId) {
+                <li class="rf-ia__item">
+                  <div class="rf-ia__fila">
+                    <span class="rf-ia__nombre">{{ d.nombre }}</span>
+                    <span class="rf-ia__cantidad">{{ d.unidades }} und</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="rf-ia__sub">Todavía no hay ventas para predecir la demanda de mañana.</p>
+          }
+        </section>
+
+        <section class="rf-tarjeta" aria-labelledby="t-dias">
+          <div class="rf-tarjeta__titulo"><h2 id="t-dias">Ventas promedio por día</h2></div>
+          <div class="dias" role="img"
+               [attr.aria-label]="'Ventas promedio por día de la semana. El día más fuerte es ' + (a.ventas.diaMasFuerte ? nombreDia[a.ventas.diaMasFuerte] : 'ninguno')">
+            @for (c of columnas(); track c.dia) {
+              <div class="dia" [class.dia--fuerte]="c.fuerte" [title]="nombreDia[c.dia] + ': ' + pesos(c.promedio)">
+                <span class="dia__barra" [style.height.%]="c.alto"></span>
+                <span class="dia__etiqueta">{{ c.etiqueta }}</span>
+              </div>
+            }
+          </div>
+          <p class="rf-ayuda nota">{{ a.ventas.diasConVentas }} días con ventas en las últimas 4 semanas.</p>
+        </section>
+
+        <section class="rf-tarjeta" aria-labelledby="t-productos">
+          <div class="rf-tarjeta__titulo"><h2 id="t-productos">Productos de la semana</h2></div>
+          <ol class="rf-ranking">
+            @for (p of productos(); track p.productoId; let pos = $index) {
+              <li>
+                <span class="rf-ranking__pos">{{ pos + 1 }}</span>
+                <span class="rf-ranking__nombre"><strong>{{ p.nombre }}</strong><span>{{ p.unidadesSemana }} vendidos</span></span>
+                <span class="rf-ranking__valor tendencia" [class.tendencia--sube]="direccion(p.tendenciaPorcentaje) === 'sube'"
+                      [class.tendencia--baja]="direccion(p.tendenciaPorcentaje) === 'baja'">{{ textoTendencia(p.tendenciaPorcentaje) }}</span>
+              </li>
+            } @empty {
+              <li class="vacio">Sin ventas en la última semana.</li>
+            }
+          </ol>
+        </section>
+
+        <section class="rf-tarjeta como" aria-labelledby="t-como">
+          <div class="rf-tarjeta__titulo"><h2 id="t-como">Cómo decide</h2></div>
+          <ul>
+            <li><strong>Consumo diario:</strong> salidas de los últimos 7 días ÷ 7.</li>
+            <li><strong>Alcanza para:</strong> stock actual ÷ consumo diario.</li>
+            <li><strong>Prioridad:</strong> alta si alcanza para 3 días o menos (o está en su mínimo); media si para 7 o menos.</li>
+            <li><strong>Sugerido:</strong> consumo de una semana, más la tendencia si sube, más el mínimo, menos lo que hay.</li>
+            <li><strong>Mañana:</strong> promedio de los mismos días de la semana de las últimas 4 semanas.</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+  } @else if (cargando()) {
+    <p class="vacio">Analizando ventas e inventario...</p>
+  }
+</div>

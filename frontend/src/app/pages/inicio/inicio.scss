@@ -30,7 +30,7 @@
 .enlace-kpi { color: inherit; text-decoration: none; }
 .ver-mas { font-size: 14px; font-weight: 500; }
 .vacio { margin: 0; padding: 16px 0; color: var(--rf-texto-2); }
-.pronto { margin-left: auto; }
+.rf-ia__fila .rf-chip { flex: 0 0 auto; }
 .rf-grafica__area, .rf-grafica__horas { gap: 6px; }
 .rf-leyenda i.cerrada { background: var(--rf-tinta); border-color: var(--rf-tinta); }
 .rf-leyenda i.en-curso { background: var(--rf-brasa-oscura); border-color: var(--rf-brasa-oscura); }
