@@ -89,6 +89,12 @@ final class Auditoria {
         log.info("evento=ALERTA_CERRADA ingrediente=\"{}\" alertas={}", ingrediente, cantidad);
     }
 
+    // ---------- RestoFlow AI (RES-40) ----------
+
+    static void alertasRestoFlowAI(int creadas, int cerradas) {
+        log.info("evento=RESTOFLOW_AI_ALERTAS creadas={} cerradas={}", creadas, cerradas);
+    }
+
     // ---------- Catálogo externo (Open Food Facts) ----------
 
     static void productoExternoConsultado(String codigo, String fuente) {
