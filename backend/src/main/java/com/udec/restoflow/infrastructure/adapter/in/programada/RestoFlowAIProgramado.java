@@ -5,7 +5,6 @@ import com.udec.restoflow.application.port.in.GenerarAlertasIAUseCase.ResultadoA
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Component;
  * {@code IA_ALERTAS_PROGRAMADAS=false}; en las pruebas automáticas está apagado.
  */
 @Component
-@EnableScheduling
 @ConditionalOnProperty(name = "restoflow.ia.alertas-programadas", havingValue = "true", matchIfMissing = true)
 public class RestoFlowAIProgramado {
 

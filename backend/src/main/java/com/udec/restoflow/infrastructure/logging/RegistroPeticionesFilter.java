@@ -1,5 +1,6 @@
 package com.udec.restoflow.infrastructure.logging;
 
+import com.udec.restoflow.domain.model.RegistroPeticion;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -24,6 +27,8 @@ import java.util.regex.Pattern;
  *       así se pueden seguir juntas aunque lleguen muchas al tiempo.</li>
  *   <li>Al terminar escribe una línea: método, ruta, estado HTTP, duración y usuario.
  *       Errores 5xx → ERROR, 4xx → WARN, más de 1 segundo → WARN (petición lenta), lo demás → INFO.</li>
+ *   <li>Además la guarda en la base de datos (tabla registro_peticiones) en segundo plano, para consultarla
+ *       desde la pantalla "Registro de actividad" (recomendación del comité).</li>
  * </ol>
  * Corre <b>antes</b> que Spring Security (máxima prioridad) para registrar también los 401 y 403.
  * No registra el healthcheck de Docker (/api/salud y /actuator) ni Swagger, que solo harían ruido.
@@ -35,6 +40,8 @@ public class RegistroPeticionesFilter extends OncePerRequestFilter {
     public static final String ENCABEZADO = "X-Request-Id";
     /** El filtro del token guarda aquí el correo del usuario autenticado. */
     public static final String ATRIBUTO_USUARIO = "restoflow.usuario";
+    /** ... y aquí su rol. */
+    public static final String ATRIBUTO_ROL = "restoflow.rol";
     static final String MDC_PETICION = "requestId";
     static final String MDC_USUARIO = "usuario";
     static final long UMBRAL_LENTA_MS = 1000;
@@ -42,6 +49,14 @@ public class RegistroPeticionesFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger("restoflow.peticiones");
     /** Solo se acepta un id de petición corto y sin caracteres raros (evita inyectar texto en el log). */
     private static final Pattern ID_VALIDO = Pattern.compile("[A-Za-z0-9-]{8,64}");
+
+    private final DestinoRegistro destino;
+    private final Clock reloj;
+
+    public RegistroPeticionesFilter(DestinoRegistro destino, Clock reloj) {
+        this.destino = destino;
+        this.reloj = reloj;
+    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -65,6 +80,7 @@ public class RegistroPeticionesFilter extends OncePerRequestFilter {
         } finally {
             long ms = (System.nanoTime() - inicio) / 1_000_000;
             registrar(request, response.getStatus(), ms);
+            guardarEnBaseDeDatos(request, requestId, response.getStatus(), ms);
             MDC.remove(MDC_PETICION);
             MDC.remove(MDC_USUARIO);
         }
@@ -72,8 +88,7 @@ public class RegistroPeticionesFilter extends OncePerRequestFilter {
 
     private void registrar(HttpServletRequest request, int estado, long ms) {
         Object usuario = request.getAttribute(ATRIBUTO_USUARIO);
-        String ruta = request.getQueryString() == null ? request.getRequestURI()
-                : request.getRequestURI() + "?" + request.getQueryString();
+        String ruta = ruta(request);
         String linea = "{} {} → {} en {} ms · usuario={}";
         Object[] datos = {request.getMethod(), ruta, estado, ms, usuario == null ? "anónimo" : usuario};
         if (estado >= 500) {
@@ -85,6 +100,24 @@ public class RegistroPeticionesFilter extends OncePerRequestFilter {
         } else {
             log.info(linea, datos);
         }
+    }
+
+    /** Nunca debe romper la respuesta: si algo falla al armar el registro, solo queda en el log de texto. */
+    private void guardarEnBaseDeDatos(HttpServletRequest request, String requestId, int estado, long ms) {
+        try {
+            Object usuario = request.getAttribute(ATRIBUTO_USUARIO);
+            Object rol = request.getAttribute(ATRIBUTO_ROL);
+            destino.enviar(RegistroPeticion.nuevo(LocalDateTime.now(reloj), requestId,
+                    usuario == null ? null : usuario.toString(), rol == null ? null : rol.toString(),
+                    request.getMethod(), ruta(request), estado, ms));
+        } catch (RuntimeException e) {
+            log.warn("No se pudo preparar el registro de la petición: {}", e.getMessage());
+        }
+    }
+
+    private static String ruta(HttpServletRequest request) {
+        return request.getQueryString() == null ? request.getRequestURI()
+                : request.getRequestURI() + "?" + request.getQueryString();
     }
 
     private static String idDePeticion(String recibido) {

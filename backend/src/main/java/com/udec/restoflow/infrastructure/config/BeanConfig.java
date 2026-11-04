@@ -26,6 +26,7 @@ import com.udec.restoflow.application.port.out.PedidoRepositoryPort;
 import com.udec.restoflow.application.port.out.ProductoRepositoryPort;
 import com.udec.restoflow.application.port.out.RecetaRepositoryPort;
 import com.udec.restoflow.application.port.out.UsuarioRepositoryPort;
+import com.udec.restoflow.application.port.out.RegistroPeticionRepositoryPort;
 import com.udec.restoflow.application.service.BuscarProductoExternoService;
 import com.udec.restoflow.application.service.ConsultarHistorialService;
 import com.udec.restoflow.application.service.ConsultarPanelService;
@@ -41,6 +42,8 @@ import com.udec.restoflow.application.service.GestionarRecetasService;
 import com.udec.restoflow.application.service.IniciarSesionService;
 import com.udec.restoflow.application.service.RecuperarContrasenaService;
 import com.udec.restoflow.application.service.RestoFlowAIService;
+import com.udec.restoflow.application.service.RegistroActividadService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -160,5 +163,14 @@ public class BeanConfig {
                                                  MovimientoRepositoryPort movimientos, AlertaRepositoryPort alertas,
                                                  Clock reloj) {
         return new RestoFlowAIService(pedidos, ingredientes, movimientos, alertas, reloj);
+    }
+
+    // ---------- Registro de actividad en la base de datos (recomendación del comité) ----------
+
+    /** Guardar, consultar y limpiar las peticiones registradas (tres casos de uso en un servicio). */
+    @Bean
+    public RegistroActividadService registroActividadService(RegistroPeticionRepositoryPort registros, Clock reloj,
+                                                             @Value("${restoflow.registro.dias:30}") int dias) {
+        return new RegistroActividadService(registros, reloj, dias);
     }
 }

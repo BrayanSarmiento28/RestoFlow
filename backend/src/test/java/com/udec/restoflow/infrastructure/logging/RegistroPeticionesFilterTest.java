@@ -1,5 +1,6 @@
 package com.udec.restoflow.infrastructure.logging;
 
+import com.udec.restoflow.domain.model.RegistroPeticion;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,15 +11,27 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Filtro de logs de peticiones probado solo (sin Spring): niveles, id de petición y limpieza del contexto. */
+/**
+ * Filtro de logs de peticiones probado solo (sin Spring): niveles, id de petición, limpieza del contexto y el
+ * registro que se envía a la base de datos.
+ */
 @ExtendWith(OutputCaptureExtension.class)
 class RegistroPeticionesFilterTest {
 
-    private final RegistroPeticionesFilter filtro = new RegistroPeticionesFilter();
+    private static final ZoneId BOGOTA = ZoneId.of("America/Bogota");
+    private final List<RegistroPeticion> enviados = new ArrayList<>();
+    private final RegistroPeticionesFilter filtro = new RegistroPeticionesFilter(enviados::add,
+            Clock.fixed(Instant.parse("2026-11-04T15:00:00Z"), BOGOTA));
 
     private MockHttpServletResponse ejecutar(MockHttpServletRequest peticion, FilterChain cadena) throws Exception {
         MockHttpServletResponse respuesta = new MockHttpServletResponse();
@@ -50,6 +63,41 @@ class RegistroPeticionesFilterTest {
 
         assertThat(salida.getOut()).contains("ERROR").contains("POST /api/pedidos?mesa=4 → 500")
                 .contains("usuario=laura@restoflow.com");
+    }
+
+    @Test
+    @DisplayName("Cada petición se envía a la base de datos con usuario, rol, ruta, estado e id de petición")
+    void registroEnBaseDeDatos() throws Exception {
+        MockHttpServletRequest peticion = new MockHttpServletRequest("POST", "/api/pedidos");
+        peticion.setAttribute(RegistroPeticionesFilter.ATRIBUTO_USUARIO, "laura@restoflow.com");
+        peticion.setAttribute(RegistroPeticionesFilter.ATRIBUTO_ROL, "MESERO");
+        peticion.setQueryString("mesa=4");
+
+        MockHttpServletResponse r = ejecutar(peticion, (req, res) -> ((MockHttpServletResponse) res).setStatus(201));
+
+        assertThat(enviados).hasSize(1);
+        RegistroPeticion registro = enviados.get(0);
+        assertThat(registro.fecha()).isEqualTo(LocalDateTime.of(2026, 11, 4, 10, 0));
+        assertThat(registro.usuario()).isEqualTo("laura@restoflow.com");
+        assertThat(registro.rol()).isEqualTo("MESERO");
+        assertThat(registro.metodo()).isEqualTo("POST");
+        assertThat(registro.ruta()).isEqualTo("/api/pedidos?mesa=4");
+        assertThat(registro.estado()).isEqualTo(201);
+        assertThat(registro.requestId()).isEqualTo(r.getHeader("X-Request-Id"));
+    }
+
+    @Test
+    @DisplayName("Si la base de datos falla, la respuesta al usuario no se afecta")
+    void fallaElRegistro() throws Exception {
+        RegistroPeticionesFilter conFalla = new RegistroPeticionesFilter(registro -> {
+            throw new IllegalStateException("base de datos caída");
+        }, Clock.system(BOGOTA));
+        MockHttpServletResponse respuesta = new MockHttpServletResponse();
+
+        conFalla.doFilter(new MockHttpServletRequest("GET", "/api/pedidos"), respuesta,
+                (req, res) -> ((MockHttpServletResponse) res).setStatus(200));
+
+        assertThat(respuesta.getStatus()).isEqualTo(200);
     }
 
     @Test
