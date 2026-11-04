@@ -40,6 +40,7 @@ import com.udec.restoflow.application.service.GestionarPedidosService;
 import com.udec.restoflow.application.service.GestionarRecetasService;
 import com.udec.restoflow.application.service.IniciarSesionService;
 import com.udec.restoflow.application.service.RecuperarContrasenaService;
+import com.udec.restoflow.application.service.RestoFlowAIService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -146,5 +147,18 @@ public class BeanConfig {
     @Bean
     public BuscarProductoExternoUseCase buscarProductoExternoUseCase(CatalogoExternoPort catalogo) {
         return new BuscarProductoExternoService(catalogo);
+    }
+
+    // ---------- RestoFlow AI (Sprint 5: RF-09 a RF-11) ----------
+
+    /**
+     * Un solo servicio que implementa dos casos de uso: consultar el análisis y generar las alertas automáticas.
+     * Se declara con su clase para que Spring lo entregue a quien pida cualquiera de los dos puertos.
+     */
+    @Bean
+    public RestoFlowAIService restoFlowAIService(PedidoRepositoryPort pedidos, IngredienteRepositoryPort ingredientes,
+                                                 MovimientoRepositoryPort movimientos, AlertaRepositoryPort alertas,
+                                                 Clock reloj) {
+        return new RestoFlowAIService(pedidos, ingredientes, movimientos, alertas, reloj);
     }
 }

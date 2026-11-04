@@ -99,6 +99,9 @@ services:
       TZ: ${TZ:-America/Bogota}
       # API externa Open Food Facts (gratuita, sin clave): datos de un insumo por código de barras
       OPENFOODFACTS_URL: ${OPENFOODFACTS_URL:-https://world.openfoodfacts.org}
+      # RestoFlow AI: alertas anticipadas cada hora y, solo para demostraciones, 3 semanas de ventas de ejemplo
+      IA_ALERTAS_PROGRAMADAS: ${IA_ALERTAS_PROGRAMADAS:-true}
+      IA_HISTORIAL_DEMO: ${IA_HISTORIAL_DEMO:-false}
     volumes:
       # Los archivos restoflow.log y auditoria.log sobreviven aunque se borre el contenedor
       - backend_logs:/app/logs

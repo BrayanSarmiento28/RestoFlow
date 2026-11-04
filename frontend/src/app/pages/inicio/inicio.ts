@@ -4,10 +4,13 @@ import { AuthService } from '../../core/services/auth.service';
 import { PanelService } from '../../core/services/panel.service';
 import { PedidoService } from '../../core/services/pedido.service';
 import { InventarioService } from '../../core/services/inventario.service';
+import { RestoFlowAIService } from '../../core/services/restoflow-ai.service';
 import { mensajeDeError } from '../../core/services/errores';
 import { environment } from '../../../environments/environment';
 import { numero, pesos } from '../../core/util/formato';
 import { columnasPorHora, variacionPorcentual } from '../../core/util/graficas';
+import { CLASE_PRIORIDAD, NOMBRE_PRIORIDAD, principales } from '../../core/util/restoflow-ai';
+import { Recomendacion } from '../../core/models/restoflow-ai.models';
 import { ResumenPanel } from '../../core/models/inventario.models';
 import { ABREVIATURA_UNIDAD, Ingrediente, NOMBRES_ESTADO_COCINA, Pedido, Rol } from '../../core/entities';
 
@@ -30,6 +33,7 @@ export class Inicio implements OnInit, OnDestroy {
   private readonly panelApi = inject(PanelService);
   private readonly pedidoApi = inject(PedidoService);
   private readonly inventarioApi = inject(InventarioService);
+  private readonly iaApi = inject(RestoFlowAIService);
   private temporizador?: ReturnType<typeof setInterval>;
 
   protected readonly usuario = this.auth.usuario;
@@ -39,6 +43,8 @@ export class Inicio implements OnInit, OnDestroy {
   protected readonly numero = numero;
   protected readonly abreviatura = ABREVIATURA_UNIDAD;
   protected readonly nombresCocina = NOMBRES_ESTADO_COCINA;
+  protected readonly clasePrioridad = CLASE_PRIORIDAD;
+  protected readonly nombrePrioridad = NOMBRE_PRIORIDAD;
   protected readonly hoy = new Date().toLocaleDateString('es-CO', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
@@ -48,6 +54,8 @@ export class Inicio implements OnInit, OnDestroy {
   protected readonly insumosBajos = signal<Ingrediente[]>([]);
   protected readonly alertasPendientes = signal(0);
   protected readonly error = signal<string | null>(null);
+  /** RestoFlow AI · las 3 recomendaciones más importantes (null si no se pudo consultar: se muestran los insumos bajos). */
+  protected readonly recomendacionesIA = signal<Recomendacion[] | null>(null);
 
   private readonly todos: Acceso[] = [
     { titulo: 'Tomar un pedido', texto: 'Arma el pedido de una mesa y envíalo a cocina.', ruta: '/pedidos', roles: ['MESERO', 'ADMIN'] },
@@ -83,6 +91,11 @@ export class Inicio implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.cargar();
     if (this.esAdmin) {
+      // El análisis de RestoFlow AI se consulta una vez al entrar (revisa 4 semanas de datos; no hace falta cada minuto)
+      this.iaApi.analisis().subscribe({
+        next: (a) => this.recomendacionesIA.set(principales(a.recomendaciones)),
+        error: () => this.recomendacionesIA.set(null),
+      });
       this.temporizador = setInterval(() => this.cargar(), environment.refrescoPedidosMs * 4);
     }
   }

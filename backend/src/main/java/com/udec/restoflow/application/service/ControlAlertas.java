@@ -35,12 +35,15 @@ public class ControlAlertas {
         List<Alerta> pendientes = alertas.pendientesDe(ingrediente.getId());
 
         if (!ingrediente.estaEnMinimo()) {
-            pendientes.forEach(a -> {
+            // Las alertas anticipadas de RestoFlow AI ("se acaba en 2 días") pueden existir aunque el stock esté
+            // sobre el mínimo: esas las cierra el propio análisis cuando el insumo vuelve a alcanzar (RES-40).
+            List<Alerta> deStock = pendientes.stream().filter(a -> !a.esDeRestoFlowAI()).toList();
+            deStock.forEach(a -> {
                 a.marcarAtendida(ahora);
                 alertas.guardar(a);
             });
-            if (!pendientes.isEmpty()) {
-                Auditoria.alertaCerrada(ingrediente.getNombre(), pendientes.size());
+            if (!deStock.isEmpty()) {
+                Auditoria.alertaCerrada(ingrediente.getNombre(), deStock.size());
             }
             return;
         }

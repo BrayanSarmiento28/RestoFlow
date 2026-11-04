@@ -24,6 +24,9 @@ restoflow:
     email: admin@pruebas.com
     contrasena: Admin2026*
   # Las pruebas nunca llaman a internet: el adaptador se prueba con un servidor simulado
+  # La tarea programada de RestoFlow AI no corre en las pruebas (se prueba llamando al caso de uso)
+  ia:
+    alertas-programadas: false
   apis-externas:
     tiempo-espera-segundos: 1
     open-food-facts:

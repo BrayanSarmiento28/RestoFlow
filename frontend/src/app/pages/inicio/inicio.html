@@ -16,7 +16,8 @@
   <section class="bienvenida">
     <h2>Hola, {{ usuario?.nombre }}</h2>
     <p>Bienvenido a RestoFlow. Pedidos, cocina e inventario ya trabajan conectados: cada venta descuenta sus
-      insumos y el sistema avisa cuando algo se está acabando. RestoFlow AI llega en el próximo sprint.</p>
+      insumos y el sistema avisa cuando algo se está acabando. RestoFlow AI analiza las ventas y el inventario
+      y te recomienda qué hacer.</p>
   </section>
 
   @if (error()) {
@@ -107,23 +108,40 @@
           <div class="rf-ia__cabeza">
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
             <h2 id="t-ia">RestoFlow AI</h2>
-            <span class="rf-chip rf-chip--aviso pronto">Pronto</span>
           </div>
-          <p class="rf-ia__sub">Mientras llega el análisis inteligente, estos son los insumos que necesitan atención:</p>
-          <ul class="rf-ia__lista">
-            @for (i of r.insumosEnMinimo.slice(0, 4); track i.id) {
-              <li class="rf-ia__item">
-                <div class="rf-ia__fila">
-                  <span class="rf-ia__nombre">{{ i.nombre }}</span>
-                  <span class="rf-ia__cantidad">{{ numero(i.stockActual) }} {{ abreviatura[i.unidad] }}</span>
-                </div>
-                <div class="rf-ia__datos"><span>Mínimo {{ numero(i.stockMinimo) }} {{ abreviatura[i.unidad] }}</span></div>
-              </li>
-            } @empty {
-              <li class="rf-ia__item">Todos los insumos están por encima de su mínimo.</li>
-            }
-          </ul>
-          <a class="rf-btn rf-btn--brasa rf-btn--bloque" routerLink="/inventario">Ir al inventario</a>
+          @if (recomendacionesIA(); as recomendaciones) {
+            <p class="rf-ia__sub">Lo más importante del análisis de ventas e inventario:</p>
+            <ul class="rf-ia__lista">
+              @for (rec of recomendaciones; track $index) {
+                <li class="rf-ia__item">
+                  <div class="rf-ia__fila">
+                    <span class="rf-ia__nombre">{{ rec.titulo }}</span>
+                    <span class="rf-chip {{ clasePrioridad[rec.prioridad] }}">{{ nombrePrioridad[rec.prioridad] }}</span>
+                  </div>
+                  <div class="rf-ia__datos"><span>{{ rec.detalle }}</span></div>
+                </li>
+              } @empty {
+                <li class="rf-ia__item">Todo en orden: no hay compras urgentes ni cambios importantes.</li>
+              }
+            </ul>
+            <a class="rf-btn rf-btn--brasa rf-btn--bloque" routerLink="/restoflow-ai">Ver el análisis completo</a>
+          } @else {
+            <p class="rf-ia__sub">Estos son los insumos que necesitan atención:</p>
+            <ul class="rf-ia__lista">
+              @for (i of r.insumosEnMinimo.slice(0, 4); track i.id) {
+                <li class="rf-ia__item">
+                  <div class="rf-ia__fila">
+                    <span class="rf-ia__nombre">{{ i.nombre }}</span>
+                    <span class="rf-ia__cantidad">{{ numero(i.stockActual) }} {{ abreviatura[i.unidad] }}</span>
+                  </div>
+                  <div class="rf-ia__datos"><span>Mínimo {{ numero(i.stockMinimo) }} {{ abreviatura[i.unidad] }}</span></div>
+                </li>
+              } @empty {
+                <li class="rf-ia__item">Todos los insumos están por encima de su mínimo.</li>
+              }
+            </ul>
+            <a class="rf-btn rf-btn--brasa rf-btn--bloque" routerLink="/inventario">Ir al inventario</a>
+          }
         </section>
 
         <section class="rf-tarjeta" aria-labelledby="t-mesas">

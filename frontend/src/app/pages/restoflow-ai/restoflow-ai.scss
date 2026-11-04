@@ -1,0 +1,72 @@
+// Estilos propios de RestoFlow AI; el resto viene de las clases rf-* globales (styles.scss).
+.intro { gap: 10px; }
+.capital { text-transform: capitalize; }
+.vacio { padding: 20px 0; text-align: center; color: var(--rf-texto-2); list-style: none; }
+.filtros { margin-bottom: 16px; }
+.rf-pildora--chica { min-height: 36px; }
+.nota { margin: 12px 0 0; }
+
+.exito {
+  padding: 12px 16px;
+  border-radius: var(--rf-radio-m);
+  background: var(--rf-listo-fondo);
+  color: var(--rf-listo-texto);
+  border: 1.5px solid var(--rf-listo-borde);
+  font-size: 15px;
+}
+
+/* Flecha y color según la tendencia: sube en verde oscuro, baja en naranja oscuro (con texto, no solo color) */
+.tendencia { font-family: var(--rf-fuente-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tendencia--sube { color: var(--rf-listo-texto); }
+.tendencia--sube::before { content: '↑ '; }
+.tendencia--baja { color: var(--rf-brasa-oscura); }
+.tendencia--baja::before { content: '↓ '; }
+
+.recomendaciones { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.recomendacion {
+  padding: 16px 18px;
+  border-radius: var(--rf-radio-m);
+  background: var(--rf-crema);
+  border-left: 5px solid var(--rf-borde);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  h3 { font-size: 17px; margin: 4px 0 0; }
+  p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--rf-texto-2); }
+  &__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  &--alta { border-left-color: var(--rf-brasa-oscura); background: #FCF1EC; }
+  &--media { border-left-color: #C98A2B; background: #FDF7EC; }
+}
+
+.prediccion__valor {
+  margin: 0;
+  font-family: var(--rf-fuente-titulo);
+  font-weight: 700;
+  font-size: 34px;
+  color: var(--rf-ambar);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Gráfico de barras de lunes a domingo; el día más fuerte en naranja */
+.dias {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  height: 160px;
+  border-bottom: 1.5px solid var(--rf-borde);
+}
+.dia {
+  flex: 1 1 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  &__barra { display: block; border-radius: 6px 6px 0 0; background: var(--rf-tinta); min-height: 2px; }
+  &__etiqueta { font-family: var(--rf-fuente-mono); font-size: 11px; text-align: center; color: var(--rf-texto-2); }
+  &--fuerte .dia__barra { background: var(--rf-brasa-oscura); }
+  &--fuerte .dia__etiqueta { color: var(--rf-brasa-oscura); font-weight: 700; }
+}
+
+.como ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5; color: var(--rf-texto-2); }
+.como strong { color: var(--rf-tinta); }

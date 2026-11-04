@@ -122,3 +122,12 @@ restoflow:
     open-food-facts:
       url: ${OPENFOODFACTS_URL:https://world.openfoodfacts.org}
       user-agent: RestoFlow/@project.version@ (Proyecto Integrador UdeC)
+  # ---------- RestoFlow AI (Sprint 5) ----------
+  ia:
+    # Tarea programada que crea y cierra las alertas anticipadas (RES-40). Formato cron de Spring:
+    # segundo minuto hora día mes día-semana → "0 5 * * * *" = al minuto 5 de cada hora
+    alertas-programadas: ${IA_ALERTAS_PROGRAMADAS:true}
+    cron: "${IA_CRON:0 5 * * * *}"
+    # Solo para demostraciones: si es true y casi no hay ventas recientes, al arrancar se generan 3 semanas de
+    # ventas de ejemplo (con su consumo de inventario) para que RestoFlow AI tenga qué analizar.
+    historial-demo: ${IA_HISTORIAL_DEMO:false}

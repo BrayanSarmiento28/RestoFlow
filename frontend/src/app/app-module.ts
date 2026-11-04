@@ -16,11 +16,12 @@ import { Cocina } from './pages/cocina/cocina';
 import { Productos } from './pages/productos/productos';
 import { Inventario } from './pages/inventario/inventario';
 import { Reportes } from './pages/reportes/reportes';
+import { RestoFlowAI } from './pages/restoflow-ai/restoflow-ai';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 
 @NgModule({
   declarations: [App, Login, Inicio, PanelMarca, Logo, RecuperarContrasena, Usuarios, Estructura, Pedidos, Cocina, Productos,
-    Inventario, Reportes],
+    Inventario, Reportes, RestoFlowAI],
   imports: [BrowserModule, ReactiveFormsModule, AppRoutingModule],
   providers: [
     provideBrowserGlobalErrorListeners(),
