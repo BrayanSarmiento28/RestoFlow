@@ -61,7 +61,7 @@ public class SecurityConfig {
                 // Inventario y alertas (RF-05 a RF-07), incluido el catálogo externo (Open Food Facts)
                 .requestMatchers("/api/inventario/**", "/api/alertas/**").hasAnyRole("INVENTARIO", "ADMIN")
                 // Panel e historial (RF-08, RF-12): solo el administrador
-                .requestMatchers("/api/panel/**", "/api/historial/**").hasRole("ADMIN")
+                .requestMatchers("/api/panel/**", "/api/historial/**", "/api/registro/**").hasRole("ADMIN")
                 // RestoFlow AI (RF-09 a RF-11): el administrador y el personal de inventario (recomendaciones de compra)
                 .requestMatchers("/api/restoflow-ai/**").hasAnyRole("INVENTARIO", "ADMIN")
                 // Todo lo demás requiere haber iniciado sesión

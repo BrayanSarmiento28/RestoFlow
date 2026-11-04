@@ -34,7 +34,7 @@ Para cada factor, este documento explica:
 | VIII | Concurrencia | **`docker-compose.escalado.yml`**: varias copias del backend | `/api/salud` muestra la `instancia` |
 | IX | Desechabilidad | **Actuator** (liveness / readiness), `shutdown: graceful`, healthchecks | `ActuatorIntegracionTest` |
 | X | Paridad entre entornos | Perfiles `dev` / `preprod` / `prod`, mismas imágenes, `TZ` | — |
-| XI | Logs | **`logback-spring.xml`**, id por petición, auditoría, **JSON (ECS)** | `LogsIntegracionTest`, `RegistroPeticionesFilterTest` |
+| XI | Logs | **`logback-spring.xml`**, id por petición, auditoría, **JSON (ECS)**; además, **registro de actividad en la base de datos** ([sprint 6](sprint-6.md)) | `LogsIntegracionTest`, `RegistroPeticionesFilterTest`, `RegistroActividadIntegracionTest` |
 | XII | Procesos de administración | Contenedor `db-init`, scripts SQL, datos iniciales | `DatosDemoIntegracionTest` |
 
 ---

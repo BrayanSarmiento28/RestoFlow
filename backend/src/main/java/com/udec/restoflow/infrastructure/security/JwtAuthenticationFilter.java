@@ -41,6 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Para los logs: cada línea de esta petición mostrará quién la hizo (nunca el token)
                 MDC.put("usuario", usuario.email());
                 request.setAttribute(RegistroPeticionesFilter.ATRIBUTO_USUARIO, usuario.email());
+                request.setAttribute(RegistroPeticionesFilter.ATRIBUTO_ROL, usuario.rol().name());
             });
         }
         chain.doFilter(request, response);

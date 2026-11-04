@@ -122,6 +122,15 @@ restoflow:
     open-food-facts:
       url: ${OPENFOODFACTS_URL:https://world.openfoodfacts.org}
       user-agent: RestoFlow/@project.version@ (Proyecto Integrador UdeC)
+  # ---------- Registro de actividad en la base de datos (recomendación del comité) ----------
+  # Cada petición al API se guarda en la tabla registro_peticiones (en segundo plano) y se consulta en la
+  # pantalla "Registro de actividad" (ADMIN). Los logs de texto siguen igual.
+  registro:
+    habilitado: ${REGISTRO_BD_HABILITADO:true}
+    # Días que se conservan; cada madrugada se borran los más viejos
+    dias: ${REGISTRO_BD_DIAS:30}
+    limpieza-programada: ${REGISTRO_BD_LIMPIEZA:true}
+    cron-limpieza: "${REGISTRO_BD_CRON_LIMPIEZA:0 30 3 * * *}"
   # ---------- RestoFlow AI (Sprint 5) ----------
   ia:
     # Tarea programada que crea y cierra las alertas anticipadas (RES-40). Formato cron de Spring:

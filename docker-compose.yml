@@ -56,11 +56,12 @@ services:
       - ./docker/sqlserver/00_inicializar.sql:/scripts/00_inicializar.sql:ro
       - ./backend/database/01_crear_base_de_datos.sql:/scripts/01_crear_base_de_datos.sql:ro
       - ./backend/database/02_menu_pedidos_inventario.sql:/scripts/02_menu_pedidos_inventario.sql:ro
+      - ./backend/database/03_registro_peticiones.sql:/scripts/03_registro_peticiones.sql:ro
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
         set -e
-        for script in /scripts/00_inicializar.sql /scripts/01_crear_base_de_datos.sql /scripts/02_menu_pedidos_inventario.sql; do
+        for script in /scripts/00_inicializar.sql /scripts/01_crear_base_de_datos.sql /scripts/02_menu_pedidos_inventario.sql /scripts/03_registro_peticiones.sql; do
           echo "Ejecutando $$script"
           /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -v APP_PASSWORD="$$APP_PASSWORD" -i "$$script"
         done
@@ -102,6 +103,9 @@ services:
       # RestoFlow AI: alertas anticipadas cada hora y, solo para demostraciones, 3 semanas de ventas de ejemplo
       IA_ALERTAS_PROGRAMADAS: ${IA_ALERTAS_PROGRAMADAS:-true}
       IA_HISTORIAL_DEMO: ${IA_HISTORIAL_DEMO:-false}
+      # Registro de actividad: cada petición se guarda en la tabla registro_peticiones y se conserva N días
+      REGISTRO_BD_HABILITADO: ${REGISTRO_BD_HABILITADO:-true}
+      REGISTRO_BD_DIAS: ${REGISTRO_BD_DIAS:-30}
     volumes:
       # Los archivos restoflow.log y auditoria.log sobreviven aunque se borre el contenedor
       - backend_logs:/app/logs

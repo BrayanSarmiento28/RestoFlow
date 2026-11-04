@@ -27,6 +27,9 @@ restoflow:
   # La tarea programada de RestoFlow AI no corre en las pruebas (se prueba llamando al caso de uso)
   ia:
     alertas-programadas: false
+  # En las pruebas el registro en base de datos sí está activo (se prueba); la limpieza programada no
+  registro:
+    limpieza-programada: false
   apis-externas:
     tiempo-espera-segundos: 1
     open-food-facts:
