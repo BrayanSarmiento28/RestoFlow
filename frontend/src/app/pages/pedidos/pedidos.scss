@@ -247,6 +247,7 @@
   gap: 6px;
   margin: 4px 0 16px;
   &__titulo { margin-right: 2px; font-size: 13px; color: var(--rf-texto-2); }
+  &__lista { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 }
 .mesa-ocupada {
   display: inline-flex;
@@ -307,6 +308,7 @@
   }
 }
 .metodo {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -321,7 +323,7 @@
   background: var(--rf-papel);
   cursor: pointer;
   &:hover { border-color: var(--rf-tinta); }
-  &:focus-visible { outline: 2px solid var(--rf-brasa); outline-offset: 2px; }
+  &:focus-visible, &:has(input:focus-visible) { outline: 2px solid var(--rf-brasa); outline-offset: 2px; }
   &--activo {
     color: var(--rf-brasa-oscura);
     border-color: var(--rf-brasa-oscura);

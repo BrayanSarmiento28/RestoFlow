@@ -104,7 +104,7 @@
   color: var(--rf-crema);
   border-radius: var(--rf-radio-m);
   background: var(--rf-noche-tarjeta);
-  &__texto { margin: 0; font-size: 14px; line-height: 1.5; white-space: pre-line; }
+  &__texto { display: block; margin: 0; font-size: 14px; line-height: 1.5; white-space: pre-line; }
   &__origen {
     display: block;
     margin-top: 6px;

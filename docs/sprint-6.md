@@ -371,3 +371,59 @@ cambiar de mesa y sus reglas) y `mesas.test.ts` (Jest, 4).
 Estas pruebas se suman a las de punta a punta que ya existían: `PedidoFlujoIntegracionTest` (pedido completo con
 cada rol), `InventarioFlujoIntegracionTest` (insumo → receta → venta → descuento → alerta → panel → historial),
 `AvisosIntegracionTest`, `AsistenteIAIntegracionTest` y `RegistroActividadIntegracionTest`.
+
+## 5. Cobertura del frontend sobre el 80 % (SonarQube)
+
+**Retroalimentación del comité:** la cobertura del frontend en SonarQube debe superar el 80 %.
+
+### Por qué estaba en 63,5 %
+
+SonarQube mide **todo** el código TypeScript de `frontend/src`, pero Jest solo medía la lógica pura de `core/util`
+(unas 280 líneas, casi al 100 %). Las pantallas (`pages/*`), la campana, los servicios, los guards y el interceptor
+no tenían pruebas, así que contaban como 0 % y bajaban el total. Además el Quality Gate pedía **0 issues nuevos** y
+había 25 abiertos.
+
+### Qué se hizo
+
+1. **Pruebas de las pantallas con el mismo Jest** (no se agregó otra herramienta). Cada pantalla se crea como una
+   clase dentro de un inyector de Angular con **servicios falsos** (`src/testing/angular.ts`): sin navegador, sin
+   backend y en milisegundos. Se prueba su lógica real: cargar datos, armar el carrito, validar formularios,
+   registrar la venta, cambiar de mesa, mostrar errores del API, temporizadores (con `jest.useFakeTimers`), etc.
+2. **Configuración de Jest** (`jest.config.js`): `@swc/jest` ahora entiende los decoradores de Angular
+   (`@Component`, `@HostListener`), traduce las librerías de Angular (`.mjs`) a CommonJS y carga el compilador JIT
+   antes de cada archivo (`src/testing/preparar-jest.ts`). La cobertura se mide sobre `src/app/**` (lo mismo que
+   SonarQube), sin los archivos que solo arrancan Angular ni los modelos (interfaces sin código).
+3. **SonarQube** (`sonar-project.properties`): `src/testing/**` cuenta como código de pruebas, no de la aplicación.
+4. **Los 25 issues**, sin cambiar textos ni colores:
+   - Accesibilidad (S6819): elementos nativos en vez de roles ARIA: `<output>` en lugar de `role="status"`,
+     `<dialog open>` en lugar de `role="dialog"` (campana y ventana de cobro), `<ul>/<li>` para las mesas ocupadas,
+     `<fieldset>` para grupos de botones, `<figure>` para las gráficas y botones de radio reales
+     (`<input type="radio">`) para el método de pago. En `styles.scss` se quitan los estilos propios del navegador de
+     esos elementos para que se vean igual que antes.
+   - S7927: el filtro de insumos de Reportes tiene una etiqueta `<label>` (oculta a la vista) en vez de `aria-label`.
+   - S1135: un comentario decía "Todo en orden" y SonarQube lo leía como "TODO"; se reescribió.
+   - S6582 (encadenamiento opcional `?.`), S5906 (`toHaveLength`) y S4666 (selector `body` repetido en `styles.scss`).
+
+### Pruebas nuevas (120)
+
+| Archivo | Qué prueba |
+|---------|-----------|
+| `pages/pedidos/pedidos.test.ts` | Carrito, mesa ocupada, registrar y editar, cancelar con confirmación, cambiar de mesa, cobro solo del admin, imprimir, filtros, actualización automática |
+| `pages/inventario/inventario.test.ts` | Entradas, salidas (motivo obligatorio), ajustes, crear y editar insumos, código de barras (Open Food Facts), alertas |
+| `pages/productos/productos.test.ts` | Crear y editar productos, disponibilidad, categorías, receta |
+| `pages/restoflow-ai/restoflow-ai.test.ts` | Análisis, recomendaciones de Gemini o de reglas, filtros, chat, alertas anticipadas |
+| `pages/inicio`, `reportes`, `cocina`, `usuarios`, `login`, `recuperar-contrasena` | Lo que ve cada rol, consultas, validaciones y mensajes de error |
+| `components/avisos-campana`, `logo`, `panel-marca`, `layout/estructura` | Campana (cada minuto, resumen de Gemini, cerrar con Escape o clic fuera), menú por rol |
+| `core/services/*.test.ts` | Cada servicio llama a la URL y con los datos correctos; sesión de `AuthService` |
+| `core/guards`, `core/interceptors` | Redirección al login o al inicio; token solo para nuestro API; 401 cierra la sesión |
+
+### Cómo comprobarlo
+
+```powershell
+cd frontend
+npm run test:jest:cobertura      # 229 pruebas y la tabla de cobertura (debe superar 80 %)
+npm run test:jest:tipos          # revisa los tipos de las pruebas
+cd ..
+powershell -ExecutionPolicy Bypass -File .\analizar-calidad.ps1 -SoloFrontend
+```
+

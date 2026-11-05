@@ -23,7 +23,7 @@ const ROLES_POR_PANTALLA: Record<string, readonly Rol[]> = {
 export function enlacePara(enlace: string | null, rol: Rol | null | undefined): string | null {
   if (!enlace || !rol) return null;
   const roles = ROLES_POR_PANTALLA[enlace];
-  return roles && roles.includes(rol) ? enlace : null;
+  return roles?.includes(rol) ? enlace : null;
 }
 
 /** Los informativos no cuentan en el número rojo de la campana. */

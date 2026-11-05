@@ -77,6 +77,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 body {
   margin: 0;
+  -webkit-font-smoothing: antialiased;
   background: var(--rf-crema);
   color: var(--rf-tinta);
   font-family: var(--rf-fuente-texto);
@@ -91,6 +92,14 @@ img { max-width: 100%; }
 .rf-mono { font-family: var(--rf-fuente-mono); font-variant-numeric: tabular-nums; }
 .rf-oculto-visual { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+/* Elementos nativos de accesibilidad en lugar de role="status", "dialog", "group" o "img" (SonarQube S6819).
+   Se les quitan los estilos propios del navegador para que se vean igual que los div y p que reemplazan. */
+output { display: block; }
+dialog { position: static; inset: auto; width: auto; height: auto; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; color: inherit; background: none; }
+fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+figure { margin: 0; }
+
 /* ---------- Marca ---------- */
 .rf-marca { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
 .rf-marca img { width: 44px; height: 44px; }
@@ -99,7 +108,6 @@ img { max-width: 100%; }
 .rf-tema-claro .rf-marca__flow { color: var(--rf-brasa-oscura); }
 
 html, body { min-height: 100%; }
-body { -webkit-font-smoothing: antialiased; }
 button, input, select, textarea { font: inherit; }
 
 /* Quien pide menos movimiento en su sistema no ve animaciones */
@@ -357,7 +365,7 @@ button, input, select, textarea { font: inherit; }
   background: var(--rf-alerta-fondo); color: var(--rf-alerta-texto); border: 1.5px solid var(--rf-alerta-borde);
 }
 .rf-aviso svg { width: 24px; height: 24px; flex: 0 0 auto; }
-.rf-aviso p { margin: 0; flex: 1 1 320px; }
+.rf-aviso p, .rf-aviso output { margin: 0; flex: 1 1 320px; }
 
 .rf-ia { background: var(--rf-tinta); color: var(--rf-crema); border-radius: var(--rf-radio-xl); padding: 24px; display: flex; flex-direction: column; gap: 16px; }
 .rf-ia__cabeza { display: flex; align-items: center; gap: 10px; }

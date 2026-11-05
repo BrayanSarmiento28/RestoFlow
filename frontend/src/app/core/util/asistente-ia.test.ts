@@ -19,13 +19,13 @@ describe('RestoFlow AI con Gemini · lógica de pantalla', () => {
     for (let i = 1; i <= 12; i++) {
       lista = agregarIntercambio(lista, { pregunta: `P${i}`, respuesta: 'R', error: null, hora: '10:00' });
     }
-    expect(lista.length).toBe(10);
+    expect(lista).toHaveLength(10);
     expect(lista[0].pregunta).toBe('P12');
     expect(lista[9].pregunta).toBe('P3');
   });
 
   test('contador de caracteres y sugerencias', () => {
     expect(contador('  hola ')).toBe('4 / 500');
-    expect(SUGERENCIAS.length).toBe(3);
+    expect(SUGERENCIAS).toHaveLength(3);
   });
 });

@@ -85,11 +85,13 @@ if (-not $SoloBackend) {
     [IO.File]::WriteAllLines($lcov, [string[]]$lineas)
 
     Paso "Frontend: análisis con el escáner de SonarQube (Docker)"
+    # Se monta el proyecto completo (no solo frontend) para que el escáner vea la carpeta .git: así SonarQube sabe
+    # quién y cuándo cambió cada línea (sin esto avisa "SCM provider autodetection failed"). Se analiza solo frontend.
     & docker run --rm --network $redSonar `
         -e SONAR_HOST_URL="http://sonarqube:9000" `
         -e SONAR_TOKEN="$token" `
-        -v "${frontend}:/usr/src" `
-        $imagenEscaner
+        -v "${raiz}:/usr/src" `
+        $imagenEscaner "-Dsonar.projectBaseDir=/usr/src/frontend"
     if ($LASTEXITCODE -ne 0) { throw "El análisis del frontend falló (código $LASTEXITCODE)" }
 }
 

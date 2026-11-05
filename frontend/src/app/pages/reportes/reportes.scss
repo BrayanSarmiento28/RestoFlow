@@ -35,3 +35,6 @@
   &__etiqueta { order: 3; }
   &:last-child .rf-barra { background: var(--rf-brasa-oscura); }
 }
+
+// "Consultando…" (antes un párrafo): mismo espacio arriba y abajo
+.consultando { margin: 13px 0; }
