@@ -11,6 +11,7 @@ import com.udec.restoflow.domain.model.EstadoCocina;
 import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Ingrediente;
 import com.udec.restoflow.domain.model.MovimientoInventario;
+import com.udec.restoflow.domain.model.MetodoPago;
 import com.udec.restoflow.domain.model.Pedido;
 import com.udec.restoflow.domain.model.PrioridadAlerta;
 import com.udec.restoflow.domain.model.Producto;
@@ -83,13 +84,15 @@ class DescontarInventarioServiceTest {
         recetas.definir(ajiacoId, List.of(new LineaReceta(arrozId, new BigDecimal("80"))));
     }
 
+    private int siguienteMesa = 4;
+
     /** Registra el pedido, lo pasa por cocina hasta Entregado y registra la venta. */
     private Pedido vender(LineaPedido... lineas) {
-        Pedido pedido = ventas.registrar(new ComandoPedido(4, List.of(lineas), null), meseroId);
+        Pedido pedido = ventas.registrar(new ComandoPedido(siguienteMesa++, List.of(lineas), null), meseroId);
         cocina.cambiarEstado(pedido.getId(), EstadoCocina.EN_PREPARACION);
         cocina.cambiarEstado(pedido.getId(), EstadoCocina.LISTO);
         cocina.cambiarEstado(pedido.getId(), EstadoCocina.ENTREGADO);
-        return ventas.registrarVenta(pedido.getId());
+        return ventas.registrarVenta(pedido.getId(), MetodoPago.EFECTIVO);
     }
 
     private BigDecimal stock(Long id) {

@@ -63,18 +63,19 @@
           <div class="rf-tarjeta__titulo"><h2 id="t-ventas">Detalle de ventas</h2></div>
           <div class="rf-tabla-caja">
             <table class="rf-tabla">
-              <thead><tr><th scope="col">Cobrado</th><th scope="col">Pedido</th><th scope="col">Mesero</th><th scope="col">Productos</th><th scope="col" class="rf-num">Total</th></tr></thead>
+              <thead><tr><th scope="col">Cobrado</th><th scope="col">Pedido</th><th scope="col">Mesero</th><th scope="col">Productos</th><th scope="col">Pago</th><th scope="col" class="rf-num">Total</th></tr></thead>
               <tbody>
                 @for (p of v.ventas; track p.id) {
                   <tr>
                     <td class="mono">{{ fechaHora(p.fechaCierre) }}</td>
-                    <td>#{{ p.id }} · Mesa {{ p.numeroMesa }}</td>
+                    <td>#{{ numeroPedido(p) }} · Mesa {{ p.numeroMesa }}</td>
                     <td>{{ p.meseroNombre }}</td>
                     <td class="productos">{{ productos(p) }}</td>
+                    <td>{{ p.metodoPago ? nombresMetodo[p.metodoPago] : '—' }}</td>
                     <td class="rf-num">{{ pesos(p.total) }}</td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="5" class="vacio">Sin ventas</td></tr>
+                  <tr><td colspan="6" class="vacio">Sin ventas</td></tr>
                 }
               </tbody>
             </table>
@@ -101,7 +102,7 @@
               @for (p of pedidos(); track p.id) {
                 <tr [class.rf-inactivo]="p.estadoPedido === 'CANCELADO'">
                   <td class="mono">{{ fechaHora(p.fechaCreacion) }}</td>
-                  <td>#{{ p.id }} · Mesa {{ p.numeroMesa }}</td>
+                  <td>#{{ numeroPedido(p) }} · Mesa {{ p.numeroMesa }}</td>
                   <td>{{ p.meseroNombre }}</td>
                   <td class="productos">{{ productos(p) }}</td>
                   <td>

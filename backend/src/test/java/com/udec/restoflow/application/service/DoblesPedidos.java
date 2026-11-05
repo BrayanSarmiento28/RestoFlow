@@ -8,6 +8,7 @@ import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Pedido;
 import com.udec.restoflow.domain.model.Producto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -70,6 +71,12 @@ final class DoblesPedidos {
             Pedido copia = new Pedido(id, p.getNumeroMesa(), p.getMeseroId(), p.getMeseroNombre(), lineas,
                     p.getObservaciones(), p.getEstadoCocina(), p.getEstadoPedido(), p.getFechaCreacion(),
                     p.getFechaInicioPreparacion(), p.getFechaListo(), p.getFechaEntrega(), p.getFechaCierre());
+            if (p.getNumeroDelDia() != null) {
+                copia.asignarNumeroDelDia(p.getNumeroDelDia());
+            }
+            if (p.getMetodoPago() != null) {
+                copia.asignarMetodoPago(p.getMetodoPago());
+            }
             datos.put(id, copia);
             return copia;
         }
@@ -104,6 +111,13 @@ final class DoblesPedidos {
                     .filter(p -> estadoPedido == null || p.getEstadoPedido() == estadoPedido)
                     .sorted(Comparator.comparing(Pedido::getFechaCreacion).reversed())
                     .toList();
+        }
+
+        @Override
+        public int ultimoNumeroDelDia(LocalDate dia) {
+            return datos.values().stream()
+                    .filter(p -> p.getFechaCreacion().toLocalDate().equals(dia) && p.getNumeroDelDia() != null)
+                    .mapToInt(Pedido::getNumeroDelDia).max().orElse(0);
         }
 
         @Override

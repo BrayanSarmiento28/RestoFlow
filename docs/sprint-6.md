@@ -9,7 +9,7 @@ En el comité del 30 de octubre el docente pidió:
 |---|---------------|------------------|--------|
 | 1 | Implementar logs que se guarden en la base de datos | Registro de actividad: cada petición queda en la tabla `registro_peticiones` de SQL Server | **Hecho** |
 | 2 | Validar API externa | RestoFlow AI en toda la plataforma: avisos por rol + **IA externa Google Gemini** (resumen por rol, preguntas del admin y recomendaciones) | **Hecho** |
-| 3 | Validar lógica de la aplicación | Pruebas de integración de punta a punta de los flujos del negocio | Parte 3 |
+| 3 | Validar lógica de la aplicación | Regla nueva de **mesas ocupadas** y pruebas de punta a punta de las reglas del negocio | **Hecho** |
 | 4 | Debe tener cobertura externa | Cobertura del frontend completo mayor a 80 % en SonarQube | Parte 3 |
 
 ---
@@ -284,3 +284,90 @@ Google AI Studio), con el mismo patrón que Open Food Facts.
    - Docker, en el `.env`: `GEMINI_API_KEY=SU_CLAVE`
 3. Reiniciar el backend. En el log aparece `Gemini (gemini-3.5-flash-lite) respondió en ... ms` cuando se usa.
 4. Si Google cambia el modelo gratuito, se cambia con `GEMINI_MODELO` sin tocar el código.
+
+---
+
+## 4. Validar la lógica de la aplicación
+
+### Regla nueva: una mesa ocupada no recibe otro pedido
+
+Revisando la lógica del mesero se encontró que se podían registrar dos pedidos abiertos en la misma mesa. Ahora:
+
+- Una mesa está **ocupada** mientras tenga un pedido **abierto** (pendiente, en preparación, listo o entregado
+  sin cobrar).
+- Si el mesero escribe una mesa ocupada, la pantalla lo avisa **mientras escribe** y no deja enviar; el backend
+  también lo rechaza (409): *"La mesa 5 está ocupada con el pedido #275. Se libera cuando ese pedido se cobre o se
+  cancele, o cuando se cambie a otra mesa."*
+- La mesa se **libera** al **cobrar** (registrar la venta) o al **cancelar** el pedido.
+- **Cambiar mesa:** si el cliente se cambia de lugar, el mesero usa "Cambiar mesa" en el pedido. Solo a una mesa
+  libre, en cualquier estado de cocina mientras el pedido esté abierto; la mesa anterior queda libre. Queda en la
+  auditoría (`evento=MESA_CAMBIADA`).
+- Debajo del campo Mesa se ven las mesas ocupadas **con el mesero que las atiende** ("5 Laura", "7 Pedro").
+- **Ya enviado a cocina, lo único que se puede cambiar es la mesa.** Mientras está Pendiente se puede editar o
+  cancelar; desde En preparación los productos quedan fijos (la cocina ya los está haciendo) y solo aparece
+  "Cambiar mesa" (y "Registrar venta" cuando se entrega). El backend responde 409 con ese mismo mensaje si alguien
+  intenta modificarlo.
+
+**El número del pedido solo lo ve el administrador.** El mesero y la cocina identifican cada pedido por su mesa
+(basta, porque una mesa tiene un solo pedido abierto): "Pedido de la mesa 5 enviado a cocina", la comanda dice
+"Mesa 5", los avisos dicen "Mesa 5 · pedido demorado" y el mensaje de mesa ocupada dice quién la atiende, sin el
+número. El administrador sigue viendo el # en Pedidos, Cocina y Reportes.
+
+**Numeración por día:** los pedidos se numeran **#1, #2, #3... y la cuenta vuelve a empezar cada día** (el primer
+pedido de mañana es otra vez el #1). Los cancelados también cuentan, para que no haya números repetidos ni huecos
+que expliquen. Es el número que ve el administrador en Pedidos, Cocina y Reportes (junto a la fecha). Por dentro, la
+base de datos sigue usando el `id_pedido` de siempre, que no se reinicia (las ventas, el inventario y la auditoría
+se relacionan con él). Columna nueva `numero_dia` (script `backend/database/04_numero_pedido_dia.sql`).
+
+**Registrar la venta con método de pago:** al cobrar se abre una ventana (centrada, angosta, con los colores de
+RestoFlow) con la mesa, el total y dos opciones: **Efectivo** o **Transferencia**. "Aceptar" se activa solo cuando
+se elige el método; "Cancelar" o la tecla Esc cierran sin cobrar. El método queda guardado en el pedido (columna
+`metodo_pago`), en la auditoría (`evento=VENTA_REGISTRADA ... pago=TRANSFERENCIA`) y en Reportes; el API rechaza
+cualquier otro método (400).
+
+**Solo el administrador registra la venta; el mesero pasa la cuenta:** el mesero ya no cobra. En un pedido
+entregado su botón dice **"Pasar la cuenta"** y abre la misma ventana con los productos consumidos (precio por
+unidad, cantidad y subtotal), el **total a pagar** y el botón **"Imprimir factura"**, que imprime un comprobante
+angosto (tipo tirilla de 72 mm) con el nombre del restaurante, la mesa, el mesero, la fecha y el detalle, para
+entregarlo al cliente. El administrador ve la misma cuenta y además elige el método de pago y pulsa "Aceptar".
+¿Por qué así? Separa funciones (quien atiende la mesa no es quien recibe el dinero), como en una caja real, y deja
+un solo responsable del cuadre del día. La regla está en el backend, no solo en la pantalla:
+`PATCH /api/pedidos/{id}/pagar` es solo `ADMIN` en `SecurityConfig` (un mesero recibe 403 aunque llame al API a
+mano; lo prueban `PedidoFlujoIntegracionTest` y `ReglasDeNegocioIntegracionTest`). El aviso "sin cobrar" ahora le
+dice al mesero "Pase la cuenta a la mesa". El comprobante aclara que no reemplaza la factura electrónica.
+
+**Cierre del día (Dashboard del administrador):** pedidos registrados hoy, cobrados, abiertos y cancelados, el
+total vendido, **cuánto entró en efectivo y cuánto por transferencia** (para cuadrar la caja) y una tabla con los
+pedidos cobrados y lo vendido por cada mesero. Si quedan pedidos sin cobrar, lo
+avisa para revisarlos antes de cerrar.
+
+| Capa | Archivo | Qué cambió |
+|------|---------|------------|
+| Dominio | `Pedido.java` | `ocupaMesa()` y `cambiarMesa()` (solo pedidos abiertos, mesa válida y distinta) |
+| Dominio | `MesaOcupadaException.java` | 409 con el pedido que ocupa la mesa |
+| Aplicación | `GestionarPedidosService` | Revisa la mesa al registrar y al cambiar; `mesasOcupadas()` |
+| Infraestructura | `PedidoController` | `PATCH /api/pedidos/{id}/mesa` y `GET /api/pedidos/mesas-ocupadas` (MESERO y ADMIN; la cocina solo consulta) |
+| Frontend | `pages/pedidos/*`, `core/util/mesas.ts` | Aviso al escribir, mesas ocupadas con su mesero y botón "Cambiar mesa" |
+| Frontend | `pages/pedidos/*`, `pages/cocina/*` | El # del pedido solo para el administrador |
+| Aplicación + frontend | `ConsultarPanelService` (`pedidosRegistrados`, `porMesero`), `pages/inicio/*` | Cierre del día |
+| Seguridad + frontend | `SecurityConfig`, `pages/pedidos/*`, `styles.scss` (`@media print`) | Solo ADMIN registra la venta; el mesero pasa la cuenta e imprime la factura |
+
+### Pruebas de las reglas del negocio
+
+`ReglasDeNegocioIntegracionTest` recorre las reglas por el API real (seguridad, casos de uso, dominio y base de
+datos H2), con los roles de verdad:
+
+| Prueba | Regla |
+|--------|-------|
+| Mesa ocupada hasta cobrar | 409 con el pedido que la ocupa; sigue ocupada aunque esté entregado; se libera al cobrar |
+| Mesa libre al cancelar | Cancelar libera la mesa |
+| Cambiar de mesa | Solo a una mesa libre; la anterior se libera; la cocina recibe 403; mesa 0 → 400 |
+| Estados en orden | No se cobra lo no entregado, no se cancela ni modifica lo que se prepara, no se salta de estado, no se cobra dos veces, un pedido cobrado no se mueve |
+| Datos inválidos | Mesa 0 o 1000, cantidad 0 → 400; producto inexistente → 404; los intentos fallidos no ocupan la mesa |
+
+Además: `PedidoTest` (dominio) y `GestionarPedidosServiceTest` (+4: mesa ocupada, se libera al cobrar o cancelar,
+cambiar de mesa y sus reglas) y `mesas.test.ts` (Jest, 4).
+
+Estas pruebas se suman a las de punta a punta que ya existían: `PedidoFlujoIntegracionTest` (pedido completo con
+cada rol), `InventarioFlujoIntegracionTest` (insumo → receta → venta → descuento → alerta → panel → historial),
+`AvisosIntegracionTest`, `AsistenteIAIntegracionTest` y `RegistroActividadIntegracionTest`.

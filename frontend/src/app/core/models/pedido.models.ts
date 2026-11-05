@@ -29,3 +29,11 @@ export interface FiltroPedidos {
   estadoCocina?: EstadoCocina | null;
   estadoPedido?: 'ABIERTO' | 'PAGADO' | 'CANCELADO' | null;
 }
+
+/** Mesa con un pedido abierto (GET /api/pedidos/mesas-ocupadas). No recibe pedidos nuevos hasta liberarse. */
+export interface MesaOcupada {
+  numeroMesa: number;
+  pedidoId: number;
+  meseroNombre: string;
+  estadoCocina: EstadoCocina;
+}

@@ -635,3 +635,31 @@ button, input, select, textarea { font: inherit; }
   .encabezado h1 { font-size: 32px; }
   .tarjeta { padding: 20px; }
 }
+
+/* ---------- Factura impresa ("Imprimir factura" en Pedidos) ----------
+   Al imprimir solo se ve la cuenta (.factura), en blanco y negro y del ancho de una tirilla. */
+@media print {
+  html, body { background: #fff !important; }
+  body * { visibility: hidden; }
+  .factura, .factura * { visibility: visible; }
+  .cobro-fondo { position: static !important; display: block !important; background: none !important; }
+  .cobro { max-height: none !important; overflow: visible !important; box-shadow: none !important; border: 0 !important; }
+  .factura {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 72mm;
+    padding: 4mm;
+    color: #000;
+    font-size: 12px;
+  }
+  .factura__marca { display: block !important; margin: 0 0 2mm; font-size: 18px; font-weight: 800; text-align: center; }
+  .factura h2 { margin: 0 0 1mm !important; font-size: 14px !important; text-align: center; }
+  .factura .cobro__pedido { margin: 0 0 3mm; font-size: 11px; text-align: center; color: #000; }
+  .factura__fecha { display: inline !important; }
+  .factura .cobro__total { display: flex; justify-content: space-between; margin: 2mm 0; padding: 2mm 0; background: none !important; border-radius: 0 !important; border-top: 1px dashed #000; }
+  .factura .cobro__total span, .factura .cobro__total strong { color: #000; font-size: 14px; }
+  .factura__lineas th, .factura__lineas td { color: #000 !important; border-color: #000 !important; }
+  .factura__lineas td small { color: #000 !important; }
+  .factura__pie { display: block !important; margin-top: 3mm; font-size: 10px; text-align: center; }
+}

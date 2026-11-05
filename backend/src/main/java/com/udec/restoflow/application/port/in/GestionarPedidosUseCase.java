@@ -2,6 +2,7 @@ package com.udec.restoflow.application.port.in;
 
 import com.udec.restoflow.domain.model.EstadoCocina;
 import com.udec.restoflow.domain.model.EstadoPedido;
+import com.udec.restoflow.domain.model.MetodoPago;
 import com.udec.restoflow.domain.model.Pedido;
 
 import java.util.List;
@@ -17,12 +18,20 @@ public interface GestionarPedidosUseCase {
 
     Pedido cancelar(Long pedidoId);
 
-    /** Cierra un pedido Entregado como venta (Pagado). */
-    Pedido registrarVenta(Long pedidoId);
+    /** Cierra un pedido Entregado como venta (Pagado), con su método de pago. */
+    Pedido registrarVenta(Long pedidoId, MetodoPago metodo);
 
     Pedido obtener(Long pedidoId);
 
     List<Pedido> consultar(Integer numeroMesa, EstadoCocina estadoCocina, EstadoPedido estadoPedido);
+
+    /** Pasa un pedido abierto a otra mesa, que debe estar libre (por ejemplo, el cliente se cambió de lugar). */
+    Pedido cambiarMesa(Long pedidoId, int nuevaMesa);
+
+    /** Mesas con un pedido abierto, de la menor a la mayor (para que el mesero sepa cuáles están libres). */
+    List<MesaOcupada> mesasOcupadas();
+
+    record MesaOcupada(int numeroMesa, Long pedidoId, String meseroNombre, EstadoCocina estadoCocina) { }
 
     record LineaPedido(Long productoId, int cantidad, String nota) { }
 

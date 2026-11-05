@@ -8,7 +8,7 @@ import { cantidadMovimiento } from '../../core/util/inventario-calculos';
 import { ResumenVentas } from '../../core/models/inventario.models';
 import {
   ABREVIATURA_UNIDAD, EstadoPedido, Ingrediente, MovimientoInventario, NOMBRES_ESTADO_COCINA, NOMBRES_ESTADO_PEDIDO,
-  Pedido, TipoMovimiento,
+  NOMBRES_METODO_PAGO, Pedido, TipoMovimiento, numeroPedido,
 } from '../../core/entities';
 
 type Pestana = 'ventas' | 'pedidos' | 'movimientos';
@@ -25,6 +25,9 @@ export class Reportes implements OnInit {
   private readonly inventarioApi = inject(InventarioService);
 
   protected readonly pesos = pesos;
+  /** #1, #2... dentro de cada día (junto a la fecha de la fila). */
+  protected readonly numeroPedido = numeroPedido;
+  protected readonly nombresMetodo = NOMBRES_METODO_PAGO;
   protected readonly numero = numero;
   protected readonly fechaHora = fechaHora;
   protected readonly abreviatura = ABREVIATURA_UNIDAD;

@@ -7,6 +7,7 @@ import com.udec.restoflow.application.port.out.PedidoRepositoryPort;
 import com.udec.restoflow.domain.model.DetallePedido;
 import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Ingrediente;
+import com.udec.restoflow.domain.model.MetodoPago;
 import com.udec.restoflow.domain.model.Pedido;
 import com.udec.restoflow.domain.model.Ventas;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,7 +51,8 @@ public class ConsultarPanelService implements ConsultarPanelUseCase {
         List<Pedido> ventas = pedidos.pagadosEntre(inicio, fin);
         BigDecimal total = Ventas.total(ventas);
         BigDecimal ayer = Ventas.total(pedidos.pagadosEntre(inicio.minusDays(1), inicio));
-        int cancelados = pedidos.creadosEntre(inicio, fin, EstadoPedido.CANCELADO).size();
+        List<Pedido> registrados = pedidos.creadosEntre(inicio, fin, null);
+        int cancelados = (int) registrados.stream().filter(p -> p.getEstadoPedido() == EstadoPedido.CANCELADO).count();
 
         List<InsumoBajo> bajos = ingredientes.listar(true).stream()
                 .filter(Ingrediente::estaEnMinimo)
@@ -60,7 +63,8 @@ public class ConsultarPanelService implements ConsultarPanelUseCase {
 
         return new ResumenPanel(dia, total, ventas.size(), Ventas.ticketPromedio(total, ventas.size()), ayer,
                 pedidos.buscar(null, null, EstadoPedido.ABIERTO).size(), pedidos.pendientesEnCocina().size(),
-                cancelados, porHora(ventas), masVendidos(ventas), bajos, (int) alertas.contarPendientes());
+                cancelados, porHora(ventas), masVendidos(ventas), bajos, (int) alertas.contarPendientes(),
+                registrados.size(), porMesero(ventas), porMetodoPago(ventas));
     }
 
     /** Qué tan lleno está respecto a su mínimo (0 = agotado). Sirve para comparar insumos de distinta unidad. */
@@ -76,6 +80,26 @@ public class ConsultarPanelService implements ConsultarPanelUseCase {
         return grupos.entrySet().stream()
                 .map(e -> new VentaPorHora(e.getKey(), Ventas.total(e.getValue()), e.getValue().size()))
                 .toList();
+    }
+
+    /** Cierre del día: ventas cobradas agrupadas por el mesero que registró el pedido. */
+    private static List<VentaPorMesero> porMesero(List<Pedido> ventas) {
+        Map<Long, VentaPorMesero> acumulado = new LinkedHashMap<>();
+        for (Pedido p : ventas) {
+            acumulado.merge(p.getMeseroId(), new VentaPorMesero(p.getMeseroId(), p.getMeseroNombre(), 1, p.getTotal()),
+                    (a, b) -> new VentaPorMesero(a.meseroId(), a.meseroNombre(), a.pedidos() + 1, a.total().add(b.total())));
+        }
+        return acumulado.values().stream()
+                .sorted(Comparator.comparing(VentaPorMesero::total).reversed())
+                .toList();
+    }
+
+    /** Siempre los dos métodos (aunque uno sea 0), en el orden del enum. Las ventas antiguas sin método no cuentan. */
+    private static List<VentaPorMetodo> porMetodoPago(List<Pedido> ventas) {
+        return Arrays.stream(MetodoPago.values()).map(m -> {
+            List<Pedido> conEste = ventas.stream().filter(p -> p.getMetodoPago() == m).toList();
+            return new VentaPorMetodo(m, conEste.size(), Ventas.total(conEste));
+        }).toList();
     }
 
     private static List<ProductoVendido> masVendidos(List<Pedido> ventas) {

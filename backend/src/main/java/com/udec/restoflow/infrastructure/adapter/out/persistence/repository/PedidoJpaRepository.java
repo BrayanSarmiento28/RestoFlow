@@ -56,4 +56,8 @@ public interface PedidoJpaRepository extends JpaRepository<PedidoEntity, Long> {
               and p.fechaCierre >= :desde and p.fechaCierre < :hasta
             order by p.fechaCierre desc""")
     List<PedidoEntity> pagadosEntre(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
+    /** El número del día más alto de los pedidos creados en [desde, hasta). */
+    @Query("select max(p.numeroDelDia) from PedidoEntity p where p.fechaCreacion >= :desde and p.fechaCreacion < :hasta")
+    Integer ultimoNumeroDelDia(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 }

@@ -58,3 +58,28 @@
   span { font-size: 14px; line-height: 1.5; color: var(--rf-texto-2); }
   em { margin-top: 6px; font-size: 14px; font-style: normal; font-weight: 600; color: var(--rf-brasa-oscura); }
 }
+
+/* Cierre del día */
+.cierre {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 0 0 16px;
+  div { padding: 12px 14px; border-radius: var(--rf-radio-m); background: var(--rf-crema); }
+  dt { font-size: 13px; color: var(--rf-texto-2); }
+  dd { margin: 4px 0 0; font-family: var(--rf-fuente-titulo); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  &__total { background: var(--rf-tinta) !important; dt { color: var(--rf-texto-claro); } dd { color: var(--rf-crema); } }
+  &__pagos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: -4px 0 16px; }
+  &__pago {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--rf-texto-2);
+    border: 1px solid var(--rf-linea);
+    border-radius: var(--rf-radio-m);
+    strong { font-size: 18px; color: var(--rf-tinta); font-variant-numeric: tabular-nums; }
+  }
+  &__aviso { margin: 0 0 12px; font-size: 14px; color: var(--rf-aviso-texto); }
+}

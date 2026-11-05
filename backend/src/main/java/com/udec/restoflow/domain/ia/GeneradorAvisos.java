@@ -33,7 +33,8 @@ import java.util.stream.Collectors;
  *   <tr><td>Inventario y cocina</td><td>Mañana será un día fuerte (predicción de demanda)</td>
  *       <td>20 % o más sobre un día normal</td><td>—</td></tr>
  * </table>
- * El ADMIN ve todos. Java puro: se prueba sin base de datos.
+ * El ADMIN ve todos. Los textos nombran la mesa y no el número del pedido (una mesa tiene un solo pedido abierto).
+ * Java puro: se prueba sin base de datos.
  */
 public final class GeneradorAvisos {
 
@@ -103,7 +104,7 @@ public final class GeneradorAvisos {
         // Urgente: también le llega al mesero de la mesa, para que le avise al cliente
         Set<Rol> para = urgente ? Set.of(Rol.COCINA, Rol.MESERO) : Set.of(Rol.COCINA);
         return new Aviso("demora-" + p.getId(), Tipo.PLATO_DEMORADO, urgente ? Nivel.URGENTE : Nivel.ATENCION,
-                "Mesa " + p.getNumeroMesa() + " · pedido #" + p.getId() + " demorado",
+                "Mesa " + p.getNumeroMesa() + " · pedido demorado",
                 "Lleva " + lleva + " min y " + base + ". " + estado, "/cocina", p.getFechaCreacion(), para,
                 p.getMeseroId());
     }
@@ -120,7 +121,7 @@ public final class GeneradorAvisos {
         }
         return new Aviso("listo-" + p.getId(), Tipo.PEDIDO_LISTO,
                 espera >= LISTO_URGENTE_MIN ? Nivel.URGENTE : Nivel.ATENCION,
-                "Mesa " + p.getNumeroMesa() + " · pedido #" + p.getId() + " listo para llevar",
+                "Mesa " + p.getNumeroMesa() + " · pedido listo para llevar",
                 "Está listo hace " + espera + " min. Llévelo a la mesa antes de que se enfríe.", "/pedidos",
                 p.getFechaListo(), Set.of(Rol.MESERO), p.getMeseroId());
     }
@@ -135,9 +136,9 @@ public final class GeneradorAvisos {
         }
         return new Aviso("cobro-" + p.getId(), Tipo.SIN_COBRAR,
                 espera >= SIN_COBRAR_URGENTE_MIN ? Nivel.URGENTE : Nivel.ATENCION,
-                "Mesa " + p.getNumeroMesa() + " · pedido #" + p.getId() + " sin cobrar",
-                "Se entregó hace " + espera + " min y aún no se registra la venta ("
-                        + GeneradorRecomendaciones.pesos(p.getTotal()) + ").",
+                "Mesa " + p.getNumeroMesa() + " · pedido sin cobrar",
+                "Se entregó hace " + espera + " min y aún no se ha cobrado ("
+                        + GeneradorRecomendaciones.pesos(p.getTotal()) + "). Pase la cuenta a la mesa.",
                 "/pedidos", p.getFechaEntrega(), Set.of(Rol.MESERO), p.getMeseroId());
     }
 
