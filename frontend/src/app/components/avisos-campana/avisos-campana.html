@@ -1,0 +1,60 @@
+<button type="button" class="campana" [class.campana--urgente]="urgente()" [attr.aria-expanded]="abierto()"
+        aria-controls="panel-avisos" [attr.aria-label]="texto()" [title]="texto()" (click)="alternar()">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/>
+  </svg>
+  @if (sinVer() > 0) {
+    <span class="campana__numero" aria-hidden="true">{{ sinVer() > 9 ? '9+' : sinVer() }}</span>
+  }
+</button>
+
+@if (abierto()) {
+  <section id="panel-avisos" class="panel" role="dialog" aria-labelledby="t-avisos">
+    <header class="panel__encabezado">
+      <div>
+        <p class="panel__eyebrow">RestoFlow AI</p>
+        <h2 id="t-avisos">Avisos del momento</h2>
+      </div>
+      <button type="button" class="panel__cerrar" aria-label="Cerrar avisos" (click)="cerrar()">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+
+    <!-- Sin avisos no hay nada que resumir: basta el "Todo en orden" de la lista -->
+    @if (avisos().length > 0) {
+      @if (pensando() && !resumen()) {
+        <div class="resumen resumen--cargando" role="status">RestoFlow AI está revisando sus avisos...</div>
+      } @else if (resumen(); as r) {
+        <div class="resumen" [class.resumen--reglas]="r.origen === 'REGLAS'" role="status">
+          <p class="resumen__texto">{{ r.texto }}</p>
+          <span class="resumen__origen">{{ textoOrigen(r.origen) }}{{ pensando() ? ' · actualizando...' : '' }}</span>
+        </div>
+      }
+    }
+
+    @if (sinConexion()) {
+      <p class="panel__estado">No se pudieron actualizar los avisos. Se reintenta en un minuto.</p>
+    }
+
+    <ul class="lista">
+      @for (a of avisos(); track a.clave) {
+        <li class="aviso" [class.aviso--urgente]="a.nivel === 'URGENTE'" [class.aviso--atencion]="a.nivel === 'ATENCION'">
+          <div class="aviso__meta">
+            <span class="aviso__nivel">{{ etiquetaNivel[a.nivel] }}</span>
+            <span class="aviso__hace">{{ haceCuanto(a.desde) }}</span>
+          </div>
+          <strong class="aviso__titulo">{{ a.titulo }}</strong>
+          <p class="aviso__mensaje">{{ a.mensaje }}</p>
+          @if (enlace(a); as ruta) {
+            <a class="aviso__ir" [routerLink]="ruta" (click)="cerrar()">Ir a atenderlo</a>
+          }
+        </li>
+      } @empty {
+        <li class="vacio">Todo en orden. RestoFlow AI avisará aquí si algo necesita su atención.</li>
+      }
+    </ul>
+    <p class="panel__pie">Se actualiza cada minuto con los datos reales del restaurante.</p>
+  </section>
+}

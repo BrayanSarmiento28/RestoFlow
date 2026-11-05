@@ -13,7 +13,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * <b>Factor III de los 12 factores (configuración en el entorno), implementado en el código.</b>
@@ -79,7 +81,41 @@ public record RestoFlowProperties(
     /** Servicios de terceros (factor IV). */
     public record ApisExternas(
             @DefaultValue("4") @Min(1) @Max(30) int tiempoEsperaSegundos,
-            @Valid @NotNull @DefaultValue OpenFoodFacts openFoodFacts) {
+            @Valid @NotNull @DefaultValue OpenFoodFacts openFoodFacts,
+            @Valid @NotNull @DefaultValue Gemini gemini) {
+    }
+
+    /**
+     * IA externa de RestoFlow AI. Variables: GEMINI_API_KEY (sin clave, RestoFlow funciona con su plan B sin IA),
+     * GEMINI_MODELO, GEMINI_MODELOS_RESPALDO y GEMINI_TIEMPO_ESPERA. La clave se crea gratis en https://aistudio.google.com.
+     */
+    public record Gemini(
+            @DefaultValue("") String apiKey,
+            @DefaultValue("gemini-3.5-flash-lite") @NotBlank String modelo,
+            /* Se prueban en orden si el principal está saturado (503), sin cupo (429) o retirado (404) */
+            @DefaultValue("gemini-3.8-flash") List<String> modelosRespaldo,
+            @DefaultValue("https://generativelanguage.googleapis.com") @NotBlank String url,
+            @DefaultValue("15") @Min(5) @Max(120) int tiempoEsperaSegundos) {
+
+        public boolean configurado() {
+            return apiKey != null && !apiKey.isBlank();
+        }
+
+        /** El principal primero y luego los de respaldo, sin repetidos ni vacíos. */
+        public List<String> modelos() {
+            Set<String> todos = new LinkedHashSet<>();
+            todos.add(modelo.trim());
+            if (modelosRespaldo != null) {
+                modelosRespaldo.stream().filter(m -> m != null && !m.isBlank()).map(String::trim).forEach(todos::add);
+            }
+            return List.copyOf(todos);
+        }
+
+        @Override
+        public String toString() {
+            return "Gemini[apiKey=" + (configurado() ? "****" : "(sin clave)") + ", modelos=" + modelos() + ", url=" + url
+                    + ", tiempoEsperaSegundos=" + tiempoEsperaSegundos + "]";     // nunca mostrar la clave
+        }
     }
 
     /** Variables: OPENFOODFACTS_URL. */

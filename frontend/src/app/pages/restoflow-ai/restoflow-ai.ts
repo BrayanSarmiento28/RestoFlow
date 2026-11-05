@@ -7,7 +7,11 @@ import {
   CLASE_PRIORIDAD, ETIQUETA_TIPO, NOMBRE_DIA, NOMBRE_PRIORIDAD, columnasPorDia, contarPorPrioridad, direccion,
   fechaLarga, insumosPorComprar, mensajeAlertas, textoCobertura, textoHora, textoTendencia,
 } from '../../core/util/restoflow-ai';
-import { AnalisisRestoFlowAI } from '../../core/models/restoflow-ai.models';
+import { AnalisisRestoFlowAI, RecomendacionesIA } from '../../core/models/restoflow-ai.models';
+import { AuthService } from '../../core/services/auth.service';
+import {
+  Intercambio, SUGERENCIAS, agregarIntercambio, contador, puedePreguntar, textoOrigen,
+} from '../../core/util/asistente-ia';
 import { ABREVIATURA_UNIDAD, PrioridadAlerta } from '../../core/entities';
 
 type Filtro = 'TODAS' | PrioridadAlerta;
@@ -24,6 +28,7 @@ type Filtro = 'TODAS' | PrioridadAlerta;
 })
 export class RestoFlowAI implements OnInit {
   private readonly api = inject(RestoFlowAIService);
+  private readonly auth = inject(AuthService);
 
   protected readonly pesos = pesos;
   protected readonly numero = numero;
@@ -39,6 +44,11 @@ export class RestoFlowAI implements OnInit {
   protected readonly textoHora = textoHora;
   protected readonly fechaLarga = fechaLarga;
   protected readonly filtros: Filtro[] = ['TODAS', 'ALTA', 'MEDIA', 'BAJA'];
+  protected readonly textoOrigen = textoOrigen;
+  protected readonly contador = contador;
+  protected readonly sugerencias = SUGERENCIAS;
+  /** El chat con Gemini es solo del administrador (el backend también lo exige). */
+  protected readonly esAdmin = this.auth.tieneRol('ADMIN');
 
   protected readonly analisis = signal<AnalisisRestoFlowAI | null>(null);
   protected readonly cargando = signal(false);
@@ -47,9 +57,23 @@ export class RestoFlowAI implements OnInit {
   protected readonly mensaje = signal<string | null>(null);
   protected readonly filtro = signal<Filtro>('TODAS');
 
-  protected readonly conteo = computed(() => contarPorPrioridad(this.analisis()?.recomendaciones ?? []));
+  /** Recomendaciones redactadas por Gemini; si no llegan, se muestran las calculadas con reglas. */
+  protected readonly deIA = signal<RecomendacionesIA | null>(null);
+  protected readonly cargandoIA = signal(false);
+  protected readonly todas = computed(() => {
+    const ia = this.deIA();
+    return ia && ia.origen === 'GEMINI' ? ia.recomendaciones : (this.analisis()?.recomendaciones ?? []);
+  });
+
+  // Pregúntale a RestoFlow AI
+  protected readonly pregunta = signal('');
+  protected readonly enviando = signal(false);
+  protected readonly conversacion = signal<Intercambio[]>([]);
+  protected readonly puedeEnviar = computed(() => puedePreguntar(this.pregunta(), this.enviando()));
+
+  protected readonly conteo = computed(() => contarPorPrioridad(this.todas()));
   protected readonly recomendaciones = computed(() => {
-    const todas = this.analisis()?.recomendaciones ?? [];
+    const todas = this.todas();
     const f = this.filtro();
     return f === 'TODAS' ? todas : todas.filter((r) => r.prioridad === f);
   });
@@ -72,10 +96,47 @@ export class RestoFlowAI implements OnInit {
       next: (a) => {
         this.analisis.set(a);
         this.cargando.set(false);
+        this.cargarIA();
       },
       error: (err: HttpErrorResponse) => {
         this.error.set(mensajeDeError(err));
         this.cargando.set(false);
+      },
+    });
+  }
+
+  /** Gemini puede tardar unos segundos: mientras tanto se ven las recomendaciones de reglas. */
+  private cargarIA(): void {
+    this.cargandoIA.set(true);
+    this.api.recomendacionesIA().subscribe({
+      next: (r) => {
+        this.deIA.set(r);
+        this.cargandoIA.set(false);
+      },
+      error: () => this.cargandoIA.set(false),
+    });
+  }
+
+  protected usarSugerencia(texto: string): void {
+    this.pregunta.set(texto);
+    this.preguntar();
+  }
+
+  protected preguntar(): void {
+    const texto = this.pregunta().trim();
+    if (!puedePreguntar(texto, this.enviando())) return;
+    this.enviando.set(true);
+    const hora = new Date().toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+    this.api.preguntar(texto).subscribe({
+      next: (r) => {
+        this.conversacion.update((l) => agregarIntercambio(l, { pregunta: texto, respuesta: r.texto, error: null, hora }));
+        this.pregunta.set('');
+        this.enviando.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.conversacion.update((l) => agregarIntercambio(l,
+          { pregunta: texto, respuesta: null, error: mensajeDeError(err), hora }));
+        this.enviando.set(false);
       },
     });
   }
@@ -98,7 +159,7 @@ export class RestoFlowAI implements OnInit {
   }
 
   protected etiquetaFiltro(f: Filtro): string {
-    if (f === 'TODAS') return `Todas (${this.analisis()?.recomendaciones.length ?? 0})`;
+    if (f === 'TODAS') return `Todas (${this.todas().length})`;
     return `${this.nombrePrioridad[f]} (${this.conteo()[f]})`;
   }
 }

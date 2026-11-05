@@ -122,9 +122,19 @@ restoflow:
     open-food-facts:
       url: ${OPENFOODFACTS_URL:https://world.openfoodfacts.org}
       user-agent: RestoFlow/@project.version@ (Proyecto Integrador UdeC)
+    # ---------- IA externa: Google Gemini (RestoFlow AI) ----------
+    # Clave gratuita en https://aistudio.google.com → "Get API key". Va SOLO en el .env (nunca en GitHub).
+    # Sin clave, RestoFlow funciona igual con sus reglas (la campana y las recomendaciones no se rompen).
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      # Flash-Lite: el más rápido del plan gratuito (responde en ~1 s) y suficiente para redactar con datos dados
+      modelo: ${GEMINI_MODELO:gemini-3.5-flash-lite}
+      # Si el principal está saturado, sin cupo o tarda demasiado, se prueban estos (separados por coma)
+      modelos-respaldo: ${GEMINI_MODELOS_RESPALDO:gemini-3.8-flash}
+      tiempo-espera-segundos: ${GEMINI_TIEMPO_ESPERA:15}
   # ---------- Registro de actividad en la base de datos (recomendación del comité) ----------
-  # Cada petición al API se guarda en la tabla registro_peticiones (en segundo plano) y se consulta en la
-  # pantalla "Registro de actividad" (ADMIN). Los logs de texto siguen igual.
+  # Cada petición al API se guarda en la tabla registro_peticiones (en segundo plano) y se consulta en SQL Server.
+  # Los logs de texto siguen igual.
   registro:
     habilitado: ${REGISTRO_BD_HABILITADO:true}
     # Días que se conservan; cada madrugada se borran los más viejos

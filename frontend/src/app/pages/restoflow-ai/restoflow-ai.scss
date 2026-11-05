@@ -70,3 +70,56 @@
 
 .como ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5; color: var(--rf-texto-2); }
 .como strong { color: var(--rf-tinta); }
+
+/* ---------- IA externa (Google Gemini) ---------- */
+
+// De dónde salieron las recomendaciones
+.origen-ia {
+  margin: 0 0 12px;
+  font-family: var(--rf-fuente-mono);
+  font-size: 12px;
+  color: var(--rf-texto-2);
+  &--gemini { color: var(--rf-brasa-oscura); }
+}
+
+// Pregúntale a RestoFlow AI (solo ADMIN)
+.chat {
+  margin-bottom: 24px;
+  &__sugerencias { display: flex; flex-wrap: wrap; gap: 8px; }
+  &__sugerencia {
+    min-height: 36px;
+    padding: 6px 14px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--rf-crema);
+    border: 1px solid var(--rf-tinta-3);
+    border-radius: 999px;
+    background: var(--rf-tinta-2);
+    cursor: pointer;
+    &:hover:not(:disabled) { border-color: var(--rf-ambar); }
+    &:disabled { opacity: 0.6; cursor: default; }
+  }
+  &__form { display: flex; flex-direction: column; gap: 8px; }
+  &__etiqueta { font-size: 13px; color: var(--rf-texto-claro); }
+  &__texto {
+    width: 100%;
+    min-height: 64px;
+    padding: 12px 14px;
+    font: inherit;
+    font-size: 15px;
+    color: var(--rf-tinta);
+    border: 1px solid var(--rf-tinta-3);
+    border-radius: var(--rf-radio-m);
+    background: var(--rf-papel);
+    resize: vertical;
+    &:focus { outline: 2px solid var(--rf-ambar); outline-offset: 1px; }
+  }
+  &__acciones { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  &__contador { font-family: var(--rf-fuente-mono); font-size: 12px; color: var(--rf-texto-claro); }
+  &__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  &__item { padding: 14px 16px; border-radius: var(--rf-radio-m); background: var(--rf-tinta-2); }
+  &__pregunta { margin: 0 0 6px; font-weight: 600; }
+  &__hora { margin-right: 8px; font-family: var(--rf-fuente-mono); font-size: 12px; font-weight: 400; color: var(--rf-texto-claro); }
+  &__respuesta { margin: 0; font-size: 15px; line-height: 1.55; white-space: pre-line; color: var(--rf-crema); }
+  &__respuesta--error { color: #F7B79C; }
+}

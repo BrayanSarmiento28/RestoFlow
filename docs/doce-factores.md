@@ -27,7 +27,7 @@ Para cada factor, este documento explica:
 | I | Código base | Un repositorio, ramas `develop` / `preprod` / `main` | Pipeline en cada *pull request* |
 | II | Dependencias | `pom.xml`, `package.json` + `package-lock.json`, imágenes con versión fija, Maven Wrapper | `npm ci` en CI y Docker |
 | III | Configuración | **`RestoFlowProperties.java`**: configuración tipada y **validada al arrancar** | `RestoFlowPropertiesTest` |
-| IV | Servicios de respaldo | Puertos y adaptadores: SQL Server, Gmail, **Open Food Facts** | `OpenFoodFactsAdapterTest`, `CatalogoExternoIntegracionTest` |
+| IV | Servicios de respaldo | Puertos y adaptadores: SQL Server, Gmail, **Open Food Facts**, **Google Gemini (IA)** | `OpenFoodFactsAdapterTest`, `CatalogoExternoIntegracionTest`, `GeminiAdapterTest`, `AsistenteIAIntegracionTest` |
 | V | Construir, publicar, ejecutar | CI/CD, Dockerfiles multi-etapa, versión 0.3.0 + `build-info` | `mvn verify` en CI |
 | VI | Procesos sin estado | JWT (`SessionCreationPolicy.STATELESS`) | `SeguridadAdaptadoresTest`, `sesion.test.ts` |
 | VII | Asignación de puertos | `server.port: ${PORT:8080}`, Tomcat embebido | — |

@@ -101,6 +101,17 @@ final class Auditoria {
         log.info("evento=PRODUCTO_EXTERNO_CONSULTADO codigo={} fuente=\"{}\"", codigo, fuente);
     }
 
+    // ---------- IA externa (Gemini) ----------
+
+    /** Solo qué función, si respondió y cuánto tardó; nunca la pregunta ni la respuesta. */
+    static void consultaIA(String funcion, boolean respondio, long ms) {
+        if (respondio) {
+            log.info("evento=CONSULTA_IA funcion={} resultado=OK ms={}", funcion, ms);
+        } else {
+            log.warn("evento=CONSULTA_IA funcion={} resultado=SIN_RESPUESTA ms={}", funcion, ms);
+        }
+    }
+
     /** Quita saltos de línea de lo que escribe el usuario, para que nadie pueda inventar líneas falsas en el log. */
     private static String limpio(String texto) {
         if (texto == null) {
