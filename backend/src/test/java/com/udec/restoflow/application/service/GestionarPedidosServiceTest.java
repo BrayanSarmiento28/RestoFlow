@@ -222,4 +222,28 @@ class GestionarPedidosServiceTest {
         assertEquals(1, primeroDeManana.getNumeroDelDia());
         assertTrue(primeroDeManana.getId() > 4);                                         // el id interno sigue creciendo
     }
+
+    @Test
+    @DisplayName("RN · Adición: el cliente pide algo más con el pedido ya entregado; vuelve a cocina y suma a la cuenta")
+    void adicion() {
+        Pedido pedido = servicio.registrar(pedidoMesa(5), meseroId);
+        List<LineaPedido> otraLimonada = List.of(new LineaPedido(limonadaId, 1, "Sin azúcar"));
+        assertThrows(OperacionNoPermitidaException.class, () -> servicio.agregarAdicion(pedido.getId(), otraLimonada));
+
+        cocina.cambiarEstado(pedido.getId(), EstadoCocina.EN_PREPARACION);
+        cocina.cambiarEstado(pedido.getId(), EstadoCocina.LISTO);
+        cocina.cambiarEstado(pedido.getId(), EstadoCocina.ENTREGADO);
+        assertEquals(0, cocina.comandasPendientes().size());
+
+        Pedido conAdicion = servicio.agregarAdicion(pedido.getId(), otraLimonada);
+        assertEquals(3, conAdicion.getDetalles().size());
+        assertTrue(conAdicion.getDetalles().get(2).isAdicion());
+        assertEquals(0, new BigDecimal("82000").compareTo(conAdicion.getTotal()));   // 73.000 + 9.000
+        assertEquals(EstadoCocina.EN_PREPARACION, conAdicion.getEstadoCocina());
+        assertEquals(1, cocina.comandasPendientes().size());                         // la cocina la ve otra vez
+
+        assertThrows(DomainException.class, () -> servicio.agregarAdicion(pedido.getId(), List.of()));
+        List<LineaPedido> inexistente = List.of(new LineaPedido(999L, 1, null));
+        assertThrows(RecursoNoEncontradoException.class, () -> servicio.agregarAdicion(pedido.getId(), inexistente));
+    }
 }

@@ -17,6 +17,7 @@ import com.udec.restoflow.domain.model.Producto;
 import com.udec.restoflow.domain.model.Usuario;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -102,6 +103,22 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
     }
 
     @Override
+    public Pedido agregarAdicion(Long pedidoId, List<LineaPedido> lineas) {
+        Pedido pedido = obtener(pedidoId);
+        if (lineas == null || lineas.isEmpty()) {
+            throw new DomainException("Agregue al menos un producto a la adición");
+        }
+        List<DetallePedido> adicion = lineas.stream()
+                .map(linea -> DetallePedido.adicionDe(producto(linea.productoId()), linea.cantidad(), linea.nota()))
+                .toList();
+        BigDecimal valor = adicion.stream().map(DetallePedido::getSubtotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        pedido.agregarAdicion(adicion, LocalDateTime.now(reloj));
+        Pedido guardado = pedidos.guardar(pedido);
+        Auditoria.adicionAgregada(guardado.getId(), guardado.getNumeroMesa(), adicion.size(), valor);
+        return guardado;
+    }
+
+    @Override
     public Pedido cambiarMesa(Long pedidoId, int nuevaMesa) {
         Pedido pedido = obtener(pedidoId);
         int anterior = pedido.getNumeroMesa();
@@ -136,10 +153,12 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
         if (comando.lineas() == null || comando.lineas().isEmpty()) {
             throw new DomainException("El pedido debe tener al menos un producto");
         }
-        return comando.lineas().stream().map(linea -> {
-            Producto producto = productos.buscarPorId(linea.productoId())
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Producto", linea.productoId()));
-            return DetallePedido.de(producto, linea.cantidad(), linea.nota());
-        }).toList();
+        return comando.lineas().stream()
+                .map(linea -> DetallePedido.de(producto(linea.productoId()), linea.cantidad(), linea.nota()))
+                .toList();
+    }
+
+    private Producto producto(Long id) {
+        return productos.buscarPorId(id).orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
     }
 }

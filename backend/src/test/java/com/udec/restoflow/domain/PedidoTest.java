@@ -212,4 +212,61 @@ class PedidoTest {
         assertEquals(MetodoPago.TRANSFERENCIA, pedido.getMetodoPago());
         assertFalse(pedido.ocupaMesa());
     }
+
+    @Test
+    @DisplayName("RN · Adición: con el pedido en preparación se suman productos a la misma cuenta, marcados como adición")
+    void adicionEnPreparacion() {
+        Pedido pedido = pedidoDeEjemplo();
+        pedido.cambiarEstadoCocina(EstadoCocina.EN_PREPARACION, AHORA);
+        LocalDateTime despues = AHORA.plusMinutes(10);
+        pedido.agregarAdicion(List.of(DetallePedido.adicionDe(producto(3, "Gaseosa", "5000"), 2, null)), despues);
+
+        assertEquals(3, pedido.getDetalles().size());
+        assertTrue(pedido.getDetalles().get(2).isAdicion());
+        assertFalse(pedido.getDetalles().get(0).isAdicion());
+        assertEquals(0, new BigDecimal("101000").compareTo(pedido.getTotal()));   // 64.000 + 27.000 + 10.000
+        assertEquals(EstadoCocina.EN_PREPARACION, pedido.getEstadoCocina());
+        assertTrue(pedido.tieneAdicion());
+        assertEquals(despues, pedido.getInicioEspera());                       // la demora se mide desde la adición
+    }
+
+    @Test
+    @DisplayName("RN · Adición a un pedido Listo o Entregado: vuelve a En preparación para que la cocina la prepare")
+    void adicionVuelveACocina() {
+        Pedido pedido = pedidoDeEjemplo();
+        pedido.cambiarEstadoCocina(EstadoCocina.EN_PREPARACION, AHORA);
+        pedido.cambiarEstadoCocina(EstadoCocina.LISTO, AHORA);
+        pedido.cambiarEstadoCocina(EstadoCocina.ENTREGADO, AHORA);
+        assertFalse(pedido.tieneAdicion());
+        assertEquals(AHORA, pedido.getInicioEspera());
+
+        pedido.agregarAdicion(List.of(DetallePedido.adicionDe(producto(3, "Gaseosa", "5000"), 1, "Bien fría")), AHORA);
+        assertEquals(EstadoCocina.EN_PREPARACION, pedido.getEstadoCocina());
+        assertEquals(null, pedido.getFechaListo());
+        assertEquals(null, pedido.getFechaEntrega());
+        assertTrue(pedido.estaPendienteEnCocina());
+        // Antes de cobrar, la cocina debe entregar la adición
+        assertThrows(OperacionNoPermitidaException.class, () -> pedido.registrarVenta(AHORA, MetodoPago.EFECTIVO));
+    }
+
+    @Test
+    @DisplayName("RN · Adición: no en un pedido Pendiente (se usa Editar), cobrado o cancelado, ni vacía")
+    void adicionReglas() {
+        DetallePedido gaseosa = DetallePedido.adicionDe(producto(3, "Gaseosa", "5000"), 1, null);
+        Pedido pendiente = pedidoDeEjemplo();
+        assertThrows(OperacionNoPermitidaException.class, () -> pendiente.agregarAdicion(List.of(gaseosa), AHORA));
+
+        Pedido cancelado = pedidoDeEjemplo();
+        cancelado.cancelar(AHORA);
+        assertThrows(OperacionNoPermitidaException.class, () -> cancelado.agregarAdicion(List.of(gaseosa), AHORA));
+
+        Pedido enCocina = pedidoDeEjemplo();
+        enCocina.cambiarEstadoCocina(EstadoCocina.EN_PREPARACION, AHORA);
+        assertThrows(DomainException.class, () -> enCocina.agregarAdicion(List.of(), AHORA));
+        DetallePedido normal = DetallePedido.de(producto(3, "Gaseosa", "5000"), 1, null);
+        assertThrows(DomainException.class, () -> enCocina.agregarAdicion(List.of(normal), AHORA));
+
+        enCocina.restaurarFechaAdicion(AHORA);
+        assertTrue(enCocina.tieneAdicion());
+    }
 }

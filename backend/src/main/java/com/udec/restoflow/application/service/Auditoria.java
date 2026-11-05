@@ -68,6 +68,10 @@ final class Auditoria {
         log.info("evento=MESA_CAMBIADA pedido={} de={} a={}", pedidoId, anterior, nueva);
     }
 
+    static void adicionAgregada(Long pedidoId, int mesa, int productos, BigDecimal valor) {
+        log.info("evento=ADICION_AGREGADA pedido={} mesa={} productos={} valor={}", pedidoId, mesa, productos, valor);
+    }
+
     static void ventaRegistrada(Long pedidoId, int mesa, BigDecimal total, MetodoPago metodo) {
         log.info("evento=VENTA_REGISTRADA pedido={} mesa={} total={} pago={}", pedidoId, mesa, total, metodo);
     }

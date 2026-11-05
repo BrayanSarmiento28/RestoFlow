@@ -49,7 +49,7 @@ public final class PersistenceMapper {
 
     public static DetallePedido aDominio(DetallePedidoEntity e) {
         return new DetallePedido(e.getId(), e.getProducto().getId(), e.getProducto().getNombre(), e.getCantidad(),
-                e.getPrecioUnitario(), e.getNota());
+                e.getPrecioUnitario(), e.getNota(), e.isAdicion());
     }
 
     public static Pedido aDominio(PedidoEntity e) {
@@ -63,6 +63,7 @@ public final class PersistenceMapper {
         if (e.getMetodoPago() != null && e.getEstadoPedido() == EstadoPedido.PAGADO) {
             pedido.asignarMetodoPago(e.getMetodoPago());
         }
+        pedido.restaurarFechaAdicion(e.getFechaAdicion());
         return pedido;
     }
 

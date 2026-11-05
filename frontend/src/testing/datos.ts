@@ -15,6 +15,7 @@ export function pedido(cambios: Partial<Pedido> = {}): Pedido {
     lineas: [{ id: 1, productoId: 1, productoNombre: 'Bandeja paisa', cantidad: 2, precioUnitario: 32000, subtotal: 64000, nota: null }],
     estadoCocina: 'PENDIENTE', estadoPedido: 'ABIERTO', total: 64000, fechaCreacion: '2026-11-05T12:00:00',
     fechaInicioPreparacion: null, fechaListo: null, fechaEntrega: null, fechaCierre: null, numeroDelDia: 4, metodoPago: null,
+    fechaAdicion: null,
     ...cambios,
   };
 }

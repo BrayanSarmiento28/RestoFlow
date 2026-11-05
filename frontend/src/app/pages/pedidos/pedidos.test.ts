@@ -19,6 +19,7 @@ function apiPedidos(ocupadas: MesaOcupada[] = []) {
     cancelar: jest.fn(() => ok(pedido({ estadoPedido: 'CANCELADO' }))),
     pagar: jest.fn(() => ok(pedido({ estadoPedido: 'PAGADO' }))),
     cambiarMesa: jest.fn(() => ok(pedido({ numeroMesa: 9 }))),
+    agregarAdicion: jest.fn(() => ok(pedido({ estadoCocina: 'EN_PREPARACION' }))),
   };
 }
 
@@ -331,5 +332,54 @@ describe('Pantalla de Pedidos', () => {
       jest.useRealTimers();
     }
   });
-});
 
+  it('el título del formulario dice si es un pedido nuevo, una edición o una adición', () => {
+    let c = abrir('ADMIN');
+    expect(c['tituloFormulario']()).toBe('Nuevo pedido');
+    c['editar'](pedido());
+    expect(c['tituloFormulario']()).toBe('Editar pedido #4');
+    c['agregarProductos'](pedido({ estadoCocina: 'ENTREGADO' }));
+    expect(c['tituloFormulario']()).toBe('Adición al pedido #4 de la mesa 3');
+    montaje.componente.ngOnDestroy();
+    montaje.destruir();
+    navegador.restaurar();
+
+    c = abrir('MESERO');
+    c['editar'](pedido());
+    expect(c['tituloFormulario']()).toBe('Editar pedido de la mesa 3');
+  });
+
+  it('adición: agrega productos a un pedido ya en cocina, con la mesa fija y el carrito solo con lo nuevo', () => {
+    const ocupada: MesaOcupada = { numeroMesa: 3, pedidoId: 40, meseroNombre: 'Laura Gómez', estadoCocina: 'LISTO' };
+    const c = abrir('MESERO', [ocupada]);
+    c['agregar'](plato);
+    c['agregarProductos'](pedido({ estadoCocina: 'LISTO' }));
+    expect(c['carrito']()).toHaveLength(0);
+    expect(c['form'].controls.mesa.disabled).toBe(true);
+    expect(c['avisoMesa']()).toBeNull();                  // su propia mesa no cuenta como ocupada
+    expect(navegador.ventana.scrollTo).toHaveBeenCalled();
+
+    c['enviar']();
+    expect(c['error']()).toBe('Agrega al menos un producto al pedido.');
+    c['agregar'](jugo);
+    c['enviar']();
+    expect(api.agregarAdicion).toHaveBeenCalledWith(40, [{ productoId: 2, cantidad: 1, nota: null }]);
+    expect(api.registrar).not.toHaveBeenCalled();
+    expect(c['exito']()).toBe('Adición del pedido de la mesa 3 enviada a cocina.');
+    expect(c['adicionPara']()).toBeNull();
+    expect(c['form'].controls.mesa.enabled).toBe(true);
+  });
+
+  it('adición: si el API la rechaza, muestra el error y conserva lo que se iba a agregar', () => {
+    const c = abrir();
+    api.agregarAdicion.mockReturnValue(falla(409, 'El pedido ya se cobró'));
+    c['agregarProductos'](pedido({ estadoCocina: 'ENTREGADO' }));
+    c['agregar'](jugo);
+    c['enviar']();
+    expect(c['error']()).toBe('El pedido ya se cobró');
+    expect(c['carrito']()).toHaveLength(1);
+    expect(c['enviando']()).toBe(false);
+    c['limpiar']();
+    expect(c['adicionPara']()).toBeNull();
+  });
+});

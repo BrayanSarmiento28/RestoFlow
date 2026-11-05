@@ -5,6 +5,7 @@ import com.udec.restoflow.domain.exception.OperacionNoPermitidaException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -38,6 +39,8 @@ public class Pedido {
     private Integer numeroDelDia;
     /** Cómo se pagó (solo en pedidos Pagados). Null en ventas anteriores a este dato. */
     private MetodoPago metodoPago;
+    /** Hora de la última adición (productos agregados con el pedido ya en cocina). Null si no tiene. */
+    private LocalDateTime fechaAdicion;
 
     /** Reconstruye un pedido existente (lo usa la capa de persistencia). */
     public Pedido(Long id, int numeroMesa, Long meseroId, String meseroNombre, List<DetallePedido> detalles,
@@ -120,6 +123,40 @@ public class Pedido {
         this.numeroMesa = nuevaMesa;
     }
 
+    /**
+     * RN: el cliente pide algo más con el pedido ya en cocina. Los productos se suman al mismo pedido (y a su cuenta)
+     * marcados como "adición" para que la cocina sepa qué falta. Si el pedido ya estaba Listo o Entregado, vuelve a
+     * En preparación: la cocina debe preparar la adición y entregarla antes de cobrar. Mientras está Pendiente no
+     * hace falta: se usa "Editar".
+     */
+    public void agregarAdicion(List<DetallePedido> adicion, LocalDateTime ahora) {
+        validarAbierto("agregar productos a");
+        if (estadoCocina == EstadoCocina.PENDIENTE) {
+            throw new OperacionNoPermitidaException(
+                    "El pedido aún no se empieza a preparar: agregue los productos con \"Editar\"");
+        }
+        if (adicion == null || adicion.isEmpty()) {
+            throw new DomainException("Agregue al menos un producto a la adición");
+        }
+        if (adicion.stream().anyMatch(d -> !d.isAdicion())) {
+            throw new DomainException("Los productos agregados después de enviar el pedido deben ser una adición");
+        }
+        List<DetallePedido> todas = new ArrayList<>(detalles);
+        todas.addAll(adicion);
+        this.detalles = List.copyOf(todas);
+        this.fechaAdicion = ahora;
+        if (estadoCocina == EstadoCocina.LISTO || estadoCocina == EstadoCocina.ENTREGADO) {
+            this.estadoCocina = EstadoCocina.EN_PREPARACION;
+            this.fechaListo = null;
+            this.fechaEntrega = null;
+        }
+    }
+
+    /** Al leer de la base de datos se recupera la hora de la última adición. */
+    public void restaurarFechaAdicion(LocalDateTime fecha) {
+        this.fechaAdicion = fecha;
+    }
+
     /** RN: solo se cancelan pedidos que no han iniciado preparación. Quedan en el historial. */
     public void cancelar(LocalDateTime ahora) {
         validarAbierto("cancelar");
@@ -194,6 +231,19 @@ public class Pedido {
         return estadoPedido == EstadoPedido.ABIERTO;
     }
 
+    /** El pedido tiene productos agregados después de enviarlo a cocina. */
+    public boolean tieneAdicion() {
+        return fechaAdicion != null;
+    }
+
+    /**
+     * Desde cuándo se mide la demora en cocina: la hora del pedido o, si tiene una adición, la hora de la adición
+     * (la cocina tiene que preparar lo nuevo; no es una demora del pedido original).
+     */
+    public LocalDateTime getInicioEspera() {
+        return fechaAdicion != null ? fechaAdicion : fechaCreacion;
+    }
+
     /** RF-04 · La cocina ve los pedidos abiertos que todavía no se han entregado. */
     public boolean estaPendienteEnCocina() {
         return estadoPedido == EstadoPedido.ABIERTO && estadoCocina != EstadoCocina.ENTREGADO;
@@ -242,4 +292,5 @@ public class Pedido {
     public LocalDateTime getFechaCierre() { return fechaCierre; }
     public Integer getNumeroDelDia() { return numeroDelDia; }
     public MetodoPago getMetodoPago() { return metodoPago; }
+    public LocalDateTime getFechaAdicion() { return fechaAdicion; }
 }

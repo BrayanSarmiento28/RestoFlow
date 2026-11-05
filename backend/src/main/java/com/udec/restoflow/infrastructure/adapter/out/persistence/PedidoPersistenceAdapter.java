@@ -51,6 +51,7 @@ public class PedidoPersistenceAdapter implements PedidoRepositoryPort {
         entidad.setFechaCierre(pedido.getFechaCierre());
         entidad.setNumeroDelDia(pedido.getNumeroDelDia());
         entidad.setMetodoPago(pedido.getMetodoPago());
+        entidad.setFechaAdicion(pedido.getFechaAdicion());
 
         // Las líneas sin id son nuevas (pedido nuevo o modificado): se reemplazan todas.
         // Si solo cambió el estado, las líneas se dejan como están.
@@ -64,6 +65,7 @@ public class PedidoPersistenceAdapter implements PedidoRepositoryPort {
                 linea.setPrecioUnitario(detalle.getPrecioUnitario());
                 linea.setSubtotal(detalle.getSubtotal());
                 linea.setNota(detalle.getNota());
+                linea.setAdicion(detalle.isAdicion());
                 entidad.agregarDetalle(linea);
             }
         }

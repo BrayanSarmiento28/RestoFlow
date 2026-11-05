@@ -50,6 +50,8 @@ describe('Servicios del API', () => {
     expect(ultima(http)).toMatchObject({ url: `${API}/pedidos/4/pagar`, cuerpo: { metodoPago: 'EFECTIVO' } });
     servicio.mesasOcupadas().subscribe();
     expect(ultima(http).url).toBe(`${API}/pedidos/mesas-ocupadas`);
+    servicio.agregarAdicion(4, [{ productoId: 2, cantidad: 1, nota: null }]).subscribe();
+    expect(ultima(http)).toMatchObject({ url: `${API}/pedidos/4/adiciones`, cuerpo: { lineas: [{ productoId: 2, cantidad: 1 }] } });
     servicio.cambiarMesa(4, 9).subscribe();
     expect(ultima(http)).toMatchObject({ url: `${API}/pedidos/4/mesa`, cuerpo: { numeroMesa: 9 } });
   });

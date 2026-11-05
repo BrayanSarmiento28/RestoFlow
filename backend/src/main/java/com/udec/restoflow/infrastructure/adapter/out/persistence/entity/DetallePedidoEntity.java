@@ -42,6 +42,10 @@ public class DetallePedidoEntity {
     @Column(name = "nota", length = 200)
     private String nota;
 
+    /** La línea se agregó con el pedido ya en cocina (adición). Null en líneas anteriores a este dato = no. */
+    @Column(name = "adicion")
+    private Boolean adicion;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public PedidoEntity getPedido() { return pedido; }
@@ -56,4 +60,6 @@ public class DetallePedidoEntity {
     public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
     public String getNota() { return nota; }
     public void setNota(String nota) { this.nota = nota; }
+    public boolean isAdicion() { return Boolean.TRUE.equals(adicion); }
+    public void setAdicion(boolean adicion) { this.adicion = adicion; }
 }

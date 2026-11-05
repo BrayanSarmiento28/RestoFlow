@@ -86,6 +86,10 @@ public class PedidoEntity {
     @Column(name = "numero_dia")
     private Integer numeroDelDia;
 
+    /** Hora de la última adición (productos agregados con el pedido ya en cocina). */
+    @Column(name = "fecha_adicion")
+    private LocalDateTime fechaAdicion;
+
     /** Mantiene sincronizados los dos lados de la relación pedido ↔ detalle. */
     public void agregarDetalle(DetallePedidoEntity detalle) {
         detalle.setPedido(this);
@@ -132,5 +136,13 @@ public class PedidoEntity {
 
     public void setMetodoPago(MetodoPago metodoPago) {
         this.metodoPago = metodoPago;
+    }
+
+    public LocalDateTime getFechaAdicion() {
+        return fechaAdicion;
+    }
+
+    public void setFechaAdicion(LocalDateTime fechaAdicion) {
+        this.fechaAdicion = fechaAdicion;
     }
 }

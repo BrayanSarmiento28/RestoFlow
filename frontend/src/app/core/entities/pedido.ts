@@ -34,6 +34,8 @@ export interface DetallePedido {
   precioUnitario: number;
   subtotal: number;
   nota: string | null;
+  /** Se agregó con el pedido ya en cocina (el cliente pidió algo más). */
+  adicion?: boolean;
 }
 
 /** Entidad Pedido (tabla pedidos). */
@@ -56,6 +58,8 @@ export interface Pedido {
   numeroDelDia?: number | null;
   /** Cómo se pagó (solo en pedidos Pagados). */
   metodoPago?: MetodoPago | null;
+  /** Hora de la última adición. */
+  fechaAdicion?: string | null;
 }
 
 /** Métodos de pago al registrar la venta (por ahora efectivo y transferencia). */

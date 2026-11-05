@@ -34,6 +34,14 @@ describe('Pantalla de Cocina', () => {
     expect(c['minutos'](pendiente)).toBeGreaterThanOrEqual(0);
   });
 
+  it('con una adición, el tiempo de la comanda cuenta desde la adición', () => {
+    const c = abrir();
+    const haceUnaHora = new Date(Date.now() - 60 * 60_000).toISOString();
+    const recien = new Date(Date.now() - 2 * 60_000).toISOString();
+    expect(c['minutos'](pedido({ fechaCreacion: haceUnaHora }))).toBeGreaterThanOrEqual(59);
+    expect(c['minutos'](pedido({ fechaCreacion: haceUnaHora, fechaAdicion: recien }))).toBeLessThan(5);
+  });
+
   it('el botón de cada pedido dice el siguiente paso', () => {
     const c = abrir('ADMIN');
     expect(c['verNumero']).toBe(true);

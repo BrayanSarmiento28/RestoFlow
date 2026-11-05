@@ -45,6 +45,15 @@ public final class PedidoDto {
         }
     }
 
+    /** Productos que el cliente pide de más con el pedido ya en cocina (adición). */
+    public record AdicionRequest(
+            @NotEmpty(message = "Agregue al menos un producto a la adición") List<@Valid LineaRequest> lineas) {
+
+        public List<LineaPedido> aLineas() {
+            return lineas.stream().map(l -> new LineaPedido(l.productoId(), l.cantidad(), l.nota())).toList();
+        }
+    }
+
     /** Al registrar la venta. Si no se envía (clientes antiguos del API), se toma como efectivo. */
     public record PagoRequest(MetodoPago metodoPago) { }
 
@@ -57,10 +66,10 @@ public final class PedidoDto {
     // ---------- Salida ----------
 
     public record LineaResponse(Long id, Long productoId, String productoNombre, int cantidad, BigDecimal precioUnitario,
-                                BigDecimal subtotal, String nota) {
+                                BigDecimal subtotal, String nota, boolean adicion) {
         public static LineaResponse desde(DetallePedido d) {
             return new LineaResponse(d.getId(), d.getProductoId(), d.getProductoNombre(), d.getCantidad(),
-                    d.getPrecioUnitario(), d.getSubtotal(), d.getNota());
+                    d.getPrecioUnitario(), d.getSubtotal(), d.getNota(), d.isAdicion());
         }
     }
 
@@ -68,13 +77,13 @@ public final class PedidoDto {
                                  String observaciones, EstadoCocina estadoCocina, EstadoPedido estadoPedido,
                                  BigDecimal total, LocalDateTime fechaCreacion, LocalDateTime fechaInicioPreparacion,
                                  LocalDateTime fechaListo, LocalDateTime fechaEntrega, LocalDateTime fechaCierre,
-                                 Integer numeroDelDia, MetodoPago metodoPago) {
+                                 Integer numeroDelDia, MetodoPago metodoPago, LocalDateTime fechaAdicion) {
         public static PedidoResponse desde(Pedido p) {
             return new PedidoResponse(p.getId(), p.getNumeroMesa(), p.getMeseroId(), p.getMeseroNombre(),
                     p.getDetalles().stream().map(LineaResponse::desde).toList(), p.getObservaciones(),
                     p.getEstadoCocina(), p.getEstadoPedido(), p.getTotal(), p.getFechaCreacion(),
                     p.getFechaInicioPreparacion(), p.getFechaListo(), p.getFechaEntrega(), p.getFechaCierre(),
-                    p.getNumeroDelDia(), p.getMetodoPago());
+                    p.getNumeroDelDia(), p.getMetodoPago(), p.getFechaAdicion());
         }
     }
 }

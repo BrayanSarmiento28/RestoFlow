@@ -427,3 +427,50 @@ cd ..
 powershell -ExecutionPolicy Bypass -File .\analizar-calidad.ps1 -SoloFrontend
 ```
 
+## 6. Ajustes del frontend antes de la entrega
+
+### 6.1 Una sola herramienta de pruebas
+
+Se quitaron los `*.spec.ts` que Angular CLI genera solos ("should create"), `tsconfig.spec.json`, el `test` de
+`angular.json` y las librerías Vitest y jsdom. Todas las pruebas del frontend son de Jest y `npm test` las ejecuta.
+
+### 6.2 Ventanas propias para "Cancelar pedido" y "Cambiar mesa"
+
+Antes usaban los cuadros del navegador (`confirm` y `prompt`): grises, distintos en cada navegador y sin explicar
+nada. Ahora son ventanas como la del cobro, con los colores de RestoFlow. "Cancelar pedido" explica que la mesa
+queda libre y que no se puede deshacer; "Cambiar de mesa" muestra el error dentro de la misma ventana si la mesa
+está ocupada, es la misma o no es válida. Se cierran con "Volver", con un clic afuera o con Escape.
+
+### 6.3 Número del día en el historial de Inventario
+
+Las salidas por venta mostraban el id interno del pedido ("pedido #275"). Ahora cada movimiento trae el número del
+pedido en su día y la mesa (`pedidoNumeroDelDia`, `pedidoMesa`), y el motivo de las ventas nuevas dice
+"Venta del pedido #4 (mesa 3)". El administrador ve "Venta · pedido #4 · mesa 3"; el personal de inventario,
+"Venta · mesa 3" (el número del pedido es solo del administrador, igual que en Pedidos y Cocina).
+
+### 6.4 Adición: el cliente pide algo más con el pedido ya en cocina
+
+**Regla (decidida con el equipo):** los productos se suman **al mismo pedido y a su cuenta**, marcados como
+"Adición". Así la mesa sigue con un solo pedido y una sola cuenta, y el cierre del día cuenta una sola venta.
+
+| Estado del pedido | ¿Se puede agregar? | Qué pasa |
+|---|---|---|
+| Pendiente | No: se usa "Editar" | Todavía no se prepara, así que se cambia el pedido completo |
+| En preparación | Sí | La cocina ve las líneas nuevas marcadas "Adición" |
+| Listo o Entregado | Sí | Vuelve a **En preparación**: la cocina prepara la adición y la entrega antes de cobrar |
+| Pagado o Cancelado | No (409) | El pedido ya está cerrado |
+
+- **Backend:** `Pedido.agregarAdicion` (la regla está en el dominio), `DetallePedido.adicion`,
+  `Pedido.fechaAdicion`, `POST /api/pedidos/{id}/adiciones` (MESERO y ADMIN) y el evento `ADICION_AGREGADA` en
+  los logs. Script `backend/database/05_adiciones.sql` (columnas `detalle_pedidos.adicion` y
+  `pedidos.fecha_adicion`), montado en `docker-compose.yml`.
+- **Demora en cocina:** con una adición, la demora se mide desde la hora de la adición (no desde el pedido
+  original), y esos pedidos no se usan para aprender los tiempos normales de preparación (su hora de Listo incluye
+  lo que se pidió después).
+- **Frontend:** botón "Agregar productos" en los pedidos que ya están en cocina; el formulario pasa a "Adición al
+  pedido de la mesa N" con la mesa fija y el carrito solo con lo nuevo. En el detalle del pedido y en las comandas
+  de Cocina, las líneas nuevas llevan la etiqueta "Adición", y la comanda cuenta los minutos desde la adición.
+- **Pruebas:** `PedidoTest` (3 reglas), `GestionarPedidosServiceTest.adicion`, `ReglasDeNegocioIntegracionTest.adicion`
+  (API real: 409 si está Pendiente, 403 para cocina, vuelve a cocina, no se cobra hasta entregar) y Jest
+  (`pedidos.test.ts`, `cocina.test.ts`, `servicios-api.test.ts`).
+

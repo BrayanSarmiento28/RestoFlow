@@ -5,6 +5,7 @@ import com.udec.restoflow.application.port.in.GestionarPedidosUseCase.MesaOcupad
 import com.udec.restoflow.domain.model.EstadoCocina;
 import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.MetodoPago;
+import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.AdicionRequest;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.CambioMesaRequest;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.PagoRequest;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.PedidoRequest;
@@ -86,6 +87,15 @@ public class PedidoController {
     public PedidoResponse pagar(@PathVariable Long id, @RequestBody(required = false) PagoRequest request) {
         MetodoPago metodo = request == null || request.metodoPago() == null ? MetodoPago.EFECTIVO : request.metodoPago();
         return PedidoResponse.desde(pedidos.registrarVenta(id, metodo));
+    }
+
+    @Operation(summary = "Agregar productos (adición)",
+            description = "El cliente pide algo más con el pedido ya en cocina: los productos se suman al mismo pedido "
+                    + "y a su cuenta, marcados como adición. Si ya estaba Listo o Entregado, vuelve a En preparación. "
+                    + "409 si el pedido está Pendiente (use Editar), cobrado o cancelado.")
+    @PostMapping("/{id}/adiciones")
+    public PedidoResponse agregarAdicion(@PathVariable Long id, @Valid @RequestBody AdicionRequest request) {
+        return PedidoResponse.desde(pedidos.agregarAdicion(id, request.aLineas()));
     }
 
     @Operation(summary = "Cambiar de mesa",

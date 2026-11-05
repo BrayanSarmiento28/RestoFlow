@@ -59,7 +59,8 @@ export class Cocina implements OnInit, OnDestroy {
   }
 
   protected minutos(pedido: Pedido): number {
-    return minutosDesde(pedido.fechaCreacion, this.ahora());
+    // Con una adición, el tiempo cuenta desde la adición: es lo que la cocina tiene que preparar ahora
+    return minutosDesde(pedido.fechaAdicion ?? pedido.fechaCreacion, this.ahora());
   }
 
   /** Texto del botón que lleva el pedido a su siguiente estado. */

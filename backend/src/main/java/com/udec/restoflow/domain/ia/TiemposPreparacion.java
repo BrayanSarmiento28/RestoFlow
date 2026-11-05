@@ -34,7 +34,8 @@ public final class TiemposPreparacion {
     public static TiemposPreparacion aprender(List<Pedido> historial) {
         Map<Long, List<Long>> muestras = new HashMap<>();
         for (Pedido p : historial) {
-            if (p.getFechaListo() == null || p.getFechaCreacion() == null
+            // Un pedido con adición no sirve de muestra: su hora de Listo incluye lo que se pidió después
+            if (p.tieneAdicion() || p.getFechaListo() == null || p.getFechaCreacion() == null
                     || p.getFechaListo().isBefore(p.getFechaCreacion())) {
                 continue;
             }
