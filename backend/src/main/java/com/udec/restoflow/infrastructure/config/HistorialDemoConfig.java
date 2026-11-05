@@ -1,5 +1,6 @@
 package com.udec.restoflow.infrastructure.config;
 
+import com.udec.restoflow.application.port.in.GestionarPedidosUseCase;
 import com.udec.restoflow.application.port.in.GestionarPedidosUseCase.ComandoPedido;
 import com.udec.restoflow.application.port.in.GestionarPedidosUseCase.LineaPedido;
 import com.udec.restoflow.application.port.out.AlertaRepositoryPort;
@@ -16,6 +17,7 @@ import com.udec.restoflow.application.service.GestionarInventarioService;
 import com.udec.restoflow.application.service.GestionarPedidosService;
 import com.udec.restoflow.domain.model.EstadoCocina;
 import com.udec.restoflow.domain.model.Ingrediente;
+import com.udec.restoflow.domain.model.MetodoPago;
 import com.udec.restoflow.domain.model.Pedido;
 import com.udec.restoflow.domain.model.Producto;
 import com.udec.restoflow.domain.model.RecetaIngrediente;
@@ -140,6 +142,9 @@ public class HistorialDemoConfig implements CommandLineRunner {
         // Semilla fija: siempre genera los mismos datos. No es un uso de seguridad (no crea claves ni tokens).
         Random azar = new Random(2026);   // NOSONAR java:S2245
 
+        // Las mesas con un pedido abierto de verdad quedan por fuera: no se pueden usar para pedidos nuevos
+        Set<Integer> ocupadas = transaccion.execute(estado -> ventas.mesasOcupadas().stream()
+                .map(GestionarPedidosUseCase.MesaOcupada::numeroMesa).collect(Collectors.toSet()));
         int total = 0;
         for (int hace = DIAS; hace >= 1; hace--) {
             LocalDate dia = hoy.minusDays(hace);
@@ -153,7 +158,7 @@ public class HistorialDemoConfig implements CommandLineRunner {
                 relojDemo.fijar(dia.atTime(hora, azar.nextInt(60)));
                 Long meseroId = mesero.get().getId();
                 List<LineaPedido> lineas = lineas(menu, azar);
-                int mesa = 1 + azar.nextInt(12);
+                int mesa = mesaLibre(ocupadas, azar);
                 // Cada venta en su propia transacción, como cuando la hace el mesero desde la pantalla
                 transaccion.executeWithoutResult(estado -> vender(ventas, cocina, relojDemo, meseroId, lineas, mesa));
                 total++;
@@ -194,6 +199,21 @@ public class HistorialDemoConfig implements CommandLineRunner {
         return 8 + (finDeSemana ? 6 : 0) + (hace <= 7 ? 2 : 0) + azar.nextInt(3);
     }
 
+    /** Una de las mesas 1 a 12 que no esté ocupada (si todas lo están, una de la 13 en adelante). */
+    private static int mesaLibre(Set<Integer> ocupadas, Random azar) {
+        for (int intento = 0; intento < 30; intento++) {
+            int mesa = 1 + azar.nextInt(12);
+            if (!ocupadas.contains(mesa)) {
+                return mesa;
+            }
+        }
+        int mesa = 13;
+        while (ocupadas.contains(mesa)) {
+            mesa++;
+        }
+        return mesa;
+    }
+
     /** 1 a 3 productos distintos; los primeros del menú salen más (dos sorteos y se queda el menor). */
     private static List<LineaPedido> lineas(List<Producto> menu, Random azar) {
         Map<Long, LineaPedido> elegidos = new LinkedHashMap<>();
@@ -216,7 +236,8 @@ public class HistorialDemoConfig implements CommandLineRunner {
         relojDemo.avanzarMinutos(5);
         cocina.cambiarEstado(pedido.getId(), EstadoCocina.ENTREGADO);
         relojDemo.avanzarMinutos(30);
-        ventas.registrarVenta(pedido.getId());
+        // Dos de cada tres en efectivo, el resto por transferencia
+        ventas.registrarVenta(pedido.getId(), pedido.getId() % 3 == 0 ? MetodoPago.TRANSFERENCIA : MetodoPago.EFECTIVO);
     }
 
     /** Reloj que se puede mover a cualquier fecha: con él los casos de uso "creen" que es ese día. */

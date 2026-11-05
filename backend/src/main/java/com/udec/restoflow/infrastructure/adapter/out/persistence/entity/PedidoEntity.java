@@ -2,6 +2,7 @@ package com.udec.restoflow.infrastructure.adapter.out.persistence.entity;
 
 import com.udec.restoflow.domain.model.EstadoCocina;
 import com.udec.restoflow.domain.model.EstadoPedido;
+import com.udec.restoflow.domain.model.MetodoPago;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -76,6 +77,15 @@ public class PedidoEntity {
     @Column(name = "fecha_cierre")
     private LocalDateTime fechaCierre;
 
+    /** Cómo se pagó (EFECTIVO o TRANSFERENCIA); solo en pedidos Pagados. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "metodo_pago", length = 20)
+    private MetodoPago metodoPago;
+
+    /** Número del pedido en su día (vuelve a empezar en 1 cada día). */
+    @Column(name = "numero_dia")
+    private Integer numeroDelDia;
+
     /** Mantiene sincronizados los dos lados de la relación pedido ↔ detalle. */
     public void agregarDetalle(DetallePedidoEntity detalle) {
         detalle.setPedido(this);
@@ -107,4 +117,20 @@ public class PedidoEntity {
     public void setFechaEntrega(LocalDateTime fechaEntrega) { this.fechaEntrega = fechaEntrega; }
     public LocalDateTime getFechaCierre() { return fechaCierre; }
     public void setFechaCierre(LocalDateTime fechaCierre) { this.fechaCierre = fechaCierre; }
+
+    public Integer getNumeroDelDia() {
+        return numeroDelDia;
+    }
+
+    public void setNumeroDelDia(Integer numeroDelDia) {
+        this.numeroDelDia = numeroDelDia;
+    }
+
+    public MetodoPago getMetodoPago() {
+        return metodoPago;
+    }
+
+    public void setMetodoPago(MetodoPago metodoPago) {
+        this.metodoPago = metodoPago;
+    }
 }

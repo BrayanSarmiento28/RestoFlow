@@ -7,8 +7,11 @@
   min-height: 100vh;
 }
 
+// z-index: "sticky" crea su propia capa; sin esto el panel de la campana (que vive aquí dentro)
+// quedaba por debajo de las tarjetas del contenido. Las ventanas emergentes usan 60, así que siguen encima.
 .lateral {
   position: sticky;
+  z-index: 40;
   top: 0;
   height: 100vh;
   display: flex;

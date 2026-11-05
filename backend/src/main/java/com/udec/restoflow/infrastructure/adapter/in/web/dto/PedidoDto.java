@@ -5,6 +5,7 @@ import com.udec.restoflow.application.port.in.GestionarPedidosUseCase.LineaPedid
 import com.udec.restoflow.domain.model.DetallePedido;
 import com.udec.restoflow.domain.model.EstadoCocina;
 import com.udec.restoflow.domain.model.EstadoPedido;
+import com.udec.restoflow.domain.model.MetodoPago;
 import com.udec.restoflow.domain.model.Pedido;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -44,6 +45,13 @@ public final class PedidoDto {
         }
     }
 
+    /** Al registrar la venta. Si no se envía (clientes antiguos del API), se toma como efectivo. */
+    public record PagoRequest(MetodoPago metodoPago) { }
+
+    public record CambioMesaRequest(
+            @Min(value = 1, message = "El número de mesa es obligatorio")
+            @Max(value = 999, message = "El número de mesa no es válido") int numeroMesa) { }
+
     public record CambioEstadoRequest(@NotNull(message = "El estado es obligatorio") EstadoCocina estado) { }
 
     // ---------- Salida ----------
@@ -59,12 +67,14 @@ public final class PedidoDto {
     public record PedidoResponse(Long id, int numeroMesa, Long meseroId, String meseroNombre, List<LineaResponse> lineas,
                                  String observaciones, EstadoCocina estadoCocina, EstadoPedido estadoPedido,
                                  BigDecimal total, LocalDateTime fechaCreacion, LocalDateTime fechaInicioPreparacion,
-                                 LocalDateTime fechaListo, LocalDateTime fechaEntrega, LocalDateTime fechaCierre) {
+                                 LocalDateTime fechaListo, LocalDateTime fechaEntrega, LocalDateTime fechaCierre,
+                                 Integer numeroDelDia, MetodoPago metodoPago) {
         public static PedidoResponse desde(Pedido p) {
             return new PedidoResponse(p.getId(), p.getNumeroMesa(), p.getMeseroId(), p.getMeseroNombre(),
                     p.getDetalles().stream().map(LineaResponse::desde).toList(), p.getObservaciones(),
                     p.getEstadoCocina(), p.getEstadoPedido(), p.getTotal(), p.getFechaCreacion(),
-                    p.getFechaInicioPreparacion(), p.getFechaListo(), p.getFechaEntrega(), p.getFechaCierre());
+                    p.getFechaInicioPreparacion(), p.getFechaListo(), p.getFechaEntrega(), p.getFechaCierre(),
+                    p.getNumeroDelDia(), p.getMetodoPago());
         }
     }
 }

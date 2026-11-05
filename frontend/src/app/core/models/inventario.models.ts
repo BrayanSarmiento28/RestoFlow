@@ -38,6 +38,12 @@ export interface ResumenPanel {
   masVendidos: { productoId: number; nombre: string; cantidad: number; total: number }[];
   insumosEnMinimo: { id: number; nombre: string; stockActual: number; stockMinimo: number; unidad: UnidadMedida }[];
   alertasPendientes: number;
+  /** Cierre del día: pedidos registrados hoy (cobrados, abiertos y cancelados). */
+  pedidosRegistrados: number;
+  /** Cierre del día: pedidos cobrados y total vendido por cada mesero. */
+  porMesero: { meseroId: number; meseroNombre: string; pedidos: number; total: number }[];
+  /** Cierre del día: lo que entró en efectivo y por transferencia (para cuadrar la caja). */
+  porMetodoPago: { metodo: 'EFECTIVO' | 'TRANSFERENCIA'; pedidos: number; total: number }[];
 }
 
 /** RF-12 · GET /api/historial/ventas */

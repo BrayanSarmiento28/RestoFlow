@@ -1,9 +1,10 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CocinaService } from '../../core/services/cocina.service';
+import { AuthService } from '../../core/services/auth.service';
 import { mensajeDeError } from '../../core/services/errores';
 import { hora, minutosDesde } from '../../core/util/formato';
-import { EstadoCocina, NOMBRES_ESTADO_COCINA, Pedido, siguienteEstado } from '../../core/entities';
+import { EstadoCocina, NOMBRES_ESTADO_COCINA, Pedido, numeroPedido, siguienteEstado } from '../../core/entities';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -18,6 +19,9 @@ import { environment } from '../../../environments/environment';
 })
 export class Cocina implements OnInit, OnDestroy {
   private readonly cocinaApi = inject(CocinaService);
+  /** El número del pedido solo lo ve el administrador; la cocina trabaja por mesa. */
+  protected readonly verNumero = inject(AuthService).tieneRol('ADMIN');
+  protected readonly numeroPedido = numeroPedido;
   private temporizador?: ReturnType<typeof setInterval>;
 
   protected readonly hora = hora;

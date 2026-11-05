@@ -8,6 +8,7 @@ import com.udec.restoflow.domain.exception.DomainException;
 import com.udec.restoflow.domain.model.EstadoCocina;
 import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Ingrediente;
+import com.udec.restoflow.domain.model.MetodoPago;
 import com.udec.restoflow.domain.model.Pedido;
 import com.udec.restoflow.domain.model.Producto;
 import com.udec.restoflow.domain.model.Rol;
@@ -59,16 +60,23 @@ class ConsultarPanelServiceTest {
         ingredientes.guardar(new Ingrediente(null, "Arroz", UnidadMedida.GRAMO, new BigDecimal("9000"), new BigDecimal("10"), true));
     }
 
+    private int siguienteMesa = 1;
+
+    /** Cada pedido en su propia mesa: una mesa con un pedido abierto está ocupada. */
     private Pedido pedido(LineaPedido... lineas) {
-        return ventas.registrar(new ComandoPedido(2, List.of(lineas), null), meseroId);
+        return ventas.registrar(new ComandoPedido(siguienteMesa++, List.of(lineas), null), meseroId);
     }
 
     private Pedido vender(LineaPedido... lineas) {
+        return vender(MetodoPago.EFECTIVO, lineas);
+    }
+
+    private Pedido vender(MetodoPago metodo, LineaPedido... lineas) {
         Pedido p = pedido(lineas);
         cocina.cambiarEstado(p.getId(), EstadoCocina.EN_PREPARACION);
         cocina.cambiarEstado(p.getId(), EstadoCocina.LISTO);
         cocina.cambiarEstado(p.getId(), EstadoCocina.ENTREGADO);
-        return ventas.registrarVenta(p.getId());
+        return ventas.registrarVenta(p.getId(), metodo);
     }
 
     @Test
@@ -76,7 +84,7 @@ class ConsultarPanelServiceTest {
     void resumenDelDia() {
         vender(new LineaPedido(bandejaId, 1, null), new LineaPedido(jugoId, 2, null));   // 10:00 → 46.000
         reloj.avanzarMinutos(120);
-        vender(new LineaPedido(jugoId, 1, null));                                        // 12:00 → 7.000
+        vender(MetodoPago.TRANSFERENCIA, new LineaPedido(jugoId, 1, null));             // 12:00 → 7.000
         pedido(new LineaPedido(bandejaId, 1, null));                                     // abierto, en cocina
         ventas.cancelar(pedido(new LineaPedido(jugoId, 1, null)).getId());               // cancelado
 
@@ -95,6 +103,18 @@ class ConsultarPanelServiceTest {
         assertEquals("Huevo", r.insumosEnMinimo().get(0).nombre());
         assertEquals(0, BigDecimal.ZERO.compareTo(panel.resumen(HOY.plusDays(1)).ventas()));
         assertEquals(0, new BigDecimal("53000").compareTo(panel.resumen(HOY.plusDays(1)).ventasDiaAnterior()));
+
+        // Cierre del día: 4 pedidos registrados (2 cobrados, 1 abierto, 1 cancelado) y lo vendido por mesero
+        assertEquals(4, r.pedidosRegistrados());
+        assertEquals(1, r.porMesero().size());
+        assertEquals("Laura", r.porMesero().get(0).meseroNombre());
+        assertEquals(2, r.porMesero().get(0).pedidos());
+        assertEquals(0, new BigDecimal("53000").compareTo(r.porMesero().get(0).total()));
+        // Para cuadrar la caja: 46.000 en efectivo y 7.000 por transferencia
+        assertEquals(MetodoPago.EFECTIVO, r.porMetodoPago().get(0).metodo());
+        assertEquals(0, new BigDecimal("46000").compareTo(r.porMetodoPago().get(0).total()));
+        assertEquals(1, r.porMetodoPago().get(1).pedidos());
+        assertEquals(0, new BigDecimal("7000").compareTo(r.porMetodoPago().get(1).total()));
     }
 
     @Test

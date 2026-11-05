@@ -65,7 +65,7 @@ class AsistenteIAServiceTest {
     @BeforeEach
     void preparar() {
         avisosActuales = new ArrayList<>(List.of(new Aviso("demora-1", Aviso.Tipo.PLATO_DEMORADO, Aviso.Nivel.URGENTE,
-                "Mesa 4 · pedido #1 demorado", "Lleva 40 min", "/cocina", LocalDateTime.now(reloj),
+                "Mesa 4 · pedido demorado", "Lleva 40 min", "/cocina", LocalDateTime.now(reloj),
                 Set.of(Rol.COCINA), 7L)));
         ConsultarAvisosUseCase avisos = (rol, id) -> new AvisosDelMomento(LocalDateTime.now(reloj), avisosActuales);
         ConsultarRestoFlowAIUseCase analisis = () -> new AnalisisRestoFlowAI(LocalDateTime.now(reloj),
@@ -80,7 +80,7 @@ class AsistenteIAServiceTest {
         RespuestaIA r = servicio.resumir(Rol.COCINA, 3L);
         assertEquals("Atienda primero la mesa 4.", r.texto());
         assertEquals(Origen.GEMINI, r.origen());
-        assertTrue(ia.mensajes.get(0).contains("Mesa 4 · pedido #1 demorado"));
+        assertTrue(ia.mensajes.get(0).contains("Mesa 4 · pedido demorado"));
 
         servicio.resumir(Rol.COCINA, 3L);
         assertEquals(1, ia.mensajes.size());                                   // salió de la caché

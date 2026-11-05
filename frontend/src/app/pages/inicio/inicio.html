@@ -101,6 +101,45 @@
             }
           </ol>
         </section>
+
+        <!-- Cierre del día: lo que el administrador revisa al cerrar (solo él ve el total de pedidos) -->
+        <section class="rf-tarjeta" aria-labelledby="t-cierre">
+          <div class="rf-tarjeta__titulo">
+            <h2 id="t-cierre">Cierre del día</h2>
+            <span class="rf-chip rf-chip--neutro rf-chip--mono">HOY</span>
+          </div>
+          <dl class="cierre">
+            <div><dt>Pedidos registrados</dt><dd>{{ r.pedidosRegistrados }}</dd></div>
+            <div><dt>Cobrados</dt><dd>{{ r.pedidosPagados }}</dd></div>
+            <div><dt>Abiertos</dt><dd>{{ r.pedidosAbiertos }}</dd></div>
+            <div><dt>Cancelados</dt><dd>{{ r.pedidosCancelados }}</dd></div>
+            <div class="cierre__total"><dt>Total vendido</dt><dd>{{ pesos(r.ventas) }}</dd></div>
+          </dl>
+          <div class="cierre__pagos" aria-label="Ventas por método de pago">
+            @for (m of r.porMetodoPago; track m.metodo) {
+              <span class="cierre__pago">
+                {{ m.metodo === 'EFECTIVO' ? 'Efectivo' : 'Transferencia' }}
+                <strong>{{ pesos(m.total) }}</strong>
+                <small>{{ m.pedidos }} {{ m.pedidos === 1 ? 'pedido' : 'pedidos' }}</small>
+              </span>
+            }
+          </div>
+          @if (r.pedidosAbiertos > 0) {
+            <p class="cierre__aviso">Quedan {{ r.pedidosAbiertos }} pedidos sin cobrar: revíselos antes de cerrar.</p>
+          }
+          <div class="rf-tabla-caja">
+            <table class="rf-tabla">
+              <thead><tr><th scope="col">Mesero</th><th scope="col" class="rf-num">Pedidos cobrados</th><th scope="col" class="rf-num">Vendido</th></tr></thead>
+              <tbody>
+                @for (m of r.porMesero; track m.meseroId) {
+                  <tr><td>{{ m.meseroNombre }}</td><td class="rf-num">{{ m.pedidos }}</td><td class="rf-num">{{ pesos(m.total) }}</td></tr>
+                } @empty {
+                  <tr><td colspan="3" class="vacio">Sin ventas todavía</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
       <aside class="rf-lateral">

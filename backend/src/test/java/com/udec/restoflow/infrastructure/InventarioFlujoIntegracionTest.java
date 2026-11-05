@@ -109,7 +109,7 @@ class InventarioFlujoIntegracionTest {
             enviar(patch("/api/cocina/pedidos/" + pedido + "/estado"), admin, "{\"estado\":\"" + estado + "\"}")
                     .andExpect(status().isOk());
         }
-        enviar(patch("/api/pedidos/" + pedido + "/pagar"), mesero, null).andExpect(status().isOk())
+        enviar(patch("/api/pedidos/" + pedido + "/pagar"), admin, null).andExpect(status().isOk())
                 .andExpect(jsonPath("$.estadoPedido").value("PAGADO"));
 
         // 10 − 6 = 4 → queda en su mínimo y aparece la alerta

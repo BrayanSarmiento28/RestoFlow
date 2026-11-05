@@ -94,6 +94,7 @@ class AvisosDominioTest {
         assertEquals(2, avisos.size());
         Aviso primero = avisos.get(0);                                       // el urgente va primero
         assertEquals("demora-3", primero.clave());
+        assertEquals("Mesa 5 · pedido demorado", primero.titulo());          // la mesa, no el número del pedido
         assertEquals(Nivel.URGENTE, primero.nivel());
         assertTrue(primero.mensaje().contains("Lleva 40 min y lo normal para Bandeja paisa son 24 min"));
         assertTrue(primero.mensaje().contains("Aún no se empieza"));

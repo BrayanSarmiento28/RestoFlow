@@ -52,4 +52,21 @@ export interface Pedido {
   fechaListo: string | null;
   fechaEntrega: string | null;
   fechaCierre: string | null;
+  /** Número del pedido en su día (#1, #2...): vuelve a empezar cada día. Null en pedidos antiguos. */
+  numeroDelDia?: number | null;
+  /** Cómo se pagó (solo en pedidos Pagados). */
+  metodoPago?: MetodoPago | null;
+}
+
+/** Métodos de pago al registrar la venta (por ahora efectivo y transferencia). */
+export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA';
+
+export const NOMBRES_METODO_PAGO: Record<MetodoPago, string> = {
+  EFECTIVO: 'Efectivo',
+  TRANSFERENCIA: 'Transferencia',
+};
+
+/** El número que ve el administrador: el del día; en pedidos antiguos (sin número del día), el id. */
+export function numeroPedido(p: Pick<Pedido, 'id' | 'numeroDelDia'>): number {
+  return p.numeroDelDia ?? p.id;
 }

@@ -1,5 +1,6 @@
 package com.udec.restoflow.application.service;
 
+import com.udec.restoflow.domain.model.MetodoPago;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,8 +64,12 @@ final class Auditoria {
         log.info("evento=PEDIDO_CANCELADO pedido={}", pedidoId);
     }
 
-    static void ventaRegistrada(Long pedidoId, int mesa, BigDecimal total) {
-        log.info("evento=VENTA_REGISTRADA pedido={} mesa={} total={}", pedidoId, mesa, total);
+    static void mesaCambiada(Long pedidoId, int anterior, int nueva) {
+        log.info("evento=MESA_CAMBIADA pedido={} de={} a={}", pedidoId, anterior, nueva);
+    }
+
+    static void ventaRegistrada(Long pedidoId, int mesa, BigDecimal total, MetodoPago metodo) {
+        log.info("evento=VENTA_REGISTRADA pedido={} mesa={} total={} pago={}", pedidoId, mesa, total, metodo);
     }
 
     // ---------- Inventario y alertas (RF-05 a RF-07) ----------

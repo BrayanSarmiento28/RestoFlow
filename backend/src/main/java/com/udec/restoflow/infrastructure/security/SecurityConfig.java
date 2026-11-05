@@ -56,6 +56,8 @@ public class SecurityConfig {
                 // Cocina (RF-03, RF-04): personal de cocina y administrador
                 .requestMatchers("/api/cocina/**").hasAnyRole("COCINA", "ADMIN")
                 // Pedidos (RF-02): la cocina también puede consultarlos; solo mesero y admin los cambian
+                // Registrar la venta (cobrar): solo el administrador; el mesero pasa la cuenta
+                .requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/pagar").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/pedidos/**").hasAnyRole("MESERO", "COCINA", "ADMIN")
                 .requestMatchers("/api/pedidos/**").hasAnyRole("MESERO", "ADMIN")
                 // Inventario y alertas (RF-05 a RF-07), incluido el catálogo externo (Open Food Facts)

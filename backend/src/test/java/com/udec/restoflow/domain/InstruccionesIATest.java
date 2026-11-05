@@ -72,14 +72,14 @@ class InstruccionesIATest {
                 new BigDecimal("10"));
 
         String texto = InstruccionesIA.contexto(AHORA, ventas, List.of(pollo),
-                List.of(aviso("demora-1", Aviso.Nivel.URGENTE, "Mesa 4 · pedido #1 demorado")));
+                List.of(aviso("demora-1", Aviso.Nivel.URGENTE, "Mesa 4 · pedido demorado")));
 
         assertTrue(texto.contains("viernes"));
         assertTrue(texto.contains("$ 1.250.000 (+12 % frente a la semana anterior)"));
         assertTrue(texto.contains("Bandeja paisa: 30 / 25 (+20 %)"));
         assertTrue(texto.contains("unos 42 pedidos"));
         assertTrue(texto.contains("Pollo: 2 kg / 3 kg / 1 kg / 2 días / 10 kg"));
-        assertTrue(texto.contains("[URGENTE] Mesa 4 · pedido #1 demorado"));
+        assertTrue(texto.contains("[URGENTE] Mesa 4 · pedido demorado"));
         assertFalse(texto.contains("@"));                                     // ningún correo
     }
 
@@ -88,8 +88,8 @@ class InstruccionesIATest {
     void resumenSinIA() {
         assertEquals("Todo en orden por ahora. RestoFlow AI le avisará aquí si algo necesita su atención.",
                 InstruccionesIA.resumenSinIA(List.of()));
-        assertEquals("Tiene 2 avisos (1 urgente). Empiece por: Mesa 4 · pedido #1 demorado.",
-                InstruccionesIA.resumenSinIA(List.of(aviso("a", Aviso.Nivel.URGENTE, "Mesa 4 · pedido #1 demorado"),
+        assertEquals("Tiene 2 avisos (1 urgente). Empiece por: Mesa 4 · pedido demorado.",
+                InstruccionesIA.resumenSinIA(List.of(aviso("a", Aviso.Nivel.URGENTE, "Mesa 4 · pedido demorado"),
                         aviso("b", Aviso.Nivel.ATENCION, "Mesa 2"))));
     }
 
