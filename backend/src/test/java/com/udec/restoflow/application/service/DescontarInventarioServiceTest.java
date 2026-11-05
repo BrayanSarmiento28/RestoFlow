@@ -115,7 +115,8 @@ class DescontarInventarioServiceTest {
         assertEquals(0, new BigDecimal("380").compareTo(arroz.getCantidad()));
         assertEquals(venta.getId(), arroz.getPedidoId());
         assertEquals(null, arroz.getUsuarioId());                // lo hizo el sistema
-        assertEquals("Venta del pedido #" + venta.getId() + " (mesa 4)", arroz.getMotivo());
+        // El motivo usa el número del día (#1, #2...) que ve el administrador, no el id interno
+        assertEquals("Venta del pedido #" + venta.getNumeroDelDia() + " (mesa 4)", arroz.getMotivo());
     }
 
     @Test

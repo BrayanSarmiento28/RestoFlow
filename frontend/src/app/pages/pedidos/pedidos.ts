@@ -195,30 +195,61 @@ export class Pedidos implements OnInit, OnDestroy {
     this.limpiar();
   }
 
+  // ---------- Ventanas de "Cancelar" y "Cambiar mesa" (antes eran las del navegador: confirm y prompt) ----------
+  // Mismo estilo que la ventana de cobro: centradas, con los colores de RestoFlow y los mensajes en español.
+
+  /** Pedido que se va a cancelar (abre la ventana de confirmación). */
+  protected readonly porCancelar = signal<Pedido | null>(null);
+  /** Pedido que se pasa a otra mesa, lo que se escribe y el problema si la mesa no sirve. */
+  protected readonly porCambiarMesa = signal<Pedido | null>(null);
+  protected readonly mesaNueva = signal('');
+  protected readonly errorMesa = signal<string | null>(null);
+
   protected cancelar(pedido: Pedido): void {
-    if (!confirm(`¿Cancelar el ${nombrePedido(numeroPedido(pedido), pedido.numeroMesa, this.verNumero)}?`)) return;
+    this.porCancelar.set(pedido);
+  }
+
+  protected confirmarCancelacion(): void {
+    const pedido = this.porCancelar();
+    if (!pedido) return;
+    this.porCancelar.set(null);
     this.ejecutar(this.pedidosApi.cancelar(pedido.id), `${this.nombre(pedido)} cancelado.`);
   }
 
   /** "Pedido #275 de la mesa 5" para el admin; "Pedido de la mesa 5" para el mesero. */
-  private nombre(pedido: Pedido): string {
+  protected nombre(pedido: Pedido): string {
     const texto = nombrePedido(numeroPedido(pedido), pedido.numeroMesa, this.verNumero);
     return texto.charAt(0).toUpperCase() + texto.slice(1);
   }
 
   /** El cliente se cambió de lugar: el pedido pasa a otra mesa libre (la anterior queda libre). */
   protected cambiarMesa(pedido: Pedido): void {
-    const texto = prompt(`¿A qué mesa se pasa el ${nombrePedido(numeroPedido(pedido), pedido.numeroMesa, this.verNumero)}?`);
-    if (texto === null) return;
+    this.mesaNueva.set('');
+    this.errorMesa.set(null);
+    this.porCambiarMesa.set(pedido);
+  }
+
+  /** Revisa la mesa escrita antes de enviarla; si no sirve, lo explica dentro de la misma ventana. */
+  protected confirmarCambioMesa(): void {
+    const pedido = this.porCambiarMesa();
+    if (!pedido) return;
+    const texto = this.mesaNueva();
     const problema = errorCambioMesa(texto, pedido.numeroMesa, this.ocupadas());
     if (problema) {
-      this.exito.set(null);
-      this.error.set(problema);
+      this.errorMesa.set(problema);
       return;
     }
     const nueva = Number(texto.trim());
+    this.porCambiarMesa.set(null);
     this.ejecutar(this.pedidosApi.cambiarMesa(pedido.id, nueva),
       `${this.nombre(pedido)} pasado a la mesa ${nueva}.`);
+  }
+
+  /** Cierra las ventanas de cancelar y cambiar mesa (botón "Volver", clic afuera o Escape). */
+  @HostListener('document:keydown.escape')
+  protected cerrarVentana(): void {
+    this.porCancelar.set(null);
+    this.porCambiarMesa.set(null);
   }
 
   // ---------- Registrar la venta (ventana con el método de pago) ----------

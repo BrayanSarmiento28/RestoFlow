@@ -263,4 +263,48 @@
       </dialog>
     </div>
   }
+
+  <!-- Confirmar la cancelación (antes era el cuadro gris del navegador) -->
+  @if (porCancelar(); as p) {
+    <div class="cobro-fondo" (click)="cerrarVentana()" (keydown.escape)="cerrarVentana()">
+      <dialog open class="cobro ventana" aria-modal="true" aria-labelledby="t-cancelar" aria-describedby="d-cancelar"
+              (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <h2 id="t-cancelar">Cancelar pedido</h2>
+        <p class="cobro__pedido">{{ nombre(p) }} · {{ p.meseroNombre }} · {{ pesos(p.total) }}</p>
+        <p class="cobro__nota" id="d-cancelar">
+          El pedido no se preparará y la mesa {{ p.numeroMesa }} quedará libre. Esta acción no se puede deshacer.
+        </p>
+        <div class="cobro__botones">
+          <button type="button" class="boton-secundario" (click)="cerrarVentana()">Volver</button>
+          <button type="button" class="boton" (click)="confirmarCancelacion()">Cancelar pedido</button>
+        </div>
+      </dialog>
+    </div>
+  }
+
+  <!-- Pasar el pedido a otra mesa (antes era el cuadro del navegador para escribir) -->
+  @if (porCambiarMesa(); as p) {
+    <div class="cobro-fondo" (click)="cerrarVentana()" (keydown.escape)="cerrarVentana()">
+      <dialog open class="cobro ventana" aria-modal="true" aria-labelledby="t-mesa"
+              (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <form (submit)="$event.preventDefault(); confirmarCambioMesa()" novalidate>
+          <h2 id="t-mesa">Cambiar de mesa</h2>
+          <p class="cobro__pedido">{{ nombre(p) }} · {{ p.meseroNombre }}</p>
+          <label class="cobro__etiqueta" for="mesa-nueva">¿A qué mesa se pasa?</label>
+          <input id="mesa-nueva" class="rf-input ventana__mesa" type="number" min="1" max="999" placeholder="Número de mesa"
+                 [class.con-error]="!!errorMesa()" [value]="mesaNueva()"
+                 (input)="mesaNueva.set($any($event.target).value); errorMesa.set(null)" />
+          @if (errorMesa()) {
+            <small class="error-campo" role="alert">{{ errorMesa() }}</small>
+          } @else {
+            <p class="cobro__nota">La mesa {{ p.numeroMesa }} quedará libre y el pedido conserva sus productos.</p>
+          }
+          <div class="cobro__botones">
+            <button type="button" class="boton-secundario" (click)="cerrarVentana()">Volver</button>
+            <button type="submit" class="boton">Cambiar mesa</button>
+          </div>
+        </form>
+      </dialog>
+    </div>
+  }
 </div>

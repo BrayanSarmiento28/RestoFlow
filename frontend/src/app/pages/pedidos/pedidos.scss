@@ -354,3 +354,11 @@
     .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
   }
 }
+
+/* Ventanas de "Cancelar pedido" y "Cambiar de mesa": la misma ventana del cobro, más corta */
+.ventana {
+  h2 { margin-bottom: 4px; }
+  &__mesa { margin-bottom: 8px; &.con-error { border-color: var(--rf-error); } }
+  .error-campo { display: block; margin: 0 0 20px; }
+}
+

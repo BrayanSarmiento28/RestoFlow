@@ -26,7 +26,8 @@ export function ingrediente(cambios: Partial<Ingrediente> = {}): Ingrediente {
 
 export function movimiento(cambios: Partial<MovimientoInventario> = {}): MovimientoInventario {
   return { id: 1, ingredienteId: 1, ingredienteNombre: 'Arroz', unidad: 'GRAMO', tipo: 'ENTRADA', cantidad: 500,
-    motivo: 'Compra', usuarioId: 7, usuarioNombre: 'Laura Gómez', pedidoId: null, fecha: '2026-11-05T09:00:00', ...cambios };
+    motivo: 'Compra', usuarioId: 7, usuarioNombre: 'Laura Gómez', pedidoId: null, pedidoNumeroDelDia: null,
+    pedidoMesa: null, fecha: '2026-11-05T09:00:00', ...cambios };
 }
 
 export function alerta(cambios: Partial<Alerta> = {}): Alerta {

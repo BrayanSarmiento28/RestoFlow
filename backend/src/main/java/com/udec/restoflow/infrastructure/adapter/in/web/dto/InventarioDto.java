@@ -83,11 +83,13 @@ public final class InventarioDto {
 
     public record MovimientoResponse(Long id, Long ingredienteId, String ingredienteNombre, UnidadMedida unidad,
                                      TipoMovimiento tipo, BigDecimal cantidad, String motivo, Long usuarioId,
-                                     String usuarioNombre, Long pedidoId, LocalDateTime fecha) {
+                                     String usuarioNombre, Long pedidoId, Integer pedidoNumeroDelDia, Integer pedidoMesa,
+                                     LocalDateTime fecha) {
         public static MovimientoResponse desde(MovimientoInventario m) {
             return new MovimientoResponse(m.getId(), m.getIngredienteId(), m.getIngredienteNombre(), m.getUnidad(),
                     m.getTipo(), m.getCantidad(), m.getMotivo(), m.getUsuarioId(),
-                    m.getUsuarioId() == null ? "Sistema" : m.getUsuarioNombre(), m.getPedidoId(), m.getFecha());
+                    m.getUsuarioId() == null ? "Sistema" : m.getUsuarioNombre(), m.getPedidoId(),
+                    m.getPedidoNumeroDelDia(), m.getPedidoMesa(), m.getFecha());
         }
     }
 

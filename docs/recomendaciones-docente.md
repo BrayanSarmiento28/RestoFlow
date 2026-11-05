@@ -239,15 +239,12 @@ ahora solo la llaman.
 - `AuthInterceptor`;
 - las pantallas `Pedidos`, `Inventario` e `Inicio`.
 
-### Jest y `ng test` juntos
+### Una sola herramienta de pruebas: Jest
 
-| | Jest | `ng test` (Vitest, de Angular) |
-|--|------|--------------------------------|
-| Archivos | `*.test.ts` | `*.spec.ts` |
-| Para qué | Lógica pura (unitarias) | Componentes de Angular |
-| Comando | `npm run test:jest` | `npm test` |
-
-`angular.json` limita `ng test` a los `*.spec.ts`, y `tsconfig.app.json` excluye los `*.test.ts`.
+Desde el Sprint 6 todas las pruebas del frontend son de Jest (`*.test.ts`): la lógica de `core/util` y también las
+pantallas, la campana, los servicios, los guards y el interceptor (ver `docs/sprint-6.md`, sección 5). Se quitaron los
+`*.spec.ts` que Angular CLI genera solos ("should create"): no probaban nada y necesitaban otra herramienta (`ng test`
+con Vitest). `npm test` y `npm run test:jest` ejecutan lo mismo; `tsconfig.app.json` excluye los `*.test.ts`.
 
 ### Configuración
 

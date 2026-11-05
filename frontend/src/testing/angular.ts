@@ -50,21 +50,10 @@ export function conSesion(rol: Rol | null, nombre?: string): Provider {
   return { provide: AuthService, useValue: sesionFalsa(rol, nombre) };
 }
 
-/** Funciones del navegador que usan las pantallas (scroll, imprimir, confirmar, preguntar). */
-export function simularNavegador(respuestas: { confirmar?: boolean; preguntar?: string | null } = {}) {
+/** Funciones del navegador que usan las pantallas (subir al formulario e imprimir la cuenta). */
+export function simularNavegador() {
   const g = globalThis as Record<string, unknown>;
   const ventana = { scrollTo: jest.fn(), print: jest.fn() };
-  const confirmar = jest.fn(() => respuestas.confirmar ?? true);
-  const preguntar = jest.fn(() => (respuestas.preguntar === undefined ? null : respuestas.preguntar));
   g['window'] = ventana;
-  g['confirm'] = confirmar;
-  g['prompt'] = preguntar;
-  return {
-    ventana, confirmar, preguntar,
-    restaurar: () => {
-      delete g['window'];
-      delete g['confirm'];
-      delete g['prompt'];
-    },
-  };
+  return { ventana, restaurar: () => delete g['window'] };
 }
