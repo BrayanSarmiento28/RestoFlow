@@ -63,7 +63,11 @@ public class SecurityConfig {
                 // Panel e historial (RF-08, RF-12): solo el administrador
                 .requestMatchers("/api/panel/**", "/api/historial/**", "/api/registro/**").hasRole("ADMIN")
                 // RestoFlow AI (RF-09 a RF-11): el administrador y el personal de inventario (recomendaciones de compra)
+                // Preguntas libres a la IA externa (Gemini): solo el administrador
+                .requestMatchers("/api/restoflow-ai/preguntar").hasRole("ADMIN")
                 .requestMatchers("/api/restoflow-ai/**").hasAnyRole("INVENTARIO", "ADMIN")
+                // Avisos de RestoFlow AI: todos los roles; cada uno recibe solo los suyos (lo decide el caso de uso)
+                .requestMatchers("/api/avisos/**").authenticated()
                 // Todo lo demás requiere haber iniciado sesión
                 .anyRequest().authenticated())
             .addFilterBefore(new JwtAuthenticationFilter(jwt), UsernamePasswordAuthenticationFilter.class);

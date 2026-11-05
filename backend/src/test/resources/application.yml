@@ -34,6 +34,11 @@ restoflow:
     tiempo-espera-segundos: 1
     open-food-facts:
       url: http://localhost:9
+    # Sin clave de Gemini en las pruebas (aunque el computador tenga GEMINI_API_KEY): se prueba el plan B y el
+    # adaptador con un servidor simulado
+    gemini:
+      api-key: ""
+      url: http://localhost:9
 
 # Igual que en application.yml: Actuator con salud (liveness/readiness) e información
 management:

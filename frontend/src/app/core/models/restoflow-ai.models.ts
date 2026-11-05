@@ -91,3 +91,20 @@ export interface ResultadoAlertas {
   /** Insumos que se acaban pronto pero ya tenían una alerta pendiente (no se repite el aviso). */
   yaAvisados: number;
 }
+
+// ---------- IA externa (Google Gemini) ----------
+
+/** GEMINI: lo escribió la IA externa · REGLAS: la IA no respondió y se armó con las reglas de RestoFlow. */
+export type OrigenIA = 'GEMINI' | 'REGLAS';
+
+export interface RespuestaIA {
+  texto: string;
+  origen: OrigenIA;
+  generadoEn: string;
+}
+
+export interface RecomendacionesIA {
+  recomendaciones: Recomendacion[];
+  origen: OrigenIA;
+  generadoEn: string;
+}

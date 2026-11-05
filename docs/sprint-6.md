@@ -7,8 +7,8 @@ En el comité del 30 de octubre el docente pidió:
 
 | # | Recomendación | Cómo se resuelve | Estado |
 |---|---------------|------------------|--------|
-| 1 | Implementar logs que se guarden en la base de datos | Registro de actividad: cada petición queda en la tabla `registro_peticiones` de SQL Server | **Hecho** (esta parte) |
-| 2 | Validar API externa | RestoFlow AI integrado en toda la plataforma: avisos por rol (cocina, mesero, inventario, admin) | Parte 2 |
+| 1 | Implementar logs que se guarden en la base de datos | Registro de actividad: cada petición queda en la tabla `registro_peticiones` de SQL Server | **Hecho** |
+| 2 | Validar API externa | RestoFlow AI en toda la plataforma: avisos por rol + **IA externa Google Gemini** (resumen por rol, preguntas del admin y recomendaciones) | **Hecho** |
 | 3 | Validar lógica de la aplicación | Pruebas de integración de punta a punta de los flujos del negocio | Parte 3 |
 | 4 | Debe tener cobertura externa | Cobertura del frontend completo mayor a 80 % en SonarQube | Parte 3 |
 
@@ -136,3 +136,151 @@ npm start
 # 3. En SQL Server Management Studio (actualizar la carpeta Tablas con F5):
 #    SELECT TOP 20 * FROM registro_peticiones ORDER BY fecha DESC;
 ```
+
+---
+
+## 2. RestoFlow AI en toda la plataforma: avisos por rol
+
+El docente recomendó llevar RestoFlow AI a toda la aplicación, no solo a una pantalla. Ahora **cada usuario tiene
+una campana** (arriba del menú lateral) con los avisos de su trabajo, calculados con lo que está pasando en el
+restaurante en ese momento.
+
+### Qué avisa a cada rol
+
+| Rol | Aviso | Atención (amarillo) | Urgente (rojo) |
+|-----|-------|---------------------|----------------|
+| Cocina | Pedido demorado frente al **tiempo normal de ese plato** | pasó su tiempo normal | lleva 1,5 veces su tiempo normal (también le llega al mesero de la mesa) |
+| Mesero | Pedido listo y sin llevar a la mesa (solo sus mesas) | 3 min | 8 min |
+| Mesero | Pedido entregado y sin cobrar (solo sus mesas) | 30 min | 60 min |
+| Inventario | Insumo que alcanza para 3 días o menos / insumo en su mínimo, con cuánto comprar | se acaba | en el mínimo |
+| Inventario y cocina | Mañana será un día fuerte (20 % o más sobre un día normal) y qué platos se pedirán más | sí | — |
+| Admin | Todo lo anterior y la demanda esperada de mañana | | |
+
+### Lo que lo hace "inteligente"
+
+- **Aprende cuánto tarda cada plato** con los pedidos reales de las últimas 2 semanas (desde que se registra hasta
+  que cocina lo marca Listo). Una bandeja paisa no se compara con un jugo: cada plato tiene su propio tiempo normal.
+- Usa la **mediana**, no el promedio: si un día un pedido se quedó olvidado 2 horas, el promedio se dispara pero la
+  mediana casi no cambia. Con menos de 3 pedidos de un plato usa 15 minutos de referencia.
+- En un pedido con varios platos manda **el más lento**.
+- Reutiliza el análisis de RestoFlow AI del Sprint 5 (consumo de insumos y predicción de demanda).
+- **No se guardan**: se calculan al consultar. Cuando la situación se resuelve (el pedido se entrega, se compra el
+  insumo) el aviso desaparece solo. Así no hay avisos viejos y cualquier copia del backend responde lo mismo
+  (factor VI: procesos sin estado).
+
+### La campana
+
+- Pide los avisos **cada minuto**.
+- El número rojo cuenta los avisos importantes que aún no se han visto; si hay algo urgente, la campana late.
+- Al abrirla todo queda visto. Si después aparece algo nuevo, vuelve a contar.
+- "Ir a atenderlo" lleva a la pantalla correcta, solo si ese rol puede abrirla.
+
+### Dónde está
+
+| Capa | Archivo | Qué hace |
+|------|---------|----------|
+| Dominio | `domain/ia/Aviso.java` | Un aviso: nivel, a qué roles va y, para el mesero, de quién es la mesa |
+| Dominio | `domain/ia/TiemposPreparacion.java` | Tiempo normal de cada plato (mediana de los pedidos reales) |
+| Dominio | `domain/ia/GeneradorAvisos.java` | Todas las reglas de la tabla de arriba |
+| Aplicación | `application/port/in/ConsultarAvisosUseCase`, `application/service/AvisosService` | Reúne los datos y filtra por rol (al mesero no se le calcula el inventario) |
+| Infraestructura | `infrastructure/adapter/in/web/AvisosController` | `GET /api/avisos` (todos los roles) |
+| Frontend | `components/avisos-campana/*`, `core/services/avisos.service.ts`, `core/util/avisos.ts` | La campana y su panel |
+
+### Pruebas
+
+| Prueba | Qué comprueba |
+|--------|---------------|
+| `AvisosDominioTest` (6) | Mediana del tiempo de cada plato, demora atención / urgente, listo y sin cobrar, inventario, demanda y quién ve qué |
+| `AvisosServiceTest` (3) | Cada rol recibe lo suyo, el mesero solo sus mesas y sin análisis de inventario, el aviso se va solo al entregar |
+| `AvisosIntegracionTest` (2) | De punta a punta con H2: un pedido con una hora en cocina avisa a cocina, a su mesero y al admin, no a otro mesero ni a inventario; sin sesión, 401 |
+| `avisos.test.ts` (7, Jest) | Número de la campana, vistos, enlaces por rol, "hace cuánto", guardado en el navegador |
+
+### Cómo probarlo
+
+1. Entrar como **mesero** y registrar un pedido.
+2. Esperar más de 15 minutos sin que cocina lo marque Listo (o más de su tiempo normal si ese plato ya tiene
+   historial). Para la demostración se puede crear el pedido antes de empezar.
+3. Entrar como **cocina**: la campana muestra "Mesa X · pedido #N demorado".
+4. Marcarlo Listo y esperar 3 minutos sin entregarlo: al **mesero** le aparece "listo para llevar".
+5. Como **inventario**, la campana muestra los insumos que se están acabando.
+
+---
+
+## 3. IA externa: Google Gemini
+
+Para validar el uso de una **API externa de IA**, RestoFlow AI se conectó a **Google Gemini** (plan gratuito de
+Google AI Studio), con el mismo patrón que Open Food Facts.
+
+### Las tres funciones
+
+| # | Función | Quién | Dónde |
+|---|---------|-------|-------|
+| 1 | **Resumen de la campana**: qué atender primero, en 2 o 3 frases, según los avisos de su rol | Todos los roles | Al abrir la campana |
+| 2 | **Pregúntale a RestoFlow AI**: preguntas libres respondidas con los datos reales del restaurante | Solo ADMIN | Pantalla RestoFlow AI |
+| 3 | **Recomendaciones redactadas por la IA**: Gemini analiza ventas, insumos y predicción y propone 3 a 5 acciones | ADMIN e INVENTARIO | Pantalla RestoFlow AI, tarjeta "Recomendaciones" |
+
+### Decisiones (para la sustentación)
+
+- **Las reglas deciden, la IA explica.** Los avisos y los números los calcula RestoFlow (exactos y probados). A
+  Gemini solo se le entregan esos datos para que los redacte, priorice y responda preguntas. Se le ordena no
+  inventar y decir cuándo falta un dato.
+- **Plan B (tolerancia a fallas).** Si Gemini no responde, se acaba el cupo gratuito o no hay clave:
+  - la campana muestra un resumen armado con reglas,
+  - las recomendaciones vuelven a las calculadas con reglas,
+  - el chat responde 503 con un mensaje claro.
+  La pantalla siempre indica el origen: "Redactado por Gemini" o "Calculado con reglas".
+- **Privacidad.** Solo se envían datos del negocio (platos, ventas, insumos, avisos). Nunca nombres, correos,
+  contraseñas ni tokens. En el log queda qué función se usó y cuánto tardó (`evento=CONSULTA_IA`), nunca la
+  pregunta ni la respuesta.
+- **Modelo principal y de respaldo.** Se usa `gemini-3.5-flash-lite`, el más rápido del plan gratuito (responde en
+  cerca de 1 segundo; para redactar con datos que ya se le dan no hace falta un modelo más grande). Si está
+  saturado (503), sin cupo (429), retirado (404) o tarda más de 15 s, se prueba automáticamente
+  `gemini-3.8-flash` (`GEMINI_MODELOS_RESPALDO`). Solo si todos fallan se usa el plan B. Se decidió así después de
+  ver en las pruebas que el modelo Flash del plan gratuito a veces responde "high demand" o tarda más de 20 s.
+- **Cupo gratuito.** El resumen se guarda 5 minutos (mientras los avisos no cambien) y las recomendaciones 30
+  minutos. Sin avisos no se llama a Gemini.
+- **Sin transacción abierta mientras la IA piensa.** El servicio no es `@Transactional`: cada consulta de datos
+  abre y cierra su conexión, y la base de datos no queda ocupada los segundos que tarda Gemini.
+- **La clave es un secreto (factor III).** Va en la variable de entorno `GEMINI_API_KEY` (`.env` o
+  `application-local.yml`), viaja en el encabezado `x-goog-api-key` (nunca en la URL) y no aparece en los logs.
+- **Se puede cambiar de IA (SOLID - O y D).** La aplicación solo conoce el puerto `AsistenteIAPort`. Para usar
+  otra IA (Groq, OpenAI, Claude) se escribe otro adaptador; nada más cambia.
+
+### Dónde está
+
+| Capa | Archivo | Qué hace |
+|------|---------|----------|
+| Dominio | `domain/ia/InstruccionesIA.java` | Instrucciones para Gemini, datos que se le entregan, lectura de su respuesta y plan B |
+| Dominio | `domain/ia/RespuestaIA.java` | Texto + origen (GEMINI o REGLAS) |
+| Dominio | `domain/exception/AsistenteIANoDisponibleException.java` | 503 con mensaje claro |
+| Aplicación | `application/port/out/AsistenteIAPort.java` | Puerto hacia cualquier IA externa |
+| Aplicación | `ResumirAvisosIAUseCase`, `ConsultarAsistenteIAUseCase`, `AsistenteIAService` | Las tres funciones, con caché y plan B |
+| Infraestructura | `adapter/out/externo/GeminiAdapter.java` | `POST /v1beta/models/{modelo}:generateContent` |
+| Infraestructura | `config/ApisExternasConfig.java`, `RestoFlowProperties.Gemini` | Cliente HTTP, clave, modelos y tiempo máximo (15 s por modelo) |
+| Infraestructura | `AvisosController` (`GET /api/avisos/resumen`), `AsistenteIAController` (`POST /api/restoflow-ai/preguntar`, `GET /api/restoflow-ai/recomendaciones-ia`) | API |
+| Frontend | `components/avisos-campana/*`, `pages/restoflow-ai/*`, `core/util/asistente-ia.ts` | Resumen en la campana, chat y origen de las recomendaciones |
+
+### Pruebas (nunca llaman a internet ni gastan cupo)
+
+| Prueba | Qué comprueba |
+|--------|---------------|
+| `GeminiAdapterTest` (6) | Con un servidor simulado: el JSON que se envía, la clave en el encabezado, que ignora el "razonamiento" interno, modelo de respaldo cuando el principal está saturado o la respuesta se corta, 403 sin reintento, 429 / respuesta vacía → 503, sin clave no llama |
+| `InstruccionesIATest` (5) | Lectura de las recomendaciones (y de líneas mal formadas), datos que se envían (sin correos), plan B, validación de la pregunta, limpieza del markdown |
+| `AsistenteIAServiceTest` (4) | Caché de 5 y 30 minutos, plan B cuando Gemini falla, la pregunta lleva los datos del restaurante, 503 sin clave |
+| `AsistenteIAIntegracionTest` (1) | De punta a punta sin clave: la campana y las recomendaciones responden con reglas, el chat da 503, el inventario recibe 403 en el chat |
+| `asistente-ia.test.ts` (4, Jest) | Origen del texto, cuándo se puede enviar, conversación, contador |
+
+### Cómo activarlo
+
+1. Entrar a **https://aistudio.google.com** con una cuenta de Google → **Get API key** → **Create API key**.
+2. Pegarla **solo** en su archivo privado (nunca en GitHub ni en un chat):
+   - modo local, en `backend/src/main/resources/application-local.yml`:
+     ```yaml
+     restoflow:
+       apis-externas:
+         gemini:
+           api-key: SU_CLAVE
+     ```
+   - Docker, en el `.env`: `GEMINI_API_KEY=SU_CLAVE`
+3. Reiniciar el backend. En el log aparece `Gemini (gemini-3.5-flash-lite) respondió en ... ms` cuando se usa.
+4. Si Google cambia el modelo gratuito, se cambia con `GEMINI_MODELO` sin tocar el código.

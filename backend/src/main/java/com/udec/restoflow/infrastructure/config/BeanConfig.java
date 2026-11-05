@@ -1,8 +1,10 @@
 package com.udec.restoflow.infrastructure.config;
 
 import com.udec.restoflow.application.port.in.BuscarProductoExternoUseCase;
+import com.udec.restoflow.application.port.in.ConsultarAvisosUseCase;
 import com.udec.restoflow.application.port.in.ConsultarHistorialUseCase;
 import com.udec.restoflow.application.port.in.ConsultarPanelUseCase;
+import com.udec.restoflow.application.port.in.ConsultarRestoFlowAIUseCase;
 import com.udec.restoflow.application.port.in.DescontarInventarioUseCase;
 import com.udec.restoflow.application.port.in.GestionarAlertasUseCase;
 import com.udec.restoflow.application.port.in.GestionarCatalogoUseCase;
@@ -14,6 +16,7 @@ import com.udec.restoflow.application.port.in.GestionarRecetasUseCase;
 import com.udec.restoflow.application.port.in.IniciarSesionUseCase;
 import com.udec.restoflow.application.port.in.RecuperarContrasenaUseCase;
 import com.udec.restoflow.application.port.out.AlertaRepositoryPort;
+import com.udec.restoflow.application.port.out.AsistenteIAPort;
 import com.udec.restoflow.application.port.out.CategoriaRepositoryPort;
 import com.udec.restoflow.application.port.out.CifradoContrasenaPort;
 import com.udec.restoflow.application.port.out.CatalogoExternoPort;
@@ -41,6 +44,8 @@ import com.udec.restoflow.application.service.GestionarPedidosService;
 import com.udec.restoflow.application.service.GestionarRecetasService;
 import com.udec.restoflow.application.service.IniciarSesionService;
 import com.udec.restoflow.application.service.RecuperarContrasenaService;
+import com.udec.restoflow.application.service.AsistenteIAService;
+import com.udec.restoflow.application.service.AvisosService;
 import com.udec.restoflow.application.service.RestoFlowAIService;
 import com.udec.restoflow.application.service.RegistroActividadService;
 import org.springframework.beans.factory.annotation.Value;
@@ -163,6 +168,20 @@ public class BeanConfig {
                                                  MovimientoRepositoryPort movimientos, AlertaRepositoryPort alertas,
                                                  Clock reloj) {
         return new RestoFlowAIService(pedidos, ingredientes, movimientos, alertas, reloj);
+    }
+
+    /** Avisos por rol: usa el análisis de RestoFlow AI por su puerto de entrada, no el servicio concreto. */
+    @Bean
+    public AvisosService avisosService(PedidoRepositoryPort pedidos, ConsultarRestoFlowAIUseCase restoFlowAI,
+                                       Clock reloj) {
+        return new AvisosService(pedidos, restoFlowAI, reloj);
+    }
+
+    /** IA externa (Gemini) para la campana, las preguntas y las recomendaciones. */
+    @Bean
+    public AsistenteIAService asistenteIAService(AsistenteIAPort ia, ConsultarAvisosUseCase avisos,
+                                                 ConsultarRestoFlowAIUseCase restoFlowAI, Clock reloj) {
+        return new AsistenteIAService(ia, avisos, restoFlowAI, reloj);
     }
 
     // ---------- Registro de actividad en la base de datos (recomendación del comité) ----------

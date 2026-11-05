@@ -103,6 +103,10 @@ services:
       # RestoFlow AI: alertas anticipadas cada hora y, solo para demostraciones, 3 semanas de ventas de ejemplo
       IA_ALERTAS_PROGRAMADAS: ${IA_ALERTAS_PROGRAMADAS:-true}
       IA_HISTORIAL_DEMO: ${IA_HISTORIAL_DEMO:-false}
+      # IA externa (Google Gemini): sin clave, RestoFlow AI funciona con sus reglas
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODELO: ${GEMINI_MODELO:-gemini-3.5-flash-lite}
+      GEMINI_MODELOS_RESPALDO: ${GEMINI_MODELOS_RESPALDO:-gemini-3.8-flash}
       # Registro de actividad: cada petición se guarda en la tabla registro_peticiones y se conserva N días
       REGISTRO_BD_HABILITADO: ${REGISTRO_BD_HABILITADO:-true}
       REGISTRO_BD_DIAS: ${REGISTRO_BD_DIAS:-30}

@@ -63,6 +63,51 @@
       </div>
     </section>
 
+    @if (esAdmin) {
+      <section class="rf-ia chat" aria-labelledby="t-chat">
+        <div class="rf-ia__cabeza">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg>
+          <h2 id="t-chat">Pregúntale a RestoFlow AI</h2>
+        </div>
+        <p class="rf-ia__sub">Gemini responde con los datos reales del restaurante: ventas, productos, insumos, predicción y avisos.</p>
+
+        <div class="chat__sugerencias" role="group" aria-label="Preguntas sugeridas">
+          @for (s of sugerencias; track s) {
+            <button type="button" class="chat__sugerencia" [disabled]="enviando()" (click)="usarSugerencia(s)">{{ s }}</button>
+          }
+        </div>
+
+        <form class="chat__form" (submit)="$event.preventDefault(); preguntar()">
+          <label for="pregunta" class="chat__etiqueta">Su pregunta</label>
+          <textarea id="pregunta" class="chat__texto" rows="2" maxlength="500"
+                    placeholder="Por ejemplo: ¿qué plato debería promocionar esta semana?"
+                    [value]="pregunta()" (input)="pregunta.set($any($event.target).value)"
+                    (keydown.enter)="$event.preventDefault(); preguntar()"></textarea>
+          <div class="chat__acciones">
+            <span class="chat__contador">{{ contador(pregunta()) }}</span>
+            <button type="submit" class="rf-btn rf-btn--primario" [disabled]="!puedeEnviar()">
+              {{ enviando() ? 'Pensando...' : 'Preguntar' }}
+            </button>
+          </div>
+        </form>
+
+        @if (conversacion().length) {
+          <ul class="chat__lista" aria-live="polite">
+            @for (c of conversacion(); track $index) {
+              <li class="chat__item">
+                <p class="chat__pregunta"><span class="chat__hora">{{ c.hora }}</span>{{ c.pregunta }}</p>
+                @if (c.respuesta) {
+                  <p class="chat__respuesta">{{ c.respuesta }}</p>
+                } @else {
+                  <p class="chat__respuesta chat__respuesta--error">{{ c.error }}</p>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+
     <div class="rf-fila">
       <div class="rf-principal">
         <section class="rf-tarjeta" aria-labelledby="t-recomendaciones">
@@ -70,6 +115,15 @@
             <h2 id="t-recomendaciones">Recomendaciones</h2>
             <span class="rf-ayuda">De la más a la menos urgente</span>
           </div>
+          <p class="origen-ia" [class.origen-ia--gemini]="deIA()?.origen === 'GEMINI'" role="status">
+            @if (cargandoIA()) {
+              Gemini está analizando los datos...
+            } @else if (deIA(); as ia) {
+              {{ textoOrigen(ia.origen) }}
+            } @else {
+              Calculado con reglas
+            }
+          </p>
           <div class="rf-pildoras filtros" role="group" aria-label="Filtrar por prioridad">
             @for (f of filtros; track f) {
               <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="filtro() === f"
