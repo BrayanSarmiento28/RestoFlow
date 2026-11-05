@@ -3,7 +3,7 @@
 // títulos de grupo en mono y la tarjeta del usuario abajo.
 .app {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 260px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -162,7 +162,7 @@
 .contenido { min-width: 0; background: var(--rf-crema); }
 
 @media (max-width: 900px) {
-  .app { grid-template-columns: 1fr; }
+  .app { grid-template-columns: minmax(0, 1fr); }
   .lateral { position: static; height: auto; padding: 16px; gap: 16px; }
   .menu { flex-direction: row; flex-wrap: wrap; gap: 4px; }
   .grupo { flex-direction: row; flex-wrap: wrap; &__titulo { display: none; } }

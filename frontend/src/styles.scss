@@ -90,6 +90,8 @@ a:hover { color: var(--rf-brasa-hover); }
 img { max-width: 100%; }
 :focus-visible { outline: 3px solid var(--rf-ambar); outline-offset: 2px; }
 .rf-mono { font-family: var(--rf-fuente-mono); font-variant-numeric: tabular-nums; }
+/* Visible solo para lectores de pantalla. Su contenedor debe ser "position: relative" si está dentro de una caja
+   con desplazamiento (tablas), para no ensanchar la página. */
 .rf-oculto-visual { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Elementos nativos de accesibilidad en lugar de role="status", "dialog", "group" o "img" (SonarQube S6819).
@@ -237,7 +239,9 @@ button, input, select, textarea { font: inherit; }
 .rf-kpi--aviso .rf-kpi__valor, .rf-kpi--aviso .rf-kpi__etiqueta { color: var(--rf-aviso-texto); }
 
 /* ---------- Tablas ---------- */
-.rf-tabla-caja { overflow-x: auto; margin: 0 -24px; padding: 0 24px; }
+/* position: relative: los textos ocultos para lectores de pantalla (.rf-oculto-visual) quedan dentro de la caja;
+   sin esto se salían de ella y hacían que toda la página se desplazara de lado en el celular. */
+.rf-tabla-caja { position: relative; overflow-x: auto; margin: 0 -24px; padding: 0 24px; }
 .rf-tabla { width: 100%; border-collapse: collapse; font-size: 15px; }
 .rf-tabla th {
   text-align: left; font-family: var(--rf-fuente-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.08em;

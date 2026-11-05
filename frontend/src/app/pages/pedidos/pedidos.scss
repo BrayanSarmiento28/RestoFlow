@@ -1,6 +1,6 @@
 .columnas {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: minmax(0, 1fr) 400px;
   gap: 24px;
   align-items: start;
   margin-bottom: 24px;
@@ -172,7 +172,7 @@
 
 .filtro-mesa { width: 90px; }
 
-.tabla-contenedor { overflow-x: auto; }
+.tabla-contenedor { position: relative; overflow-x: auto; }
 
 .tabla {
   width: 100%;
@@ -235,7 +235,7 @@
 .vacio { color: var(--rf-texto-suave); text-align: center; }
 
 @media (max-width: 1100px) {
-  .columnas { grid-template-columns: 1fr; }
+  .columnas { grid-template-columns: minmax(0, 1fr); }
   .carrito { position: static; }
 }
 

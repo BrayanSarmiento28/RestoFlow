@@ -492,3 +492,20 @@ que es para quien la olvidó y usa un código enviado al correo.
   equivocada 400, la anterior deja de servir y la nueva sí) y Jest (`mi-cuenta.test.ts`, `auth.service.test.ts`,
   `estructura.test.ts`).
 
+### 6.6 Celular y tableta
+
+Se revisó la aplicación real (backend y frontend encendidos) en tamaño celular (375 px) y tableta (768 px), con los
+roles de mesero y administrador, midiendo en cada pantalla si algo se salía del ancho.
+
+| Problema encontrado | Corrección |
+|---|---|
+| Pedidos: la tabla de pedidos era más ancha que la pantalla; los botones (pasar la cuenta, agregar productos, cambiar mesa) quedaban escondidos a la derecha | Hasta 900 px cada pedido se muestra como **tarjeta**: mesa y estado, luego hora, mesero y total, y los botones siempre visibles |
+| Pedidos: en el celular el menú iba en una columna y había que bajar mucho para llegar al pedido | Menú en **dos columnas** en el celular; los filtros de la lista bajan a otra línea |
+| Login: el panel de marca ocupaba toda la primera pantalla. La regla que lo ocultaba nunca funcionó: `:host { display: flex }` del componente es más específico que `app-panel-marca { display: none }` | En celular y tableta se ve una **franja con el logo** y el formulario de inmediato |
+| Inventario, Productos y Usuarios: toda la página se desplazaba de lado | Dos causas: (1) columnas `1fr` de CSS Grid no se encogen por debajo del ancho de la tabla → `minmax(0, 1fr)`; (2) los textos ocultos para lectores de pantalla (`.rf-oculto-visual`, `position: absolute`) se salían de la caja de la tabla → las cajas con desplazamiento ahora son `position: relative` |
+| Compilación de producción fallaba (`pedidos.scss` superó el presupuesto de 8 kB de Angular) | Presupuestos en `angular.json`: estilos por componente 6 kB (aviso) / 12 kB (error); paquete inicial 600 kB (aviso). Sin esto, `ng build` para Docker o AWS habría fallado; `npm start` no lo revisa |
+
+Resultado: las 9 pantallas caben en el ancho del celular y de la tableta sin desplazamiento lateral de la página
+(las tablas grandes de Inventario, Reportes y RestoFlow AI se desplazan dentro de su propia caja). Se revisaron
+también la ventana de la cuenta, la campana y Mi cuenta en el celular.
+

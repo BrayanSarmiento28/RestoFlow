@@ -150,7 +150,7 @@
 }
 
 @media (max-width: 1100px) {
-  .tablero { grid-template-columns: 1fr; }
+  .tablero { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
   .cocina { padding: 20px 16px 40px; }
