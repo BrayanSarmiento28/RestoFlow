@@ -45,7 +45,7 @@
         <section class="rf-tarjeta" aria-labelledby="t-dias">
           <div class="rf-tarjeta__titulo"><h2 id="t-dias">Ventas por día</h2></div>
           @if (barras().length) {
-            <div class="dias" role="img" [attr.aria-label]="'Ventas por día, ' + barras().length + ' días con ventas'">
+            <figure class="dias" [attr.aria-label]="'Ventas por día, ' + barras().length + ' días con ventas'">
               @for (b of barras(); track b.dia) {
                 <div class="dia">
                   <span class="dia__valor">{{ pesos(b.total) }}</span>
@@ -53,7 +53,7 @@
                   <span class="dia__etiqueta">{{ b.etiqueta }}</span>
                 </div>
               }
-            </div>
+            </figure>
           } @else {
             <p class="vacio">No hubo ventas en este periodo</p>
           }
@@ -128,7 +128,8 @@
         <div class="rf-tarjeta__titulo filtros">
           <h2 id="t-movimientos">Movimientos ({{ movimientos().length }})</h2>
           <div class="rf-pildoras">
-            <select class="rf-select rf-select--chico" aria-label="Insumo" (change)="insumoId.set(+$any($event.target).value || null); consultar()">
+            <label for="f-insumo" class="rf-oculto-visual">Insumo</label>
+            <select id="f-insumo" class="rf-select rf-select--chico" (change)="insumoId.set(+$any($event.target).value || null); consultar()">
               <option value="">Todos los insumos</option>
               @for (i of insumos(); track i.id) { <option [value]="i.id">{{ i.nombre }}</option> }
             </select>
@@ -161,5 +162,5 @@
     }
   }
 
-  @if (cargando()) { <p class="rf-ayuda" role="status">Consultando…</p> }
+  @if (cargando()) { <output class="rf-ayuda consultando">Consultando…</output> }
 </div>

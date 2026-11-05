@@ -62,7 +62,7 @@ export class RestoFlowAI implements OnInit {
   protected readonly cargandoIA = signal(false);
   protected readonly todas = computed(() => {
     const ia = this.deIA();
-    return ia && ia.origen === 'GEMINI' ? ia.recomendaciones : (this.analisis()?.recomendaciones ?? []);
+    return ia?.origen === 'GEMINI' ? ia.recomendaciones : (this.analisis()?.recomendaciones ?? []);
   });
 
   // Pregúntale a RestoFlow AI

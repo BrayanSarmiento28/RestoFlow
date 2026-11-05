@@ -15,20 +15,20 @@
   </header>
 
   @if (exito()) {
-    <div class="alerta alerta--exito" role="status">{{ exito() }}</div>
+    <output class="alerta alerta--exito">{{ exito() }}</output>
   }
   @if (error()) {
     <div class="alerta" role="alert">{{ error() }}</div>
   }
 
   @if (urgente(); as u) {
-    <div class="rf-aviso" role="status">
+    <div class="rf-aviso">
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>
-      <p>
+      <output>
         <strong>{{ u.insumo.nombre }} {{ u.estado === 'agotado' ? 'se agotó' : 'está por debajo del mínimo' }}</strong>
         ({{ numero(u.insumo.stockActual) }} de {{ numero(u.insumo.stockMinimo) }} {{ abreviatura[u.insumo.unidad] }}).
         Se descuenta solo con cada venta, así que en los próximos pedidos puede faltar.
-      </p>
+      </output>
       <button type="button" class="rf-btn rf-btn--primario rf-btn--chico" (click)="abrirMovimiento('ENTRADA', u.insumo)">
         Registrar compra
       </button>
@@ -249,7 +249,7 @@
                   </div>
                 </div>
               }
-              @if (avisoCodigo()) { <p class="aviso-codigo" role="status">{{ avisoCodigo() }}</p> }
+              @if (avisoCodigo()) { <output class="aviso-codigo">{{ avisoCodigo() }}</output> }
             }
             <div class="rf-campo">
               <label for="i-nombre">Nombre</label>

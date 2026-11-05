@@ -60,7 +60,7 @@
             <span class="rf-chip rf-chip--neutro rf-chip--mono">HOY</span>
           </div>
           @if (horas().length) {
-            <div class="rf-grafica" role="img" [attr.aria-label]="'Ventas por hora de hoy. Máximo ' + pesos(maximoHora())">
+            <figure class="rf-grafica" [attr.aria-label]="'Ventas por hora de hoy. Máximo ' + pesos(maximoHora())">
               <div class="rf-grafica__eje" aria-hidden="true">
                 <span>{{ pesos(maximoHora()) }}</span><span>{{ pesos(maximoHora() * 2 / 3) }}</span>
                 <span>{{ pesos(maximoHora() / 3) }}</span><span>$ 0</span>
@@ -74,7 +74,7 @@
               <div class="rf-grafica__horas" aria-hidden="true" [style.grid-template-columns]="'repeat(' + horas().length + ', minmax(0, 1fr))'">
                 @for (h of horas(); track h.hora) { <span>{{ h.hora }}</span> }
               </div>
-            </div>
+            </figure>
             <div class="rf-leyenda">
               <span><i class="cerrada"></i>Hora cerrada</span>
               <span><i class="en-curso"></i>Hora en curso</span>

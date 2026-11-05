@@ -29,7 +29,7 @@
   </section>
 
   @if (mensaje()) {
-    <div class="exito" role="status">{{ mensaje() }}</div>
+    <output class="exito">{{ mensaje() }}</output>
   }
   @if (error()) {
     <div class="alerta" role="alert">{{ error() }}</div>
@@ -71,11 +71,11 @@
         </div>
         <p class="rf-ia__sub">Gemini responde con los datos reales del restaurante: ventas, productos, insumos, predicción y avisos.</p>
 
-        <div class="chat__sugerencias" role="group" aria-label="Preguntas sugeridas">
+        <fieldset class="chat__sugerencias" aria-label="Preguntas sugeridas">
           @for (s of sugerencias; track s) {
             <button type="button" class="chat__sugerencia" [disabled]="enviando()" (click)="usarSugerencia(s)">{{ s }}</button>
           }
-        </div>
+        </fieldset>
 
         <form class="chat__form" (submit)="$event.preventDefault(); preguntar()">
           <label for="pregunta" class="chat__etiqueta">Su pregunta</label>
@@ -115,7 +115,7 @@
             <h2 id="t-recomendaciones">Recomendaciones</h2>
             <span class="rf-ayuda">De la más a la menos urgente</span>
           </div>
-          <p class="origen-ia" [class.origen-ia--gemini]="deIA()?.origen === 'GEMINI'" role="status">
+          <output class="origen-ia" [class.origen-ia--gemini]="deIA()?.origen === 'GEMINI'">
             @if (cargandoIA()) {
               Gemini está analizando los datos...
             } @else if (deIA(); as ia) {
@@ -123,13 +123,13 @@
             } @else {
               Calculado con reglas
             }
-          </p>
-          <div class="rf-pildoras filtros" role="group" aria-label="Filtrar por prioridad">
+          </output>
+          <fieldset class="rf-pildoras filtros" aria-label="Filtrar por prioridad">
             @for (f of filtros; track f) {
               <button type="button" class="rf-pildora rf-pildora--chica" [attr.aria-pressed]="filtro() === f"
                       (click)="filtro.set(f)">{{ etiquetaFiltro(f) }}</button>
             }
-          </div>
+          </fieldset>
           <ul class="recomendaciones">
             @for (r of recomendaciones(); track $index) {
               <li class="recomendacion" [class.recomendacion--alta]="r.prioridad === 'ALTA'"
@@ -227,15 +227,15 @@
 
         <section class="rf-tarjeta" aria-labelledby="t-dias">
           <div class="rf-tarjeta__titulo"><h2 id="t-dias">Ventas promedio por día</h2></div>
-          <div class="dias" role="img"
-               [attr.aria-label]="'Ventas promedio por día de la semana. El día más fuerte es ' + (a.ventas.diaMasFuerte ? nombreDia[a.ventas.diaMasFuerte] : 'ninguno')">
+          <figure class="dias"
+                  [attr.aria-label]="'Ventas promedio por día de la semana. El día más fuerte es ' + (a.ventas.diaMasFuerte ? nombreDia[a.ventas.diaMasFuerte] : 'ninguno')">
             @for (c of columnas(); track c.dia) {
               <div class="dia" [class.dia--fuerte]="c.fuerte" [title]="nombreDia[c.dia] + ': ' + pesos(c.promedio)">
                 <span class="dia__barra" [style.height.%]="c.alto"></span>
                 <span class="dia__etiqueta">{{ c.etiqueta }}</span>
               </div>
             }
-          </div>
+          </figure>
           <p class="rf-ayuda nota">{{ a.ventas.diasConVentas }} días con ventas en las últimas 4 semanas.</p>
         </section>
 

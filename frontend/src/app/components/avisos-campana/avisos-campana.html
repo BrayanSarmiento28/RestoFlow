@@ -10,7 +10,7 @@
 </button>
 
 @if (abierto()) {
-  <section id="panel-avisos" class="panel" role="dialog" aria-labelledby="t-avisos">
+  <dialog open id="panel-avisos" class="panel" aria-labelledby="t-avisos">
     <header class="panel__encabezado">
       <div>
         <p class="panel__eyebrow">RestoFlow AI</p>
@@ -22,15 +22,15 @@
       </button>
     </header>
 
-    <!-- Sin avisos no hay nada que resumir: basta el "Todo en orden" de la lista -->
+    <!-- Sin avisos no hay nada que resumir: basta el mensaje de la lista vacía -->
     @if (avisos().length > 0) {
       @if (pensando() && !resumen()) {
-        <div class="resumen resumen--cargando" role="status">RestoFlow AI está revisando sus avisos...</div>
+        <output class="resumen resumen--cargando">RestoFlow AI está revisando sus avisos...</output>
       } @else if (resumen(); as r) {
-        <div class="resumen" [class.resumen--reglas]="r.origen === 'REGLAS'" role="status">
-          <p class="resumen__texto">{{ r.texto }}</p>
+        <output class="resumen" [class.resumen--reglas]="r.origen === 'REGLAS'">
+          <span class="resumen__texto">{{ r.texto }}</span>
           <span class="resumen__origen">{{ textoOrigen(r.origen) }}{{ pensando() ? ' · actualizando...' : '' }}</span>
-        </div>
+        </output>
       }
     }
 
@@ -56,5 +56,5 @@
       }
     </ul>
     <p class="panel__pie">Se actualiza cada minuto con los datos reales del restaurante.</p>
-  </section>
+  </dialog>
 }
