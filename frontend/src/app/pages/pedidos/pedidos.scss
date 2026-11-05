@@ -365,3 +365,36 @@
 /* Adición: explicación debajo del título del formulario */
 .ayuda-adicion { margin: 4px 0 12px; font-size: 13px; color: var(--rf-texto-suave); }
 
+/* Celular y tableta: la lista de pedidos pasa de tabla a tarjetas, para que los botones (cobrar, agregar
+   productos, cambiar mesa) siempre se vean sin desplazar de lado. Fila 1: mesa, número y estado;
+   fila 2: hora, mesero y total; fila 3: botones. */
+@media (max-width: 900px) {
+  .lista__encabezado { flex-wrap: wrap; }
+  .tabla thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tabla, .tabla tbody { display: block; }
+  .fila {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 6px 12px;
+    align-items: center;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--rf-borde);
+    td { padding: 0; border: 0; }
+  }
+  .c-mesa { grid-area: 1 / 1; font-size: 16px; &::before { content: 'Mesa '; font-weight: 400; } }
+  .c-numero { grid-area: 1 / 2; color: var(--rf-texto-suave); &::before { content: 'Pedido #'; } }
+  .c-estado { grid-area: 1 / 3; justify-self: end; }
+  .c-hora { grid-area: 2 / 1; color: var(--rf-texto-suave); }
+  .c-mesero { grid-area: 2 / 2; }
+  .c-total { grid-area: 2 / 3; justify-self: end; font-weight: 600; }
+  .fila .acciones { grid-area: 3 / 1 / 4 / 4; display: flex; flex-wrap: wrap; gap: 6px; white-space: normal; text-align: left; }
+  .accion { margin-left: 0; }
+  .detalle { display: block; td { display: block; } }
+}
+
+/* Celular: el menú en dos columnas para llegar más rápido al pedido */
+@media (max-width: 600px) {
+  .productos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .producto { padding: 12px; }
+}
+

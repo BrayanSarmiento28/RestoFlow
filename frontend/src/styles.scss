@@ -603,8 +603,7 @@ button, input, select, textarea { font: inherit; }
 }
 
 @media (max-width: 900px) {
-  .auth { grid-template-columns: 1fr; }
-  app-panel-marca { display: none; }
+  .auth { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
 }
 
 // ---------- Páginas internas (con menú lateral) ----------

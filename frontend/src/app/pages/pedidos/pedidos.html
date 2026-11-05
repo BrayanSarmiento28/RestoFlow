@@ -143,12 +143,12 @@
           @for (p of pedidos(); track p.id) {
             <tr class="fila" tabindex="0" [attr.aria-expanded]="abierto() === p.id"
                 (click)="alternarDetalle(p.id)" (keydown)="teclaEnFila($event, p.id)">
-              @if (verNumero) {<td>{{ numeroPedido(p) }}</td>}
-              <td><strong>{{ p.numeroMesa }}</strong></td>
-              <td>{{ hora(p.fechaCreacion) }}</td>
-              <td>{{ p.meseroNombre }}</td>
-              <td>{{ pesos(p.total) }}</td>
-              <td>
+              @if (verNumero) {<td class="c-numero">{{ numeroPedido(p) }}</td>}
+              <td class="c-mesa"><strong>{{ p.numeroMesa }}</strong></td>
+              <td class="c-hora">{{ hora(p.fechaCreacion) }}</td>
+              <td class="c-mesero">{{ p.meseroNombre }}</td>
+              <td class="c-total">{{ pesos(p.total) }}</td>
+              <td class="c-estado">
                 @if (p.estadoPedido === 'ABIERTO') {
                   <span [class]="'estado estado--' + p.estadoCocina.toLowerCase()">{{ nombresEstado[p.estadoCocina] }}</span>
                 } @else {
