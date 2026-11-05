@@ -50,6 +50,14 @@ final class Auditoria {
         log.info("evento=CONTRASENA_RESTABLECIDA usuario={}", email);
     }
 
+    static void contrasenaCambiada(String email) {
+        log.info("evento=CONTRASENA_CAMBIADA usuario={}", limpio(email));
+    }
+
+    static void cambioContrasenaRechazado(String email) {
+        log.warn("evento=CAMBIO_CONTRASENA_RECHAZADO usuario={} motivo=contrasena_actual_incorrecta", limpio(email));
+    }
+
     static void codigoRecuperacionInvalido(String email) {
         log.warn("evento=CODIGO_RECUPERACION resultado=RECHAZADO usuario={}", limpio(email));
     }

@@ -474,3 +474,21 @@ pedido en su día y la mesa (`pedidoNumeroDelDia`, `pedidoMesa`), y el motivo de
   (API real: 409 si está Pendiente, 403 para cocina, vuelve a cocina, no se cobra hasta entregar) y Jest
   (`pedidos.test.ts`, `cocina.test.ts`, `servicios-api.test.ts`).
 
+### 6.5 Mi cuenta (antes "Configuración · Pronto")
+
+El menú tenía "Configuración" marcado como "Pronto", algo sin terminar a la vista. Ahora es **Mi cuenta**, para todos
+los roles: muestra el nombre, el correo y el rol del usuario, y permite **cambiar la contraseña escribiendo la actual**
+(así, si alguien encuentra la sesión abierta, no puede cambiarla sin saberla). Es distinto de "Recuperar contraseña",
+que es para quien la olvidó y usa un código enviado al correo.
+
+- **Backend:** caso de uso `CambiarContrasenaUseCase` / `CambiarContrasenaService` y `PATCH /api/auth/contrasena`
+  (con sesión). La nueva sigue las mismas reglas de siempre (`Usuario.validarContrasenaSegura`: 8 caracteres, letras y
+  números) y debe ser distinta de la actual. Si la actual no es correcta responde **400, no 401**: un 401 haría que el
+  frontend cerrara la sesión, y el usuario solo se equivocó al escribirla. Eventos `CONTRASENA_CAMBIADA` y
+  `CAMBIO_CONTRASENA_RECHAZADO` en los logs (sin la contraseña).
+- **Frontend:** página `pages/mi-cuenta` (ruta `/mi-cuenta`, solo exige sesión) con los datos y el formulario
+  (contraseña actual, nueva y confirmación). Se quitó del menú el estado "Pronto", que ya no tenía uso.
+- **Pruebas:** `CambiarContrasenaServiceTest` (4), `CuentaIntegracionTest` (API real: sin sesión 401, actual
+  equivocada 400, la anterior deja de servir y la nueva sí) y Jest (`mi-cuenta.test.ts`, `auth.service.test.ts`,
+  `estructura.test.ts`).
+

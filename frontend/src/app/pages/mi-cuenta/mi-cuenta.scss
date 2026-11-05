@@ -1,0 +1,25 @@
+// Mismo diseño de dos columnas que "Cuentas del personal"
+.columnas {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+  align-items: start;
+}
+
+.formulario { max-width: none; }
+
+.datos {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px 24px;
+  margin: 16px 0;
+  font-size: 15px;
+  dt { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--rf-texto-suave); align-self: center; }
+  dd { margin: 0; color: var(--rf-texto); overflow-wrap: anywhere; }
+}
+
+.ayuda { margin: 0; font-size: 13px; color: var(--rf-texto-suave); }
+
+@media (max-width: 1100px) {
+  .columnas { grid-template-columns: 1fr; }
+}

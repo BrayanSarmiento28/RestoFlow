@@ -29,6 +29,11 @@ export class AuthService {
     return this.http.post<MensajeResponse>(`${this.api}/restablecer`, { email, codigo, nuevaPassword });
   }
 
+  /** Mi cuenta: cambia la contraseña del usuario de la sesión (pide la actual). */
+  cambiarContrasena(actual: string, nueva: string): Observable<MensajeResponse> {
+    return this.http.patch<MensajeResponse>(`${this.api}/contrasena`, { actual, nueva });
+  }
+
   logout(): void {
     this.sesion.cerrar();
   }

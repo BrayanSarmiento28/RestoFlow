@@ -17,12 +17,13 @@ import { Productos } from './pages/productos/productos';
 import { Inventario } from './pages/inventario/inventario';
 import { Reportes } from './pages/reportes/reportes';
 import { RestoFlowAI } from './pages/restoflow-ai/restoflow-ai';
+import { MiCuenta } from './pages/mi-cuenta/mi-cuenta';
 import { AvisosCampana } from './components/avisos-campana/avisos-campana';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 
 @NgModule({
   declarations: [App, Login, Inicio, PanelMarca, Logo, RecuperarContrasena, Usuarios, Estructura, Pedidos, Cocina, Productos,
-    Inventario, Reportes, RestoFlowAI, AvisosCampana],
+    Inventario, Reportes, RestoFlowAI, AvisosCampana, MiCuenta],
   imports: [BrowserModule, ReactiveFormsModule, AppRoutingModule],
   providers: [
     provideBrowserGlobalErrorListeners(),

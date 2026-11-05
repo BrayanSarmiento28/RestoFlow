@@ -20,7 +20,7 @@ describe('AuthService', () => {
   const g = globalThis as Record<string, unknown>;
   let local: ReturnType<typeof almacen>;
   let sesion: ReturnType<typeof almacen>;
-  let http: { post: jest.Mock };
+  let http: { post: jest.Mock; patch: jest.Mock };
   let auth: AuthService;
 
   beforeEach(() => {
@@ -29,7 +29,10 @@ describe('AuthService', () => {
     g['localStorage'] = local;
     g['sessionStorage'] = sesion;
     const usuario = { id: 1, nombre: 'Admin', email: 'admin@restoflow.com', rol: 'ADMIN', activo: true };
-    http = { post: jest.fn(() => of({ token: 'abc', expiraEnSegundos: 3600, usuario, mensaje: 'Listo' })) };
+    http = {
+      post: jest.fn(() => of({ token: 'abc', expiraEnSegundos: 3600, usuario, mensaje: 'Listo' })),
+      patch: jest.fn(() => of({ mensaje: 'Listo' })),
+    };
     const injector = Injector.create({ providers: [{ provide: HttpClient, useValue: http }] });
     auth = runInInjectionContext(injector, () => new AuthService());
   });
@@ -65,11 +68,13 @@ describe('AuthService', () => {
     expect(local.datos.size).toBe(0);
   });
 
-  it('recuperar y restablecer llaman al API con los datos del formulario', () => {
+  it('recuperar, restablecer y cambiar la contraseña llaman al API con los datos del formulario', () => {
     auth.recuperar('a@b.com').subscribe();
     expect(http.post).toHaveBeenLastCalledWith(`${environment.apiUrl}/auth/recuperar`, { email: 'a@b.com' });
     auth.restablecer('a@b.com', '123456', 'Nueva2026').subscribe();
     expect(http.post).toHaveBeenLastCalledWith(`${environment.apiUrl}/auth/restablecer`,
       { email: 'a@b.com', codigo: '123456', nuevaPassword: 'Nueva2026' });
+    auth.cambiarContrasena('Vieja2026', 'Nueva2027').subscribe();
+    expect(http.patch).toHaveBeenCalledWith(`${environment.apiUrl}/auth/contrasena`, { actual: 'Vieja2026', nueva: 'Nueva2027' });
   });
 });

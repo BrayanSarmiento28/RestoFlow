@@ -20,21 +20,12 @@
         <div class="grupo">
           <p class="grupo__titulo">{{ grupo.titulo }}</p>
           @for (item of grupo.items; track item.etiqueta) {
-            @if (item.ruta) {
-              <a class="item" [class.item--ai]="item.ai" [routerLink]="item.ruta" routerLinkActive="item--activo"
-                 ariaCurrentWhenActive="page">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="item.icono"/></svg>
-                <span>{{ item.etiqueta }}</span>
-              </a>
-            } @else {
-              <span class="item item--pronto" [class.item--ai]="item.ai" title="Disponible en los próximos sprints">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="item.icono"/></svg>
-                <span>{{ item.etiqueta }}</span>
-                <span class="pronto">Pronto</span>
-              </span>
-            }
+            <a class="item" [class.item--ai]="item.ai" [routerLink]="item.ruta" routerLinkActive="item--activo"
+               ariaCurrentWhenActive="page">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="item.icono"/></svg>
+              <span>{{ item.etiqueta }}</span>
+            </a>
           }
         </div>
       }

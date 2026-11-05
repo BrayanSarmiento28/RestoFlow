@@ -103,18 +103,6 @@
     font-weight: 600;
     background: var(--rf-crema);
   }
-  &--pronto { cursor: default; opacity: 0.6; &:hover { color: var(--rf-texto-claro); background: none; } }
-  &--pronto.item--ai:hover { color: var(--rf-ambar); }
-}
-
-.pronto {
-  margin-left: auto;
-  padding: 1px 7px;
-  font-family: var(--rf-fuente-mono);
-  font-size: 9px;
-  letter-spacing: 0.04em;
-  border: 1px solid var(--rf-tinta-3);
-  border-radius: 999px;
 }
 
 .perfil {
