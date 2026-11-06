@@ -427,3 +427,85 @@ cd ..
 powershell -ExecutionPolicy Bypass -File .\analizar-calidad.ps1 -SoloFrontend
 ```
 
+## 6. Ajustes del frontend antes de la entrega
+
+### 6.1 Una sola herramienta de pruebas
+
+Se quitaron los `*.spec.ts` que Angular CLI genera solos ("should create"), `tsconfig.spec.json`, el `test` de
+`angular.json` y las librerías Vitest y jsdom. Todas las pruebas del frontend son de Jest y `npm test` las ejecuta.
+
+### 6.2 Ventanas propias para "Cancelar pedido" y "Cambiar mesa"
+
+Antes usaban los cuadros del navegador (`confirm` y `prompt`): grises, distintos en cada navegador y sin explicar
+nada. Ahora son ventanas como la del cobro, con los colores de RestoFlow. "Cancelar pedido" explica que la mesa
+queda libre y que no se puede deshacer; "Cambiar de mesa" muestra el error dentro de la misma ventana si la mesa
+está ocupada, es la misma o no es válida. Se cierran con "Volver", con un clic afuera o con Escape.
+
+### 6.3 Número del día en el historial de Inventario
+
+Las salidas por venta mostraban el id interno del pedido ("pedido #275"). Ahora cada movimiento trae el número del
+pedido en su día y la mesa (`pedidoNumeroDelDia`, `pedidoMesa`), y el motivo de las ventas nuevas dice
+"Venta del pedido #4 (mesa 3)". El administrador ve "Venta · pedido #4 · mesa 3"; el personal de inventario,
+"Venta · mesa 3" (el número del pedido es solo del administrador, igual que en Pedidos y Cocina).
+
+### 6.4 Adición: el cliente pide algo más con el pedido ya en cocina
+
+**Regla (decidida con el equipo):** los productos se suman **al mismo pedido y a su cuenta**, marcados como
+"Adición". Así la mesa sigue con un solo pedido y una sola cuenta, y el cierre del día cuenta una sola venta.
+
+| Estado del pedido | ¿Se puede agregar? | Qué pasa |
+|---|---|---|
+| Pendiente | No: se usa "Editar" | Todavía no se prepara, así que se cambia el pedido completo |
+| En preparación | Sí | La cocina ve las líneas nuevas marcadas "Adición" |
+| Listo o Entregado | Sí | Vuelve a **En preparación**: la cocina prepara la adición y la entrega antes de cobrar |
+| Pagado o Cancelado | No (409) | El pedido ya está cerrado |
+
+- **Backend:** `Pedido.agregarAdicion` (la regla está en el dominio), `DetallePedido.adicion`,
+  `Pedido.fechaAdicion`, `POST /api/pedidos/{id}/adiciones` (MESERO y ADMIN) y el evento `ADICION_AGREGADA` en
+  los logs. Script `backend/database/05_adiciones.sql` (columnas `detalle_pedidos.adicion` y
+  `pedidos.fecha_adicion`), montado en `docker-compose.yml`.
+- **Demora en cocina:** con una adición, la demora se mide desde la hora de la adición (no desde el pedido
+  original), y esos pedidos no se usan para aprender los tiempos normales de preparación (su hora de Listo incluye
+  lo que se pidió después).
+- **Frontend:** botón "Agregar productos" en los pedidos que ya están en cocina; el formulario pasa a "Adición al
+  pedido de la mesa N" con la mesa fija y el carrito solo con lo nuevo. En el detalle del pedido y en las comandas
+  de Cocina, las líneas nuevas llevan la etiqueta "Adición", y la comanda cuenta los minutos desde la adición.
+- **Pruebas:** `PedidoTest` (3 reglas), `GestionarPedidosServiceTest.adicion`, `ReglasDeNegocioIntegracionTest.adicion`
+  (API real: 409 si está Pendiente, 403 para cocina, vuelve a cocina, no se cobra hasta entregar) y Jest
+  (`pedidos.test.ts`, `cocina.test.ts`, `servicios-api.test.ts`).
+
+### 6.5 Mi cuenta (antes "Configuración · Pronto")
+
+El menú tenía "Configuración" marcado como "Pronto", algo sin terminar a la vista. Ahora es **Mi cuenta**, para todos
+los roles: muestra el nombre, el correo y el rol del usuario, y permite **cambiar la contraseña escribiendo la actual**
+(así, si alguien encuentra la sesión abierta, no puede cambiarla sin saberla). Es distinto de "Recuperar contraseña",
+que es para quien la olvidó y usa un código enviado al correo.
+
+- **Backend:** caso de uso `CambiarContrasenaUseCase` / `CambiarContrasenaService` y `PATCH /api/auth/contrasena`
+  (con sesión). La nueva sigue las mismas reglas de siempre (`Usuario.validarContrasenaSegura`: 8 caracteres, letras y
+  números) y debe ser distinta de la actual. Si la actual no es correcta responde **400, no 401**: un 401 haría que el
+  frontend cerrara la sesión, y el usuario solo se equivocó al escribirla. Eventos `CONTRASENA_CAMBIADA` y
+  `CAMBIO_CONTRASENA_RECHAZADO` en los logs (sin la contraseña).
+- **Frontend:** página `pages/mi-cuenta` (ruta `/mi-cuenta`, solo exige sesión) con los datos y el formulario
+  (contraseña actual, nueva y confirmación). Se quitó del menú el estado "Pronto", que ya no tenía uso.
+- **Pruebas:** `CambiarContrasenaServiceTest` (4), `CuentaIntegracionTest` (API real: sin sesión 401, actual
+  equivocada 400, la anterior deja de servir y la nueva sí) y Jest (`mi-cuenta.test.ts`, `auth.service.test.ts`,
+  `estructura.test.ts`).
+
+### 6.6 Celular y tableta
+
+Se revisó la aplicación real (backend y frontend encendidos) en tamaño celular (375 px) y tableta (768 px), con los
+roles de mesero y administrador, midiendo en cada pantalla si algo se salía del ancho.
+
+| Problema encontrado | Corrección |
+|---|---|
+| Pedidos: la tabla de pedidos era más ancha que la pantalla; los botones (pasar la cuenta, agregar productos, cambiar mesa) quedaban escondidos a la derecha | Hasta 900 px cada pedido se muestra como **tarjeta**: mesa y estado, luego hora, mesero y total, y los botones siempre visibles |
+| Pedidos: en el celular el menú iba en una columna y había que bajar mucho para llegar al pedido | Menú en **dos columnas** en el celular; los filtros de la lista bajan a otra línea |
+| Login: el panel de marca ocupaba toda la primera pantalla. La regla que lo ocultaba nunca funcionó: `:host { display: flex }` del componente es más específico que `app-panel-marca { display: none }` | En celular y tableta se ve una **franja con el logo** y el formulario de inmediato |
+| Inventario, Productos y Usuarios: toda la página se desplazaba de lado | Dos causas: (1) columnas `1fr` de CSS Grid no se encogen por debajo del ancho de la tabla → `minmax(0, 1fr)`; (2) los textos ocultos para lectores de pantalla (`.rf-oculto-visual`, `position: absolute`) se salían de la caja de la tabla → las cajas con desplazamiento ahora son `position: relative` |
+| Compilación de producción fallaba (`pedidos.scss` superó el presupuesto de 8 kB de Angular) | Presupuestos en `angular.json`: estilos por componente 6 kB (aviso) / 12 kB (error); paquete inicial 600 kB (aviso). Sin esto, `ng build` para Docker o AWS habría fallado; `npm start` no lo revisa |
+
+Resultado: las 9 pantallas caben en el ancho del celular y de la tableta sin desplazamiento lateral de la página
+(las tablas grandes de Inventario, Reportes y RestoFlow AI se desplazan dentro de su propia caja). Se revisaron
+también la ventana de la cuenta, la campana y Mi cuenta en el celular.
+

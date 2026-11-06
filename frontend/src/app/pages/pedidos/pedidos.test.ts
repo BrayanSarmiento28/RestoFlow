@@ -19,6 +19,7 @@ function apiPedidos(ocupadas: MesaOcupada[] = []) {
     cancelar: jest.fn(() => ok(pedido({ estadoPedido: 'CANCELADO' }))),
     pagar: jest.fn(() => ok(pedido({ estadoPedido: 'PAGADO' }))),
     cambiarMesa: jest.fn(() => ok(pedido({ numeroMesa: 9 }))),
+    agregarAdicion: jest.fn(() => ok(pedido({ estadoCocina: 'EN_PREPARACION' }))),
   };
 }
 
@@ -28,8 +29,8 @@ describe('Pantalla de Pedidos', () => {
   let catalogo: { productos: jest.Mock };
   let navegador: ReturnType<typeof simularNavegador>;
 
-  function abrir(rol: Rol = 'MESERO', ocupadas: MesaOcupada[] = [], respuestas = {}) {
-    navegador = simularNavegador(respuestas);
+  function abrir(rol: Rol = 'MESERO', ocupadas: MesaOcupada[] = []) {
+    navegador = simularNavegador();
     api = apiPedidos(ocupadas);
     catalogo = { productos: jest.fn(() => ok([plato, jugo])) };
     montaje = crear(Pedidos, [
@@ -180,18 +181,23 @@ describe('Pantalla de Pedidos', () => {
     expect(c['editandoId']()).toBeNull();
   });
 
-  it('cancela un pedido solo si el usuario lo confirma', () => {
-    let c = abrir('MESERO', [], { confirmar: false });
+  it('cancelar abre una ventana de confirmación; "Volver" no cancela nada', () => {
+    const c = abrir();
     c['cancelar'](pedido());
+    expect(c['porCancelar']()?.id).toBe(40);
     expect(api.cancelar).not.toHaveBeenCalled();
-    montaje.componente.ngOnDestroy();
-    montaje.destruir();
-    navegador.restaurar();
+    c['cerrarVentana']();
+    expect(c['porCancelar']()).toBeNull();
+    c['confirmarCancelacion']();
+    expect(api.cancelar).not.toHaveBeenCalled();
+  });
 
-    c = abrir('MESERO', [], { confirmar: true });
+  it('al confirmar, cancela el pedido, cierra la ventana y lo avisa', () => {
+    const c = abrir();
     c['cancelar'](pedido());
-    expect(navegador.confirmar).toHaveBeenCalledWith('¿Cancelar el pedido de la mesa 3?');
+    c['confirmarCancelacion']();
     expect(api.cancelar).toHaveBeenCalledWith(40);
+    expect(c['porCancelar']()).toBeNull();
     expect(c['exito']()).toBe('Pedido de la mesa 3 cancelado.');
   });
 
@@ -199,29 +205,39 @@ describe('Pantalla de Pedidos', () => {
     const c = abrir();
     api.cancelar.mockReturnValue(falla(409, 'Ya está en preparación'));
     c['cancelar'](pedido());
+    c['confirmarCancelacion']();
     expect(c['error']()).toBe('Ya está en preparación');
   });
 
-  it('cambia el pedido de mesa con la mesa que escribe el mesero', () => {
-    const c = abrir('MESERO', [], { preguntar: ' 9 ' });
+  it('cambia el pedido de mesa con la mesa que escribe el mesero en la ventana', () => {
+    const c = abrir();
     c['cambiarMesa'](pedido());
+    expect(c['porCambiarMesa']()?.id).toBe(40);
+    c['mesaNueva'].set(' 9 ');
+    c['confirmarCambioMesa']();
     expect(api.cambiarMesa).toHaveBeenCalledWith(40, 9);
+    expect(c['porCambiarMesa']()).toBeNull();
     expect(c['exito']()).toBe('Pedido de la mesa 3 pasado a la mesa 9.');
   });
 
-  it('cambiar de mesa: si cierra el cuadro no hace nada; si la mesa no sirve, lo explica', () => {
-    let c = abrir('MESERO', [], { preguntar: null });
+  it('cambiar de mesa: si la mesa no sirve, lo explica en la misma ventana sin enviar nada', () => {
+    const ocupada: MesaOcupada = { numeroMesa: 5, pedidoId: 30, meseroNombre: 'Pedro', estadoCocina: 'LISTO' };
+    const c = abrir('MESERO', [ocupada]);
     c['cambiarMesa'](pedido());
+    c['confirmarCambioMesa']();
+    expect(c['errorMesa']()).toBe('Escriba un número de mesa entre 1 y 999.');
+    c['mesaNueva'].set('3');
+    c['confirmarCambioMesa']();
+    expect(c['errorMesa']()).toBe('El pedido ya está en la mesa 3.');
+    c['mesaNueva'].set('5');
+    c['confirmarCambioMesa']();
+    expect(c['errorMesa']()).toContain('Pedro');
     expect(api.cambiarMesa).not.toHaveBeenCalled();
-    montaje.componente.ngOnDestroy();
-    montaje.destruir();
-    navegador.restaurar();
-
-    c = abrir('MESERO', [], { preguntar: '3' });
-    c['cambiarMesa'](pedido());
+    expect(c['porCambiarMesa']()).not.toBeNull();
+    c['cerrarVentana']();
+    expect(c['porCambiarMesa']()).toBeNull();
+    c['confirmarCambioMesa']();
     expect(api.cambiarMesa).not.toHaveBeenCalled();
-    expect(c['error']()).toBeTruthy();
-    expect(c['exito']()).toBeNull();
   });
 
   it('el administrador registra la venta con el método de pago elegido', () => {
@@ -316,5 +332,54 @@ describe('Pantalla de Pedidos', () => {
       jest.useRealTimers();
     }
   });
-});
 
+  it('el título del formulario dice si es un pedido nuevo, una edición o una adición', () => {
+    let c = abrir('ADMIN');
+    expect(c['tituloFormulario']()).toBe('Nuevo pedido');
+    c['editar'](pedido());
+    expect(c['tituloFormulario']()).toBe('Editar pedido #4');
+    c['agregarProductos'](pedido({ estadoCocina: 'ENTREGADO' }));
+    expect(c['tituloFormulario']()).toBe('Adición al pedido #4 de la mesa 3');
+    montaje.componente.ngOnDestroy();
+    montaje.destruir();
+    navegador.restaurar();
+
+    c = abrir('MESERO');
+    c['editar'](pedido());
+    expect(c['tituloFormulario']()).toBe('Editar pedido de la mesa 3');
+  });
+
+  it('adición: agrega productos a un pedido ya en cocina, con la mesa fija y el carrito solo con lo nuevo', () => {
+    const ocupada: MesaOcupada = { numeroMesa: 3, pedidoId: 40, meseroNombre: 'Laura Gómez', estadoCocina: 'LISTO' };
+    const c = abrir('MESERO', [ocupada]);
+    c['agregar'](plato);
+    c['agregarProductos'](pedido({ estadoCocina: 'LISTO' }));
+    expect(c['carrito']()).toHaveLength(0);
+    expect(c['form'].controls.mesa.disabled).toBe(true);
+    expect(c['avisoMesa']()).toBeNull();                  // su propia mesa no cuenta como ocupada
+    expect(navegador.ventana.scrollTo).toHaveBeenCalled();
+
+    c['enviar']();
+    expect(c['error']()).toBe('Agrega al menos un producto al pedido.');
+    c['agregar'](jugo);
+    c['enviar']();
+    expect(api.agregarAdicion).toHaveBeenCalledWith(40, [{ productoId: 2, cantidad: 1, nota: null }]);
+    expect(api.registrar).not.toHaveBeenCalled();
+    expect(c['exito']()).toBe('Adición del pedido de la mesa 3 enviada a cocina.');
+    expect(c['adicionPara']()).toBeNull();
+    expect(c['form'].controls.mesa.enabled).toBe(true);
+  });
+
+  it('adición: si el API la rechaza, muestra el error y conserva lo que se iba a agregar', () => {
+    const c = abrir();
+    api.agregarAdicion.mockReturnValue(falla(409, 'El pedido ya se cobró'));
+    c['agregarProductos'](pedido({ estadoCocina: 'ENTREGADO' }));
+    c['agregar'](jugo);
+    c['enviar']();
+    expect(c['error']()).toBe('El pedido ya se cobró');
+    expect(c['carrito']()).toHaveLength(1);
+    expect(c['enviando']()).toBe(false);
+    c['limpiar']();
+    expect(c['adicionPara']()).toBeNull();
+  });
+});

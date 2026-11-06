@@ -90,7 +90,7 @@ public final class GeneradorAvisos {
     // ---------- Cocina ----------
 
     static Aviso demora(Pedido p, TiemposPreparacion tiempos, LocalDateTime ahora) {
-        long lleva = minutos(p.getFechaCreacion(), ahora);
+        long lleva = minutos(p.getInicioEspera(), ahora);
         int normal = tiempos.minutosNormales(p);
         if (lleva <= normal) {
             return null;
@@ -105,7 +105,8 @@ public final class GeneradorAvisos {
         Set<Rol> para = urgente ? Set.of(Rol.COCINA, Rol.MESERO) : Set.of(Rol.COCINA);
         return new Aviso("demora-" + p.getId(), Tipo.PLATO_DEMORADO, urgente ? Nivel.URGENTE : Nivel.ATENCION,
                 "Mesa " + p.getNumeroMesa() + " · pedido demorado",
-                "Lleva " + lleva + " min y " + base + ". " + estado, "/cocina", p.getFechaCreacion(), para,
+                (p.tieneAdicion() ? "La adición lleva " : "Lleva ") + lleva + " min y " + base + ". " + estado,
+                "/cocina", p.getInicioEspera(), para,
                 p.getMeseroId());
     }
 

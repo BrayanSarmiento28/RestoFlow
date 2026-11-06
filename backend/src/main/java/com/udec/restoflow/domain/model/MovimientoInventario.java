@@ -24,6 +24,9 @@ public class MovimientoInventario {
     private final String ingredienteNombre;
     private final UnidadMedida unidad;
     private final String usuarioNombre;
+    /** Número del pedido en su día (#1, #2...) y su mesa, en las salidas por venta (solo para mostrar). */
+    private Integer pedidoNumeroDelDia;
+    private Integer pedidoMesa;
 
     public MovimientoInventario(Long id, Long ingredienteId, TipoMovimiento tipo, BigDecimal cantidad, String motivo,
                                 Long usuarioId, Long pedidoId, LocalDateTime fecha) {
@@ -72,4 +75,16 @@ public class MovimientoInventario {
     public String getIngredienteNombre() { return ingredienteNombre; }
     public UnidadMedida getUnidad() { return unidad; }
     public String getUsuarioNombre() { return usuarioNombre; }
+    public Integer getPedidoNumeroDelDia() { return pedidoNumeroDelDia; }
+    public Integer getPedidoMesa() { return pedidoMesa; }
+
+    /**
+     * Datos del pedido que originó la salida, para mostrarlos en el historial (los llena la persistencia al leer).
+     * El número del día es el que ve el administrador; el id interno no se muestra.
+     */
+    public MovimientoInventario conDatosDelPedido(Integer numeroDelDia, Integer mesa) {
+        this.pedidoNumeroDelDia = numeroDelDia;
+        this.pedidoMesa = mesa;
+        return this;
+    }
 }

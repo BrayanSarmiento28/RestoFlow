@@ -102,9 +102,11 @@ class InventarioFlujoIntegracionTest {
                 .andExpect(jsonPath("$", hasSize(1)));
 
         // Se venden 2 tortillas: el pedido pasa por cocina y se cobra
-        long pedido = leer(enviar(post("/api/pedidos"), mesero,
+        JsonNode creado = leer(enviar(post("/api/pedidos"), mesero,
                 "{\"numeroMesa\":8,\"lineas\":[{\"productoId\":" + tortilla + ",\"cantidad\":2}]}")
-                .andExpect(status().isCreated())).get("id").asLong();
+                .andExpect(status().isCreated()));
+        long pedido = creado.get("id").asLong();
+        int numeroDelDia = creado.get("numeroDelDia").asInt();
         for (String estado : new String[]{"EN_PREPARACION", "LISTO", "ENTREGADO"}) {
             enviar(patch("/api/cocina/pedidos/" + pedido + "/estado"), admin, "{\"estado\":\"" + estado + "\"}")
                     .andExpect(status().isOk());
@@ -129,8 +131,10 @@ class InventarioFlujoIntegracionTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].cantidad").value(6))
                 .andExpect(jsonPath("$[0].pedidoId").value(pedido))
+                .andExpect(jsonPath("$[0].pedidoNumeroDelDia").value(numeroDelDia))
+                .andExpect(jsonPath("$[0].pedidoMesa").value(8))
                 .andExpect(jsonPath("$[0].usuarioNombre").value("Sistema"))
-                .andExpect(jsonPath("$[0].motivo", startsWith("Venta del pedido #" + pedido)));
+                .andExpect(jsonPath("$[0].motivo", startsWith("Venta del pedido #" + numeroDelDia + " (mesa 8)")));
 
         // Llega mercancía: la alerta se cierra sola
         enviar(post("/api/inventario/ingredientes/" + huevo + "/entradas"), bodega, "{\"cantidad\":30,\"motivo\":\"Compra\"}")

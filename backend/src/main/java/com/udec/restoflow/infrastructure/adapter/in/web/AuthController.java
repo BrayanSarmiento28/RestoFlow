@@ -1,10 +1,12 @@
 package com.udec.restoflow.infrastructure.adapter.in.web;
 
+import com.udec.restoflow.application.port.in.CambiarContrasenaUseCase;
 import com.udec.restoflow.application.port.in.GestionarCuentasUseCase;
 import com.udec.restoflow.application.port.in.IniciarSesionUseCase;
 import com.udec.restoflow.application.port.in.IniciarSesionUseCase.ComandoInicioSesion;
 import com.udec.restoflow.application.port.in.RecuperarContrasenaUseCase;
 import com.udec.restoflow.application.port.in.RecuperarContrasenaUseCase.ComandoRestablecer;
+import com.udec.restoflow.infrastructure.adapter.in.web.dto.AuthDto.CambioContrasenaRequest;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.AuthDto.LoginRequest;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.AuthDto.LoginResponse;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.AuthDto.MensajeResponse;
@@ -18,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,12 +41,14 @@ public class AuthController {
     private final IniciarSesionUseCase iniciarSesion;
     private final RecuperarContrasenaUseCase recuperarContrasena;
     private final GestionarCuentasUseCase cuentas;
+    private final CambiarContrasenaUseCase cambiarContrasena;
 
     public AuthController(IniciarSesionUseCase iniciarSesion, RecuperarContrasenaUseCase recuperarContrasena,
-                          GestionarCuentasUseCase cuentas) {
+                          GestionarCuentasUseCase cuentas, CambiarContrasenaUseCase cambiarContrasena) {
         this.iniciarSesion = iniciarSesion;
         this.recuperarContrasena = recuperarContrasena;
         this.cuentas = cuentas;
+        this.cambiarContrasena = cambiarContrasena;
     }
 
     /** HU-01 · Iniciar sesión. */
@@ -80,5 +85,16 @@ public class AuthController {
     @GetMapping("/me")
     public UsuarioResponse me(@AuthenticationPrincipal UsuarioAutenticado actual) {
         return UsuarioResponse.desde(cuentas.obtenerCuenta(actual.id()));
+    }
+
+    /** Mi cuenta · Cambiar la contraseña con la sesión iniciada, escribiendo la actual. */
+    @Operation(summary = "Cambiar mi contraseña",
+            description = "Cambia la contraseña del usuario de la sesión. Pide la actual; la nueva debe tener al menos "
+                    + "8 caracteres con letras y números, y ser distinta de la actual. 400 si la actual no es correcta.")
+    @PatchMapping("/contrasena")
+    public MensajeResponse cambiarContrasena(@Valid @RequestBody CambioContrasenaRequest request,
+                                             @AuthenticationPrincipal UsuarioAutenticado actual) {
+        cambiarContrasena.cambiar(actual.id(), request.actual(), request.nueva());
+        return new MensajeResponse("Tu contraseña se cambió correctamente.");
     }
 }

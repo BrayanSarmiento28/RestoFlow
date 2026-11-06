@@ -201,4 +201,37 @@ class ReglasDeNegocioIntegracionTest {
         org.junit.jupiter.api.Assertions.assertTrue(n >= 1);
         org.junit.jupiter.api.Assertions.assertEquals(n + 1, segundo.get("numeroDelDia").asInt());
     }
+
+    @Test
+    @DisplayName("RN · Adición: con el pedido entregado, el mesero agrega productos; vuelve a cocina y suma a la cuenta")
+    void adicion() throws Exception {
+        long pedido = registrar(55);
+        String otraArepa = "{\"lineas\":[{\"productoId\":" + producto + ",\"cantidad\":2,\"nota\":\"Con queso\"}]}";
+
+        // Pendiente: se usa "Editar", no adición
+        enviar(post("/api/pedidos/" + pedido + "/adiciones"), mesero, otraArepa).andExpect(status().isConflict());
+
+        cocinaHasta(pedido, "EN_PREPARACION", "LISTO", "ENTREGADO");
+        enviar(post("/api/pedidos/" + pedido + "/adiciones"), cocina, otraArepa).andExpect(status().isForbidden());
+        enviar(post("/api/pedidos/" + pedido + "/adiciones"), mesero, "{\"lineas\":[]}").andExpect(status().isBadRequest());
+
+        enviar(post("/api/pedidos/" + pedido + "/adiciones"), mesero, otraArepa)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estadoCocina").value("EN_PREPARACION"))
+                .andExpect(jsonPath("$.total").value(24000))
+                .andExpect(jsonPath("$.lineas[0].adicion").value(false))
+                .andExpect(jsonPath("$.lineas[1].adicion").value(true))
+                .andExpect(jsonPath("$.lineas[1].nota").value("Con queso"))
+                .andExpect(jsonPath("$.fechaAdicion").exists());
+
+        // La cocina la vuelve a ver, con la línea marcada; no se cobra hasta entregar la adición
+        enviar(get("/api/cocina/comandas"), cocina, null)
+                .andExpect(jsonPath("$[?(@.id == " + pedido + ")].lineas[1].adicion", hasItem(true)));
+        enviar(patch("/api/pedidos/" + pedido + "/pagar"), admin, "{\"metodoPago\":\"EFECTIVO\"}")
+                .andExpect(status().isConflict());
+        cocinaHasta(pedido, "LISTO", "ENTREGADO");
+        enviar(patch("/api/pedidos/" + pedido + "/pagar"), admin, "{\"metodoPago\":\"EFECTIVO\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(24000));
+    }
 }

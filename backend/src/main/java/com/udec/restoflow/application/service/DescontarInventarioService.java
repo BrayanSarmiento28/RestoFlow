@@ -67,7 +67,10 @@ public class DescontarInventarioService implements DescontarInventarioUseCase {
         Map<Long, Ingrediente> porId = ingredientes.buscarPorIds(consumoPorIngrediente.keySet()).stream()
                 .collect(Collectors.toMap(Ingrediente::getId, Function.identity()));
         LocalDateTime ahora = LocalDateTime.now(reloj);
-        String motivo = "Venta del pedido #" + pedido.getId() + " (mesa " + pedido.getNumeroMesa() + ")";
+        // El número del día (#1, #2...) es el que ve el administrador; los pedidos antiguos sin él usan el id
+        Integer numero = pedido.getNumeroDelDia();
+        String motivo = "Venta del pedido #" + (numero != null ? numero : pedido.getId())
+                + " (mesa " + pedido.getNumeroMesa() + ")";
         List<Consumo> resultado = new ArrayList<>();
 
         consumoPorIngrediente.forEach((ingredienteId, cantidad) -> {

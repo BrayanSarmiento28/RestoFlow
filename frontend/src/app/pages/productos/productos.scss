@@ -1,6 +1,6 @@
 .columnas {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 380px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -51,7 +51,7 @@
   }
 }
 
-.tabla-contenedor { overflow-x: auto; }
+.tabla-contenedor { position: relative; overflow-x: auto; }
 
 .tabla {
   width: 100%;
@@ -101,7 +101,7 @@
 .vacio { color: var(--rf-texto-suave); text-align: center; }
 
 @media (max-width: 1100px) {
-  .columnas { grid-template-columns: 1fr; }
+  .columnas { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* RF-06 · Editor de la receta del producto */

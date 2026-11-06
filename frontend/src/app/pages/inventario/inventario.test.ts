@@ -238,9 +238,19 @@ describe('Pantalla de Inventario', () => {
     expect(c['editando']()).toBeNull();
   });
 
-  it('describe cada movimiento: venta con su pedido o motivo y usuario', () => {
-    const c = abrir();
+  it('una venta muestra la mesa; el número del pedido del día solo lo ve el administrador', () => {
+    const venta = movimiento({ pedidoId: 275, pedidoNumeroDelDia: 4, pedidoMesa: 3 });
+    expect(abrir('INVENTARIO')['detalleMovimiento'](venta)).toBe('Venta · mesa 3');
+    montaje.destruir();
+    navegador.restaurar();
+    const c = abrir('ADMIN');
+    expect(c['detalleMovimiento'](venta)).toBe('Venta · pedido #4 · mesa 3');
+    // Pedidos antiguos (antes del número del día): se usa el id
     expect(c['detalleMovimiento'](movimiento({ pedidoId: 12 }))).toBe('Venta · pedido #12');
+  });
+
+  it('describe cada movimiento manual con su motivo y usuario', () => {
+    const c = abrir();
     expect(c['detalleMovimiento'](movimiento({ motivo: 'Compra', usuarioNombre: 'Laura' }))).toBe('Compra · Laura');
     expect(c['detalleMovimiento'](movimiento({ motivo: null, usuarioNombre: 'Laura' }))).toBe('Laura');
   });

@@ -36,12 +36,13 @@
               <span class="mesa">Mesa {{ p.numeroMesa }}</span>
               <span class="tiempo">{{ minutos(p) }} min</span>
             </header>
-            <p class="comanda__meta">@if (verNumero) {#{{ numeroPedido(p) }} · }{{ hora(p.fechaCreacion) }} · {{ p.meseroNombre }}</p>
+            <p class="comanda__meta">@if (verNumero) {#{{ numeroPedido(p) }} · }{{ hora(p.fechaCreacion) }} · {{ p.meseroNombre }}@if (p.fechaAdicion) { · adición {{ hora(p.fechaAdicion) }}}</p>
 
             <ul class="comanda__lineas">
               @for (l of p.lineas; track l.id) {
                 <li>
                   <strong>{{ l.cantidad }}×</strong> {{ l.productoNombre }}
+                  @if (l.adicion) { <span class="rf-chip rf-chip--alerta adicion">Adición</span> }
                   @if (l.nota) { <em>{{ l.nota }}</em> }
                 </li>
               }

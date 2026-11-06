@@ -15,6 +15,7 @@ import com.udec.restoflow.application.port.in.GestionarPedidosUseCase;
 import com.udec.restoflow.application.port.in.GestionarRecetasUseCase;
 import com.udec.restoflow.application.port.in.IniciarSesionUseCase;
 import com.udec.restoflow.application.port.in.RecuperarContrasenaUseCase;
+import com.udec.restoflow.application.port.in.CambiarContrasenaUseCase;
 import com.udec.restoflow.application.port.out.AlertaRepositoryPort;
 import com.udec.restoflow.application.port.out.AsistenteIAPort;
 import com.udec.restoflow.application.port.out.CategoriaRepositoryPort;
@@ -30,6 +31,7 @@ import com.udec.restoflow.application.port.out.ProductoRepositoryPort;
 import com.udec.restoflow.application.port.out.RecetaRepositoryPort;
 import com.udec.restoflow.application.port.out.UsuarioRepositoryPort;
 import com.udec.restoflow.application.port.out.RegistroPeticionRepositoryPort;
+import com.udec.restoflow.application.service.CambiarContrasenaService;
 import com.udec.restoflow.application.service.BuscarProductoExternoService;
 import com.udec.restoflow.application.service.ConsultarHistorialService;
 import com.udec.restoflow.application.service.ConsultarPanelService;
@@ -80,6 +82,12 @@ public class BeanConfig {
                                                                  CifradoContrasenaPort cifrado,
                                                                  EnviarCorreoPort correo, Clock reloj) {
         return new RecuperarContrasenaService(usuarios, codigos, cifrado, correo, reloj);
+    }
+
+    @Bean
+    public CambiarContrasenaUseCase cambiarContrasenaUseCase(UsuarioRepositoryPort usuarios,
+                                                             CifradoContrasenaPort cifrado) {
+        return new CambiarContrasenaService(usuarios, cifrado);
     }
 
     @Bean

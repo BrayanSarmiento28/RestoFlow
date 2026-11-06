@@ -281,8 +281,15 @@ export class Inventario implements OnInit {
 
   protected readonly cantidadMovimiento = cantidadMovimiento;
 
+  /**
+   * Venta: el administrador ve el número del pedido del día (#4) y la mesa; el personal de inventario solo la mesa
+   * (el número del pedido es solo del administrador, igual que en Pedidos y Cocina).
+   */
   protected detalleMovimiento(m: MovimientoInventario): string {
-    if (m.pedidoId !== null) return `Venta · pedido #${m.pedidoId}`;
+    if (m.pedidoId !== null) {
+      const mesa = m.pedidoMesa ? ` · mesa ${m.pedidoMesa}` : '';
+      return this.esAdmin ? `Venta · pedido #${m.pedidoNumeroDelDia ?? m.pedidoId}${mesa}` : `Venta${mesa}`;
+    }
     return [m.motivo, m.usuarioNombre].filter(Boolean).join(' · ');
   }
 

@@ -43,7 +43,11 @@
     <!-- Pedido que se está armando -->
     <section class="tarjeta carrito">
       <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
-        <h2>{{ editandoId() ? (verNumero ? 'Editar pedido #' + editandoNumero() : 'Editar pedido de la mesa ' + form.getRawValue().mesa) : 'Nuevo pedido' }}</h2>
+        <h2>{{ tituloFormulario() }}</h2>
+        @if (adicionPara(); as a) {
+          <p class="ayuda-adicion">Agregue lo que el cliente pidió de más. Se suma a la cuenta de la mesa {{ a.numeroMesa }}
+            y la cocina lo ve marcado como «Adición».</p>
+        }
 
         <label for="mesa">Mesa</label>
         <input id="mesa" type="number" min="1" max="999" formControlName="mesa" placeholder="Número de mesa"
@@ -53,7 +57,7 @@
         } @else if (avisoMesa()) {
           <small class="error-campo" role="alert">{{ avisoMesa() }}</small>
         }
-        @if (mesasOcupadas().length && !editandoId()) {
+        @if (mesasOcupadas().length && !editandoId() && !adicionPara()) {
           <div class="mesas-ocupadas">
             <span class="mesas-ocupadas__titulo">Mesas ocupadas</span>
             <ul class="mesas-ocupadas__lista" aria-label="Mesas ocupadas y el mesero que las atiende">
@@ -88,20 +92,24 @@
           }
         </div>
 
-        <label for="observaciones">Observaciones</label>
-        <textarea id="observaciones" rows="2" maxlength="300" formControlName="observaciones"
-                  placeholder="Ej: cliente con afán, alergia al maní"></textarea>
+        @if (!adicionPara()) {
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones" rows="2" maxlength="300" formControlName="observaciones"
+                    placeholder="Ej: cliente con afán, alergia al maní"></textarea>
+        }
 
         <div class="total">
-          <span>Total</span>
+          <span>{{ adicionPara() ? 'Total de la adición' : 'Total' }}</span>
           <strong>{{ pesos(total()) }}</strong>
         </div>
 
         <button type="submit" class="boton" [disabled]="enviando() || carrito().length === 0 || !!avisoMesa()">
-          {{ enviando() ? 'Enviando...' : (editandoId() ? 'Guardar cambios' : 'Enviar a cocina') }}
+          {{ enviando() ? 'Enviando...' : (editandoId() ? 'Guardar cambios' : (adicionPara() ? 'Enviar adición a cocina' : 'Enviar a cocina')) }}
         </button>
         @if (editandoId()) {
           <button type="button" class="boton-secundario" (click)="cancelarEdicion()">Descartar cambios</button>
+        } @else if (adicionPara()) {
+          <button type="button" class="boton-secundario" (click)="limpiar()">Descartar adición</button>
         } @else if (carrito().length > 0) {
           <button type="button" class="boton-secundario" (click)="limpiar()">Vaciar</button>
         }
@@ -135,12 +143,12 @@
           @for (p of pedidos(); track p.id) {
             <tr class="fila" tabindex="0" [attr.aria-expanded]="abierto() === p.id"
                 (click)="alternarDetalle(p.id)" (keydown)="teclaEnFila($event, p.id)">
-              @if (verNumero) {<td>{{ numeroPedido(p) }}</td>}
-              <td><strong>{{ p.numeroMesa }}</strong></td>
-              <td>{{ hora(p.fechaCreacion) }}</td>
-              <td>{{ p.meseroNombre }}</td>
-              <td>{{ pesos(p.total) }}</td>
-              <td>
+              @if (verNumero) {<td class="c-numero">{{ numeroPedido(p) }}</td>}
+              <td class="c-mesa"><strong>{{ p.numeroMesa }}</strong></td>
+              <td class="c-hora">{{ hora(p.fechaCreacion) }}</td>
+              <td class="c-mesero">{{ p.meseroNombre }}</td>
+              <td class="c-total">{{ pesos(p.total) }}</td>
+              <td class="c-estado">
                 @if (p.estadoPedido === 'ABIERTO') {
                   <span [class]="'estado estado--' + p.estadoCocina.toLowerCase()">{{ nombresEstado[p.estadoCocina] }}</span>
                 } @else {
@@ -151,6 +159,9 @@
                 @if (p.estadoPedido === 'ABIERTO' && p.estadoCocina === 'PENDIENTE') {
                   <button type="button" class="accion" (click)="editar(p)">Editar</button>
                   <button type="button" class="accion accion--peligro" (click)="cancelar(p)">Cancelar</button>
+                }
+                @if (p.estadoPedido === 'ABIERTO' && p.estadoCocina !== 'PENDIENTE') {
+                  <button type="button" class="accion" (click)="agregarProductos(p)">Agregar productos</button>
                 }
                 @if (p.estadoPedido === 'ABIERTO') {
                   <button type="button" class="accion" (click)="cambiarMesa(p)">Cambiar mesa</button>
@@ -169,6 +180,7 @@
                     @for (l of p.lineas; track l.id) {
                       <li>
                         <strong>{{ l.cantidad }}×</strong> {{ l.productoNombre }}
+                        @if (l.adicion) { <span class="rf-chip rf-chip--cocina">Adición</span> }
                         <span class="detalle__precio">{{ pesos(l.subtotal) }}</span>
                         @if (l.nota) { <em> · {{ l.nota }}</em> }
                       </li>
@@ -178,8 +190,8 @@
                     <p class="detalle__obs">Observaciones: {{ p.observaciones }}</p>
                   }
                   @if (p.estadoPedido === 'ABIERTO' && p.estadoCocina !== 'PENDIENTE') {
-                    <p class="detalle__obs">Ya se envió a cocina: los productos no se pueden cambiar. Si el cliente se
-                      mueve, use «Cambiar mesa».</p>
+                    <p class="detalle__obs">Ya se envió a cocina: los productos no se pueden cambiar. Si el cliente pide
+                      algo más, use «Agregar productos»; si se mueve, «Cambiar mesa».</p>
                   }
                 </td>
               </tr>
@@ -260,6 +272,50 @@
             <button type="button" class="boton" (click)="cerrarCobro()">Cerrar</button>
           }
         </div>
+      </dialog>
+    </div>
+  }
+
+  <!-- Confirmar la cancelación (antes era el cuadro gris del navegador) -->
+  @if (porCancelar(); as p) {
+    <div class="cobro-fondo" (click)="cerrarVentana()" (keydown.escape)="cerrarVentana()">
+      <dialog open class="cobro ventana" aria-modal="true" aria-labelledby="t-cancelar" aria-describedby="d-cancelar"
+              (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <h2 id="t-cancelar">Cancelar pedido</h2>
+        <p class="cobro__pedido">{{ nombre(p) }} · {{ p.meseroNombre }} · {{ pesos(p.total) }}</p>
+        <p class="cobro__nota" id="d-cancelar">
+          El pedido no se preparará y la mesa {{ p.numeroMesa }} quedará libre. Esta acción no se puede deshacer.
+        </p>
+        <div class="cobro__botones">
+          <button type="button" class="boton-secundario" (click)="cerrarVentana()">Volver</button>
+          <button type="button" class="boton" (click)="confirmarCancelacion()">Cancelar pedido</button>
+        </div>
+      </dialog>
+    </div>
+  }
+
+  <!-- Pasar el pedido a otra mesa (antes era el cuadro del navegador para escribir) -->
+  @if (porCambiarMesa(); as p) {
+    <div class="cobro-fondo" (click)="cerrarVentana()" (keydown.escape)="cerrarVentana()">
+      <dialog open class="cobro ventana" aria-modal="true" aria-labelledby="t-mesa"
+              (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <form (submit)="$event.preventDefault(); confirmarCambioMesa()" novalidate>
+          <h2 id="t-mesa">Cambiar de mesa</h2>
+          <p class="cobro__pedido">{{ nombre(p) }} · {{ p.meseroNombre }}</p>
+          <label class="cobro__etiqueta" for="mesa-nueva">¿A qué mesa se pasa?</label>
+          <input id="mesa-nueva" class="rf-input ventana__mesa" type="number" min="1" max="999" placeholder="Número de mesa"
+                 [class.con-error]="!!errorMesa()" [value]="mesaNueva()"
+                 (input)="mesaNueva.set($any($event.target).value); errorMesa.set(null)" />
+          @if (errorMesa()) {
+            <small class="error-campo" role="alert">{{ errorMesa() }}</small>
+          } @else {
+            <p class="cobro__nota">La mesa {{ p.numeroMesa }} quedará libre y el pedido conserva sus productos.</p>
+          }
+          <div class="cobro__botones">
+            <button type="button" class="boton-secundario" (click)="cerrarVentana()">Volver</button>
+            <button type="submit" class="boton">Cambiar mesa</button>
+          </div>
+        </form>
       </dialog>
     </div>
   }

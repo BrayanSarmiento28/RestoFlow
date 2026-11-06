@@ -66,7 +66,8 @@ final class DoblesPedidos {
             Long id = p.getId() != null ? p.getId() : secuencia++;
             List<DetallePedido> lineas = p.getDetalles().stream()
                     .map(d -> new DetallePedido(d.getId() != null ? d.getId() : secuenciaLineas.getAndIncrement(),
-                            d.getProductoId(), d.getProductoNombre(), d.getCantidad(), d.getPrecioUnitario(), d.getNota()))
+                            d.getProductoId(), d.getProductoNombre(), d.getCantidad(), d.getPrecioUnitario(), d.getNota(),
+                            d.isAdicion()))
                     .toList();
             Pedido copia = new Pedido(id, p.getNumeroMesa(), p.getMeseroId(), p.getMeseroNombre(), lineas,
                     p.getObservaciones(), p.getEstadoCocina(), p.getEstadoPedido(), p.getFechaCreacion(),
@@ -77,6 +78,7 @@ final class DoblesPedidos {
             if (p.getMetodoPago() != null) {
                 copia.asignarMetodoPago(p.getMetodoPago());
             }
+            copia.restaurarFechaAdicion(p.getFechaAdicion());
             datos.put(id, copia);
             return copia;
         }

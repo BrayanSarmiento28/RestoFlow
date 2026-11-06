@@ -50,6 +50,10 @@ class InventarioDominioTest {
         MovimientoInventario sinMotivo = MovimientoInventario.registrar(1L, TipoMovimiento.SALIDA, BigDecimal.ONE,
                 "   ", null, 15L, AHORA);
         assertThat(sinMotivo.getMotivo()).isNull();
+        // Las salidas por venta muestran el número del día y la mesa del pedido (no el id interno)
+        assertThat(sinMotivo.getPedidoNumeroDelDia()).isNull();
+        assertThat(sinMotivo.conDatosDelPedido(4, 3).getPedidoNumeroDelDia()).isEqualTo(4);
+        assertThat(sinMotivo.getPedidoMesa()).isEqualTo(3);
         assertThat(sinMotivo.getPedidoId()).isEqualTo(15L);
     }
 

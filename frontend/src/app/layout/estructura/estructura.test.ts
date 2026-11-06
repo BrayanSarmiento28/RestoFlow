@@ -21,9 +21,9 @@ describe('Menú lateral', () => {
     montaje.destruir();
   });
 
-  it('el mesero ve solo lo suyo y los módulos que llegarán pronto', () => {
+  it('el mesero ve solo lo suyo y su cuenta', () => {
     const { c, montaje } = abrir('MESERO');
-    expect(c['menu'].map((i) => i.etiqueta)).toEqual(['Dashboard', 'Pedidos', 'Configuración']);
+    expect(c['menu'].map((i) => i.etiqueta)).toEqual(['Dashboard', 'Pedidos', 'Mi cuenta']);
     expect(c['grupos'].map((g) => g.titulo)).toEqual(['Operación', 'Gestión']);
     montaje.destruir();
   });

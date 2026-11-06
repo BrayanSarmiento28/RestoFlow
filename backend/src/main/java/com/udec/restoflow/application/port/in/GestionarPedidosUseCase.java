@@ -25,6 +25,12 @@ public interface GestionarPedidosUseCase {
 
     List<Pedido> consultar(Integer numeroMesa, EstadoCocina estadoCocina, EstadoPedido estadoPedido);
 
+    /**
+     * El cliente pide algo más con el pedido ya en cocina: los productos se suman al mismo pedido como "adición"
+     * (y a su cuenta). Si ya estaba Listo o Entregado, vuelve a En preparación.
+     */
+    Pedido agregarAdicion(Long pedidoId, List<LineaPedido> lineas);
+
     /** Pasa un pedido abierto a otra mesa, que debe estar libre (por ejemplo, el cliente se cambió de lugar). */
     Pedido cambiarMesa(Long pedidoId, int nuevaMesa);
 

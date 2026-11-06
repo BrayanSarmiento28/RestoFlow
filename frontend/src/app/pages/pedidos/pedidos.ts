@@ -16,7 +16,7 @@ import {
 } from '../../core/util/carrito';
 import { errorCambioMesa, mensajeMesaOcupada, mesaOcupada, mesasConMesero, nombrePedido } from '../../core/util/mesas';
 import { AuthService } from '../../core/services/auth.service';
-import { MesaOcupada } from '../../core/models/pedido.models';
+import { LineaPedidoRequest, MesaOcupada } from '../../core/models/pedido.models';
 
 /**
  * RF-02 · Pantalla del mesero: arma el pedido de una mesa, lo envía a cocina
@@ -67,6 +67,8 @@ export class Pedidos implements OnInit, OnDestroy {
   protected readonly carrito = signal<ItemCarrito[]>([]);
   protected readonly editandoId = signal<number | null>(null);
   protected readonly editandoNumero = signal<number | null>(null);
+  /** Pedido ya en cocina al que se le agregan productos (adición): el carrito trae solo lo nuevo. */
+  protected readonly adicionPara = signal<Pedido | null>(null);
   protected readonly total = computed(() => totalCarrito(this.carrito()));
   protected readonly form = this.fb.group({
     mesa: [null as number | null, [Validators.required, Validators.min(1), Validators.max(999)]],
@@ -79,7 +81,7 @@ export class Pedidos implements OnInit, OnDestroy {
   private readonly mesaEscrita = toSignal(this.form.controls.mesa.valueChanges, { initialValue: null });
   /** Aviso debajo del campo Mesa mientras se arma un pedido nuevo (al editar, la mesa es la del propio pedido). */
   protected readonly avisoMesa = computed(() => {
-    if (this.editandoId()) return null;
+    if (this.editandoId() || this.adicionPara()) return null;
     const ocupada = mesaOcupada(this.ocupadas(), this.mesaEscrita());
     return ocupada ? mensajeMesaOcupada(ocupada) : null;
   });
@@ -130,6 +132,7 @@ export class Pedidos implements OnInit, OnDestroy {
     this.carrito.set([]);
     this.editandoId.set(null);
     this.editandoNumero.set(null);
+    this.adicionPara.set(null);
     this.form.reset({ mesa: null, observaciones: '' });
     this.form.controls.mesa.enable();
   }
@@ -150,6 +153,11 @@ export class Pedidos implements OnInit, OnDestroy {
     }
     const valores = this.form.getRawValue();
     const datos = aPedidoRequest(valores.mesa, valores.observaciones, this.carrito());
+    const adicion = this.adicionPara();
+    if (adicion) {
+      this.enviarAdicion(adicion, datos.lineas);
+      return;
+    }
     const id = this.editandoId();
     const peticion = id ? this.pedidosApi.modificar(id, datos) : this.pedidosApi.registrar(datos);
 
@@ -172,7 +180,52 @@ export class Pedidos implements OnInit, OnDestroy {
     });
   }
 
+  /** Envía a cocina los productos agregados a un pedido que ya se estaba preparando o que ya se entregó. */
+  private enviarAdicion(pedido: Pedido, lineas: LineaPedidoRequest[]): void {
+    this.enviando.set(true);
+    this.error.set(null);
+    this.exito.set(null);
+    this.pedidosApi.agregarAdicion(pedido.id, lineas).subscribe({
+      next: (actualizado) => {
+        this.enviando.set(false);
+        this.exito.set(`Adición del ${this.nombre(actualizado).toLowerCase()} enviada a cocina.`);
+        this.limpiar();
+        this.cargarPedidos();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviando.set(false);
+        this.error.set(mensajeDeError(err));
+      },
+    });
+  }
+
   // ---------- Acciones sobre pedidos existentes ----------
+
+  /**
+   * El cliente pide algo más con el pedido ya en cocina: el carrito queda vacío para lo nuevo y la mesa fija.
+   * Al enviarlo, se suma al mismo pedido (y a su cuenta) y la cocina lo ve marcado como "Adición".
+   */
+  protected agregarProductos(pedido: Pedido): void {
+    this.limpiar();
+    this.adicionPara.set(pedido);
+    this.form.reset({ mesa: pedido.numeroMesa, observaciones: '' });
+    this.form.controls.mesa.disable();
+    this.error.set(null);
+    this.exito.set(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /** Título del formulario: pedido nuevo, edición o adición. */
+  protected tituloFormulario(): string {
+    const adicion = this.adicionPara();
+    if (adicion) return `Adición al ${this.nombre(adicion).toLowerCase()}`;
+    if (this.editandoId()) {
+      return this.verNumero
+        ? `Editar pedido #${this.editandoNumero()}`
+        : `Editar pedido de la mesa ${this.form.getRawValue().mesa}`;
+    }
+    return 'Nuevo pedido';
+  }
 
   /** Carga un pedido Pendiente en el formulario para cambiarlo. */
   protected editar(pedido: Pedido): void {
@@ -195,30 +248,61 @@ export class Pedidos implements OnInit, OnDestroy {
     this.limpiar();
   }
 
+  // ---------- Ventanas de "Cancelar" y "Cambiar mesa" (antes eran las del navegador: confirm y prompt) ----------
+  // Mismo estilo que la ventana de cobro: centradas, con los colores de RestoFlow y los mensajes en español.
+
+  /** Pedido que se va a cancelar (abre la ventana de confirmación). */
+  protected readonly porCancelar = signal<Pedido | null>(null);
+  /** Pedido que se pasa a otra mesa, lo que se escribe y el problema si la mesa no sirve. */
+  protected readonly porCambiarMesa = signal<Pedido | null>(null);
+  protected readonly mesaNueva = signal('');
+  protected readonly errorMesa = signal<string | null>(null);
+
   protected cancelar(pedido: Pedido): void {
-    if (!confirm(`¿Cancelar el ${nombrePedido(numeroPedido(pedido), pedido.numeroMesa, this.verNumero)}?`)) return;
+    this.porCancelar.set(pedido);
+  }
+
+  protected confirmarCancelacion(): void {
+    const pedido = this.porCancelar();
+    if (!pedido) return;
+    this.porCancelar.set(null);
     this.ejecutar(this.pedidosApi.cancelar(pedido.id), `${this.nombre(pedido)} cancelado.`);
   }
 
   /** "Pedido #275 de la mesa 5" para el admin; "Pedido de la mesa 5" para el mesero. */
-  private nombre(pedido: Pedido): string {
+  protected nombre(pedido: Pedido): string {
     const texto = nombrePedido(numeroPedido(pedido), pedido.numeroMesa, this.verNumero);
     return texto.charAt(0).toUpperCase() + texto.slice(1);
   }
 
   /** El cliente se cambió de lugar: el pedido pasa a otra mesa libre (la anterior queda libre). */
   protected cambiarMesa(pedido: Pedido): void {
-    const texto = prompt(`¿A qué mesa se pasa el ${nombrePedido(numeroPedido(pedido), pedido.numeroMesa, this.verNumero)}?`);
-    if (texto === null) return;
+    this.mesaNueva.set('');
+    this.errorMesa.set(null);
+    this.porCambiarMesa.set(pedido);
+  }
+
+  /** Revisa la mesa escrita antes de enviarla; si no sirve, lo explica dentro de la misma ventana. */
+  protected confirmarCambioMesa(): void {
+    const pedido = this.porCambiarMesa();
+    if (!pedido) return;
+    const texto = this.mesaNueva();
     const problema = errorCambioMesa(texto, pedido.numeroMesa, this.ocupadas());
     if (problema) {
-      this.exito.set(null);
-      this.error.set(problema);
+      this.errorMesa.set(problema);
       return;
     }
     const nueva = Number(texto.trim());
+    this.porCambiarMesa.set(null);
     this.ejecutar(this.pedidosApi.cambiarMesa(pedido.id, nueva),
       `${this.nombre(pedido)} pasado a la mesa ${nueva}.`);
+  }
+
+  /** Cierra las ventanas de cancelar y cambiar mesa (botón "Volver", clic afuera o Escape). */
+  @HostListener('document:keydown.escape')
+  protected cerrarVentana(): void {
+    this.porCancelar.set(null);
+    this.porCambiarMesa.set(null);
   }
 
   // ---------- Registrar la venta (ventana con el método de pago) ----------

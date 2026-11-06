@@ -17,5 +17,8 @@ export interface MovimientoInventario {
   usuarioNombre: string;
   /** Pedido que originó la salida (descuento automático por venta). */
   pedidoId: number | null;
+  /** Número del pedido en su día (#1, #2...) y su mesa, en las salidas por venta. */
+  pedidoNumeroDelDia?: number | null;
+  pedidoMesa?: number | null;
   fecha: string;
 }

@@ -9,6 +9,7 @@ import { Pedidos } from './pages/pedidos/pedidos';
 import { Cocina } from './pages/cocina/cocina';
 import { Productos } from './pages/productos/productos';
 import { Inventario } from './pages/inventario/inventario';
+import { MiCuenta } from './pages/mi-cuenta/mi-cuenta';
 import { Reportes } from './pages/reportes/reportes';
 import { RestoFlowAI } from './pages/restoflow-ai/restoflow-ai';
 import { adminGuard, authGuard, rolGuard } from './core/guards/auth.guard';
@@ -38,6 +39,8 @@ const routes: Routes = [
         data: { roles: ['INVENTARIO', 'ADMIN'] }, title: 'Inventario · RestoFlow',
       },
       { path: 'reportes', component: Reportes, canActivate: [adminGuard], title: 'Reportes · RestoFlow' },
+      // Mi cuenta: todos los roles (solo exige haber iniciado sesión)
+      { path: 'mi-cuenta', component: MiCuenta, title: 'Mi cuenta · RestoFlow' },
       {
         path: 'restoflow-ai', component: RestoFlowAI, canActivate: [rolGuard],
         data: { roles: ['INVENTARIO', 'ADMIN'] }, title: 'RestoFlow AI · RestoFlow',
