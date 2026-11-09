@@ -44,6 +44,9 @@ public final class AuthDto {
             @NotBlank(message = "La contraseña es obligatoria") @Size(max = 72) String password,
             @NotNull(message = "El rol es obligatorio") Rol rol) { }
 
+    /** Desactivar (false) o reactivar (true) una cuenta del personal. */
+    public record CambioEstadoRequest(@NotNull(message = "Indica si la cuenta queda activa") Boolean activa) { }
+
     // ---------- Salida ----------
 
     public record LoginResponse(String token, long expiraEnSegundos, UsuarioResponse usuario) { }

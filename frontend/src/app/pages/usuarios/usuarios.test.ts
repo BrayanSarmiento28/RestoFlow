@@ -1,18 +1,20 @@
-// Pruebas con Jest · cuentas del personal (solo el administrador las crea).
+// Pruebas con Jest · cuentas del personal (solo el administrador las crea, desactiva y reactiva).
 import { throwError } from 'rxjs';
 import { Usuarios } from './usuarios';
 import { UsuarioService } from '../../core/services/usuario.service';
-import { Montaje, crear, falla, ok } from '../../../testing/angular';
+import { Montaje, conSesion, crear, falla, ok } from '../../../testing/angular';
 
-const laura = { id: 7, nombre: 'Laura Gómez', email: 'laura@restoflow.com', rol: 'MESERO' as const, activo: true };
+// La sesión de prueba es la del administrador con id 7; Laura es otra cuenta
+const laura = { id: 8, nombre: 'Laura Gómez', email: 'laura@restoflow.com', rol: 'MESERO' as const, activo: true };
 
 describe('Cuentas del personal', () => {
   let montaje: Montaje<Usuarios>;
-  let api: { listar: jest.Mock; crear: jest.Mock };
+  let api: { listar: jest.Mock; crear: jest.Mock; cambiarEstado: jest.Mock };
 
   function abrir() {
-    api = { listar: jest.fn(() => ok([laura])), crear: jest.fn(() => ok({ ...laura, id: 8, nombre: 'Pedro Ruiz', rol: 'COCINA' })) };
-    montaje = crear(Usuarios, [{ provide: UsuarioService, useValue: api }]);
+    api = { listar: jest.fn(() => ok([laura])), crear: jest.fn(() => ok({ ...laura, id: 9, nombre: 'Pedro Ruiz', rol: 'COCINA' })),
+      cambiarEstado: jest.fn((_id: number, activa: boolean) => ok({ ...laura, activo: activa })) };
+    montaje = crear(Usuarios, [{ provide: UsuarioService, useValue: api }, conSesion('ADMIN')]);
     montaje.componente.ngOnInit();
     return montaje.componente;
   }
@@ -61,5 +63,52 @@ describe('Cuentas del personal', () => {
     api.listar.mockReturnValue(throwError(() => ({ status: 400, error: { campos: { email: 'Correo inválido', password: 'Muy corta' } } })));
     c.ngOnInit();
     expect(c['error']()).toBe('Correo inválido. Muy corta');
+  });
+
+  it('desactiva otra cuenta después de confirmar en la ventana', () => {
+    const c = abrir();
+    c['cambiarEstado'](laura);
+    expect(c['porCambiarEstado']()).toEqual(laura);
+    expect(api.cambiarEstado).not.toHaveBeenCalled();
+
+    c['confirmarCambioEstado']();
+    expect(api.cambiarEstado).toHaveBeenCalledWith(8, false);
+    expect(c['porCambiarEstado']()).toBeNull();
+    expect(c['cambiandoEstado']()).toBe(false);
+    expect(c['exito']()).toBe('La cuenta de Laura Gómez se desactivó. Ya no puede iniciar sesión.');
+    expect(api.listar).toHaveBeenCalledTimes(2);
+  });
+
+  it('reactiva una cuenta inactiva', () => {
+    const c = abrir();
+    c['cambiarEstado']({ ...laura, activo: false });
+    c['confirmarCambioEstado']();
+    expect(api.cambiarEstado).toHaveBeenCalledWith(8, true);
+    expect(c['exito']()).toBe('La cuenta de Laura Gómez se reactivó. Ya puede iniciar sesión.');
+  });
+
+  it('reconoce la cuenta propia para no ofrecer desactivarla', () => {
+    const c = abrir();
+    expect(c['esMiCuenta']({ ...laura, id: 7 })).toBe(true);
+    expect(c['esMiCuenta'](laura)).toBe(false);
+  });
+
+  it('Volver o Escape cierran la ventana sin cambiar nada; confirmar sin cuenta no hace nada', () => {
+    const c = abrir();
+    c['cambiarEstado'](laura);
+    c['cerrarVentana']();
+    expect(c['porCambiarEstado']()).toBeNull();
+    c['confirmarCambioEstado']();
+    expect(api.cambiarEstado).not.toHaveBeenCalled();
+  });
+
+  it('si el backend rechaza el cambio muestra su mensaje y cierra la ventana', () => {
+    const c = abrir();
+    api.cambiarEstado.mockReturnValue(falla(409, 'No puedes desactivar tu propia cuenta'));
+    c['cambiarEstado'](laura);
+    c['confirmarCambioEstado']();
+    expect(c['error']()).toBe('No puedes desactivar tu propia cuenta');
+    expect(c['porCambiarEstado']()).toBeNull();
+    expect(c['cambiandoEstado']()).toBe(false);
   });
 });

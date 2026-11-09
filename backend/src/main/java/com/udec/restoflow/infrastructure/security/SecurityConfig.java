@@ -1,5 +1,6 @@
 package com.udec.restoflow.infrastructure.security;
 
+import com.udec.restoflow.application.port.out.UsuarioRepositoryPort;
 import com.udec.restoflow.infrastructure.config.RestoFlowProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,7 +32,8 @@ public class SecurityConfig {
      */
     @Bean
     @SuppressWarnings("java:S4502")
-    public SecurityFilterChain reglasDeSeguridad(HttpSecurity http, JwtTokenAdapter jwt) throws Exception {
+    public SecurityFilterChain reglasDeSeguridad(HttpSecurity http, JwtTokenAdapter jwt,
+                                                  UsuarioRepositoryPort usuarios) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)            // API sin sesión de navegador: no aplica CSRF
             .cors(cors -> { })                                // usa la configuración CORS de abajo
@@ -48,7 +50,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                 // Documentación Swagger (en producción se apaga desde application-prod.yml)
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                // Solo el administrador gestiona cuentas (HU-03)
+                // Solo el administrador gestiona cuentas: crear, desactivar y reactivar (HU-03)
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                 // Menú: todos lo consultan; solo el administrador lo crea y edita
                 .requestMatchers(HttpMethod.GET, "/api/categorias/**", "/api/productos/**").authenticated()
@@ -72,7 +74,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/avisos/**").authenticated()
                 // Todo lo demás requiere haber iniciado sesión
                 .anyRequest().authenticated())
-            .addFilterBefore(new JwtAuthenticationFilter(jwt), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new JwtAuthenticationFilter(jwt, usuarios), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

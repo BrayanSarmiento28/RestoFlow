@@ -17,7 +17,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Mi cuenta · Cambiar la contraseña con la sesión iniciada, por el API completo (seguridad, caso de uso y JPA). */
+/**
+ * Mi cuenta (cambiar la contraseña) y desactivar o reactivar cuentas del personal, por el API completo
+ * (seguridad, caso de uso y JPA).
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -78,5 +81,59 @@ class CuentaIntegracionTest {
         // La anterior ya no sirve; la nueva sí
         login("cocina.cuenta@pruebas.com", "Cocina2026").andExpect(status().isUnauthorized());
         login("cocina.cuenta@pruebas.com", "Fogon2027").andExpect(status().isOk());
+    }
+
+    private ResultActions estado(String token, Object id, String cuerpo) throws Exception {
+        return mvc.perform(patch("/api/usuarios/" + id + "/estado").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(cuerpo));
+    }
+
+    @Test
+    @DisplayName("El administrador desactiva una cuenta: su sesión abierta deja de servir y no puede volver a entrar")
+    void desactivarYReactivar() throws Exception {
+        String admin = token("admin@pruebas.com", "Admin2026*");
+        String creada = mvc.perform(post("/api/usuarios").header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Mesero Turno\",\"email\":\"mesero.turno@pruebas.com\","
+                                + "\"password\":\"Mesero2026\",\"rol\":\"MESERO\"}"))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long id = json.readTree(creada).get("id").asLong();
+        String mesero = token("mesero.turno@pruebas.com", "Mesero2026");
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + mesero)).andExpect(status().isOk());
+
+        // Solo el administrador puede hacerlo, y el cuerpo es obligatorio
+        estado(mesero, id, "{\"activa\":false}").andExpect(status().isForbidden());
+        estado(admin, id, "{}").andExpect(status().isBadRequest());
+        estado(admin, 999_999, "{\"activa\":false}").andExpect(status().isNotFound());
+
+        estado(admin, id, "{\"activa\":false}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activo").value(false));
+
+        // El token que ya tenía deja de funcionar de inmediato y no puede iniciar sesión de nuevo
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + mesero)).andExpect(status().isUnauthorized());
+        // Al iniciar sesión, la contraseña es correcta pero la cuenta está desactivada: 403 con un mensaje claro
+        login("mesero.turno@pruebas.com", "Mesero2026")
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.mensaje").value("La cuenta está desactivada. Comuníquese con el administrador"));
+
+        // Sigue en la lista (no se borra) y al reactivarla vuelve a entrar con la misma contraseña
+        mvc.perform(get("/api/usuarios/" + id).header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.activo").value(false));
+        estado(admin, id, "{\"activa\":true}").andExpect(status().isOk()).andExpect(jsonPath("$.activo").value(true));
+        login("mesero.turno@pruebas.com", "Mesero2026").andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("El administrador no puede desactivar su propia cuenta (409)")
+    void noDesactivarseASiMismo() throws Exception {
+        String admin = token("admin@pruebas.com", "Admin2026*");
+        String yo = mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + admin))
+                .andReturn().getResponse().getContentAsString();
+
+        estado(admin, json.readTree(yo).get("id").asLong(), "{\"activa\":false}")
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensaje").value("No puedes desactivar tu propia cuenta"));
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + admin)).andExpect(status().isOk());
     }
 }

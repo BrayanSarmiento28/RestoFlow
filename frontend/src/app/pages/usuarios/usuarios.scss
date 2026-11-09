@@ -39,6 +39,63 @@
 
 .vacio { text-align: center; color: var(--rf-texto-suave); }
 
+/* Desactivar o reactivar: mismo estilo de los botones de la tabla de Productos */
+.inactiva { opacity: 0.6; }
+.acciones { white-space: nowrap; text-align: right; }
+.tu-cuenta { font-size: 13px; color: var(--rf-texto-suave); }
+.accion {
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rf-primario);
+  cursor: pointer;
+  border: 1px solid var(--rf-borde);
+  border-radius: 8px;
+  background: #fff;
+  &--peligro { color: var(--rf-error); }
+}
+.estado {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  &--activa { color: #166534; background: #dcfce7; }
+  &--inactiva { color: #475569; background: #e2e8f0; }
+}
+
+/* Ventana de confirmación (igual a las de Pedidos) */
+.ventana-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(27, 31, 29, 0.55);
+}
+.ventana {
+  position: static;
+  width: min(440px, 100%);
+  margin: 0;
+  padding: 24px;
+  border: 1px solid var(--rf-borde);
+  border-radius: var(--rf-radio-l);
+  background: var(--rf-papel);
+  box-shadow: 0 18px 48px rgba(27, 31, 29, 0.25);
+  h2 { margin: 0 0 4px; font-family: var(--rf-fuente-titulo); font-size: 22px; }
+  &__cuenta { margin: 0 0 16px; font-size: 14px; color: var(--rf-texto-2); overflow-wrap: anywhere; }
+  &__nota { margin: 0 0 20px; font-size: 14px; color: var(--rf-texto-2); }
+  &__botones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    .boton, .boton-secundario { width: auto; height: 44px; min-height: 44px; margin: 0; padding: 0 22px; }
+  }
+}
+
 .rol {
   display: inline-block;
   padding: 3px 10px;

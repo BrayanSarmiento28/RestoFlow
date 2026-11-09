@@ -132,6 +132,8 @@ describe('Servicios del API', () => {
     expect(ultima(usuarios.http).url).toBe(`${API}/usuarios`);
     usuarios.servicio.crear({ nombre: 'Pedro', email: 'p@r.com', password: 'Clave2026', rol: 'COCINA' }).subscribe();
     expect(ultima(usuarios.http).cuerpo).toMatchObject({ rol: 'COCINA' });
+    usuarios.servicio.cambiarEstado(8, false).subscribe();
+    expect(ultima(usuarios.http)).toMatchObject({ url: `${API}/usuarios/8/estado`, cuerpo: { activa: false } });
 
     const avisos = crearServicio(AvisosService);
     avisos.servicio.consultar().subscribe();

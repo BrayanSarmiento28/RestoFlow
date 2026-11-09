@@ -509,3 +509,30 @@ Resultado: las 9 pantallas caben en el ancho del celular y de la tableta sin des
 (las tablas grandes de Inventario, Reportes y RestoFlow AI se desplazan dentro de su propia caja). Se revisaron
 también la ventana de la cuenta, la campana y Mi cuenta en el celular.
 
+
+### 6.7 Desactivar y reactivar cuentas del personal
+
+En "Cuentas del personal" el administrador solo podía crear cuentas; no tenía cómo quitarle el acceso a alguien que
+ya no trabaja en el restaurante. Ahora cada fila tiene el botón **Desactivar** (o **Reactivar** si está inactiva),
+con una ventana de confirmación del mismo estilo de las de Pedidos.
+
+**Por qué desactivar y no eliminar:** los pedidos, las ventas por mesero y los movimientos de inventario guardan
+quién los hizo. Borrar la cuenta rompería ese historial (o la base de datos lo impediría por las llaves foráneas) y
+los reportes perderían el nombre del mesero. Desactivar corta el acceso de inmediato, conserva el historial y se
+puede deshacer. Es la práctica habitual en sistemas de punto de venta.
+
+| Regla | Dónde se aplica |
+|---|---|
+| Solo el administrador cambia el estado de una cuenta | `SecurityConfig` (`/api/usuarios/**` exige ADMIN) |
+| El administrador no puede desactivar su propia cuenta (409). Como quien lo hace es un administrador activo, siempre queda al menos uno con acceso | `GestionarCuentasService.cambiarEstado` |
+| Una cuenta desactivada no inicia sesión | Ya existía: `Usuario.validarPuedeIngresar()` |
+| **Nuevo:** si tenía una sesión abierta, su token deja de servir de inmediato (401 y el frontend la saca al login), sin esperar las 8 horas de vigencia del token | `JwtAuthenticationFilter` consulta la cuenta por su id (llave primaria, consulta muy rápida) en cada petición |
+
+- **API:** `PATCH /api/usuarios/{id}/estado` con `{"activa": false}` o `{"activa": true}`. Eventos
+  `CUENTA_DESACTIVADA` y `CUENTA_REACTIVADA` en `logs/auditoria.log`, con el id del administrador que lo hizo.
+- **Frontend:** columna de acciones en `pages/usuarios`; en la fila propia dice "Tu cuenta" en lugar del botón.
+  Las cuentas inactivas se ven atenuadas con la etiqueta "Inactiva".
+- **Pruebas:** `GestionarCuentasServiceTest` (+3: desactivar y reactivar, no a sí mismo, cuenta inexistente),
+  `CuentaIntegracionTest` (+2 por el API real: el mesero no puede, cuerpo vacío 400, cuenta inexistente 404, el token
+  abierto pasa a 401, al iniciar sesión recibe 403 "La cuenta está desactivada", sigue en la lista, al reactivarla entra con la misma contraseña; el
+  administrador no puede desactivarse) y Jest (`usuarios.test.ts` +5, `servicios-api.test.ts`).

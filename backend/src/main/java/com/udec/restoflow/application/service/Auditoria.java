@@ -41,6 +41,11 @@ final class Auditoria {
         log.info("evento=CUENTA_CREADA usuario={} rol={}", email, rol);
     }
 
+    static void estadoCuentaCambiado(String email, boolean activa, Long administradorId) {
+        log.info("evento={} usuario={} por={}", activa ? "CUENTA_REACTIVADA" : "CUENTA_DESACTIVADA",
+                limpio(email), administradorId);
+    }
+
     static void recuperacionSolicitada(String email, boolean cuentaExiste) {
         // Se registra si la cuenta existía (útil para soporte) aunque al usuario siempre se le responda igual
         log.info("evento=RECUPERACION_SOLICITADA usuario={} cuentaExiste={}", limpio(email), cuentaExiste);
