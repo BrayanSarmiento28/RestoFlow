@@ -532,7 +532,10 @@ puede deshacer. Es la práctica habitual en sistemas de punto de venta.
   `CUENTA_DESACTIVADA` y `CUENTA_REACTIVADA` en `logs/auditoria.log`, con el id del administrador que lo hizo.
 - **Frontend:** columna de acciones en `pages/usuarios`; en la fila propia dice "Tu cuenta" en lugar del botón.
   Las cuentas inactivas se ven atenuadas con la etiqueta "Inactiva".
+- **Lista limpia:** encima de la tabla hay un filtro **Activas · Inactivas · Todas** (las mismas píldoras de
+  Reportes, con el número de cuentas en cada una). Por defecto muestra solo las activas; las desactivadas no se
+  pierden, quedan a un clic para reactivarlas.
 - **Pruebas:** `GestionarCuentasServiceTest` (+3: desactivar y reactivar, no a sí mismo, cuenta inexistente),
   `CuentaIntegracionTest` (+2 por el API real: el mesero no puede, cuerpo vacío 400, cuenta inexistente 404, el token
   abierto pasa a 401, al iniciar sesión recibe 403 "La cuenta está desactivada", sigue en la lista, al reactivarla entra con la misma contraseña; el
-  administrador no puede desactivarse) y Jest (`usuarios.test.ts` +5, `servicios-api.test.ts`).
+  administrador no puede desactivarse) y Jest (`usuarios.test.ts` +6, `servicios-api.test.ts`).

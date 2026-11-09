@@ -111,4 +111,18 @@ describe('Cuentas del personal', () => {
     expect(c['porCambiarEstado']()).toBeNull();
     expect(c['cambiandoEstado']()).toBe(false);
   });
+
+  it('por defecto muestra solo las activas; las inactivas y todas se ven con el filtro', () => {
+    const c = abrir();
+    const pedro = { ...laura, id: 9, nombre: 'Pedro Ruiz', activo: false };
+    c['usuarios'].set([laura, pedro]);
+    expect(c['filtro']()).toBe('activas');
+    expect(c['visibles']()).toEqual([laura]);
+    expect(c['cuenta']()).toEqual({ activas: 1, inactivas: 1, todas: 2 });
+
+    c['filtro'].set('inactivas');
+    expect(c['visibles']()).toEqual([pedro]);
+    c['filtro'].set('todas');
+    expect(c['visibles']()).toEqual([laura, pedro]);
+  });
 });

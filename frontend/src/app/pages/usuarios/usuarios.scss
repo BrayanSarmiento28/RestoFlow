@@ -39,6 +39,9 @@
 
 .vacio { text-align: center; color: var(--rf-texto-suave); }
 
+/* Filtro Activas / Inactivas / Todas (mismas píldoras de Reportes) */
+.filtro-cuentas { margin: 4px 0 12px; }
+
 /* Desactivar o reactivar: mismo estilo de los botones de la tabla de Productos */
 .inactiva { opacity: 0.6; }
 .acciones { white-space: nowrap; text-align: right; }

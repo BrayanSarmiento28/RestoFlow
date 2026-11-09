@@ -1,9 +1,12 @@
-import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Rol, Usuario } from '../../core/models/auth.models';
+
+/** Qué cuentas muestra la tabla. Por defecto solo las activas, para que la lista quede limpia. */
+export type FiltroCuentas = 'activas' | 'inactivas' | 'todas';
 
 /**
  * HU-03 · El administrador crea las cuentas del personal, les asigna un rol y las desactiva o reactiva.
@@ -34,6 +37,22 @@ export class Usuarios implements OnInit {
   /** Cuenta que se va a desactivar o reactivar (abre la ventana de confirmación). */
   protected readonly porCambiarEstado = signal<Usuario | null>(null);
   protected readonly cambiandoEstado = signal(false);
+
+  protected readonly filtro = signal<FiltroCuentas>('activas');
+  protected readonly filtros: { valor: FiltroCuentas; etiqueta: string }[] = [
+    { valor: 'activas', etiqueta: 'Activas' },
+    { valor: 'inactivas', etiqueta: 'Inactivas' },
+    { valor: 'todas', etiqueta: 'Todas' },
+  ];
+  /** Cuántas cuentas hay en cada filtro (el número que se ve en cada botón). */
+  protected readonly cuenta = computed<Record<FiltroCuentas, number>>(() => {
+    const activas = this.usuarios().filter((u) => u.activo).length;
+    return { activas, inactivas: this.usuarios().length - activas, todas: this.usuarios().length };
+  });
+  protected readonly visibles = computed(() => {
+    const f = this.filtro();
+    return f === 'todas' ? this.usuarios() : this.usuarios().filter((u) => u.activo === (f === 'activas'));
+  });
 
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
