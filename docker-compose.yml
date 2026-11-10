@@ -25,7 +25,9 @@ services:
     container_name: restoflow-db
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_PID: Developer
+      # Edición de SQL Server. Developer: gratis, solo para desarrollo y pruebas (PC local).
+      # Express: gratis y con licencia para producción (máx. 10 GB por base de datos): úsela en el servidor de AWS.
+      MSSQL_PID: ${MSSQL_PID:-Developer}
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD en el archivo .env}
     ports:
       # 14330 en el computador para no chocar con un SQL Server instalado (1433)
