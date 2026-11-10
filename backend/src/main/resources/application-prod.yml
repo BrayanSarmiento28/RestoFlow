@@ -30,3 +30,4 @@ logging:
   level:
     root: WARN
     com.udec.restoflow: INFO
+    restoflow: INFO            # peticiones y auditoría siempre visibles

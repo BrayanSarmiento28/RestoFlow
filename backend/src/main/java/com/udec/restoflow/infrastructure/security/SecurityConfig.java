@@ -1,6 +1,7 @@
 package com.udec.restoflow.infrastructure.security;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.udec.restoflow.application.port.out.UsuarioRepositoryPort;
+import com.udec.restoflow.infrastructure.config.RestoFlowProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,8 +25,15 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
+    /**
+     * CSRF desactivado a propósito (regla java:S4502 de SonarQube revisada): el ataque CSRF aprovecha que el
+     * navegador envía solo las cookies de sesión. RestoFlow no usa cookies ni sesión en el servidor: cada petición
+     * lleva el token JWT en el encabezado Authorization, que el navegador nunca agrega por su cuenta.
+     */
     @Bean
-    public SecurityFilterChain reglasDeSeguridad(HttpSecurity http, JwtTokenAdapter jwt) throws Exception {
+    @SuppressWarnings("java:S4502")
+    public SecurityFilterChain reglasDeSeguridad(HttpSecurity http, JwtTokenAdapter jwt,
+                                                  UsuarioRepositoryPort usuarios) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)            // API sin sesión de navegador: no aplica CSRF
             .cors(cors -> { })                                // usa la configuración CORS de abajo
@@ -38,9 +46,11 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 // Estado del servicio para el healthcheck de Docker
                 .requestMatchers(HttpMethod.GET, "/api/salud").permitAll()
+                // Actuator (factor IX): salud (liveness / readiness) e información de la versión; nada más se publica
+                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                 // Documentación Swagger (en producción se apaga desde application-prod.yml)
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                // Solo el administrador gestiona cuentas (HU-03)
+                // Solo el administrador gestiona cuentas: crear, desactivar y reactivar (HU-03)
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                 // Menú: todos lo consultan; solo el administrador lo crea y edita
                 .requestMatchers(HttpMethod.GET, "/api/categorias/**", "/api/productos/**").authenticated()
@@ -48,18 +58,31 @@ public class SecurityConfig {
                 // Cocina (RF-03, RF-04): personal de cocina y administrador
                 .requestMatchers("/api/cocina/**").hasAnyRole("COCINA", "ADMIN")
                 // Pedidos (RF-02): la cocina también puede consultarlos; solo mesero y admin los cambian
+                // Registrar la venta (cobrar): solo el administrador; el mesero pasa la cuenta
+                .requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/pagar").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/pedidos/**").hasAnyRole("MESERO", "COCINA", "ADMIN")
                 .requestMatchers("/api/pedidos/**").hasAnyRole("MESERO", "ADMIN")
+                // Inventario y alertas (RF-05 a RF-07), incluido el catálogo externo (Open Food Facts)
+                .requestMatchers("/api/inventario/**", "/api/alertas/**").hasAnyRole("INVENTARIO", "ADMIN")
+                // Panel e historial (RF-08, RF-12): solo el administrador
+                .requestMatchers("/api/panel/**", "/api/historial/**", "/api/registro/**").hasRole("ADMIN")
+                // RestoFlow AI (RF-09 a RF-11): el administrador y el personal de inventario (recomendaciones de compra)
+                // Preguntas libres a la IA externa (Gemini): solo el administrador
+                .requestMatchers("/api/restoflow-ai/preguntar").hasRole("ADMIN")
+                .requestMatchers("/api/restoflow-ai/**").hasAnyRole("INVENTARIO", "ADMIN")
+                // Avisos de RestoFlow AI: todos los roles; cada uno recibe solo los suyos (lo decide el caso de uso)
+                .requestMatchers("/api/avisos/**").authenticated()
                 // Todo lo demás requiere haber iniciado sesión
                 .anyRequest().authenticated())
-            .addFilterBefore(new JwtAuthenticationFilter(jwt), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new JwtAuthenticationFilter(jwt, usuarios), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
     /** Permite que el frontend Angular (otro puerto) llame al API desde el navegador. */
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
-            @Value("${restoflow.cors.origenes-permitidos}") List<String> origenes) {
+            RestoFlowProperties propiedades) {
+        List<String> origenes = propiedades.cors().origenesPermitidos();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(origenes);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

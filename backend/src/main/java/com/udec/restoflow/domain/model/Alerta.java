@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
  */
 public class Alerta {
 
+    /** Las alertas que crea RestoFlow AI empiezan así; las cierra el propio análisis, no el control de stock. */
+    public static final String PREFIJO_RESTOFLOW_AI = "RestoFlow AI: ";
+
     private final Long id;
     private final Long ingredienteId;
     private final String mensaje;
@@ -17,9 +20,16 @@ public class Alerta {
     private boolean atendida;
     private final LocalDateTime fechaCreacion;
     private LocalDateTime fechaAtencion;
+    /** Nombre del insumo solo para mostrar (puede venir vacío). */
+    private final String ingredienteNombre;
 
     public Alerta(Long id, Long ingredienteId, String mensaje, PrioridadAlerta prioridad, boolean atendida,
                   LocalDateTime fechaCreacion, LocalDateTime fechaAtencion) {
+        this(id, ingredienteId, mensaje, prioridad, atendida, fechaCreacion, fechaAtencion, null);
+    }
+
+    public Alerta(Long id, Long ingredienteId, String mensaje, PrioridadAlerta prioridad, boolean atendida,
+                  LocalDateTime fechaCreacion, LocalDateTime fechaAtencion, String ingredienteNombre) {
         if (mensaje == null || mensaje.isBlank()) {
             throw new DomainException("La alerta debe tener un mensaje");
         }
@@ -33,10 +43,16 @@ public class Alerta {
         this.atendida = atendida;
         this.fechaCreacion = fechaCreacion;
         this.fechaAtencion = fechaAtencion;
+        this.ingredienteNombre = ingredienteNombre;
     }
 
     public static Alerta nueva(Long ingredienteId, String mensaje, PrioridadAlerta prioridad, LocalDateTime ahora) {
         return new Alerta(null, ingredienteId, mensaje, prioridad, false, ahora, null);
+    }
+
+    /** RES-40 · Alerta anticipada de RestoFlow AI ("se acaba en 2 días"), no del control de stock mínimo. */
+    public boolean esDeRestoFlowAI() {
+        return mensaje.startsWith(PREFIJO_RESTOFLOW_AI);
     }
 
     public void marcarAtendida(LocalDateTime ahora) {
@@ -53,4 +69,5 @@ public class Alerta {
     public boolean isAtendida() { return atendida; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public LocalDateTime getFechaAtencion() { return fechaAtencion; }
+    public String getIngredienteNombre() { return ingredienteNombre; }
 }

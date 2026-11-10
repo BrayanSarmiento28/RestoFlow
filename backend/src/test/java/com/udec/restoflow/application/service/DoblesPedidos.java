@@ -8,6 +8,8 @@ import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Pedido;
 import com.udec.restoflow.domain.model.Producto;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,11 +66,19 @@ final class DoblesPedidos {
             Long id = p.getId() != null ? p.getId() : secuencia++;
             List<DetallePedido> lineas = p.getDetalles().stream()
                     .map(d -> new DetallePedido(d.getId() != null ? d.getId() : secuenciaLineas.getAndIncrement(),
-                            d.getProductoId(), d.getProductoNombre(), d.getCantidad(), d.getPrecioUnitario(), d.getNota()))
+                            d.getProductoId(), d.getProductoNombre(), d.getCantidad(), d.getPrecioUnitario(), d.getNota(),
+                            d.isAdicion()))
                     .toList();
             Pedido copia = new Pedido(id, p.getNumeroMesa(), p.getMeseroId(), p.getMeseroNombre(), lineas,
                     p.getObservaciones(), p.getEstadoCocina(), p.getEstadoPedido(), p.getFechaCreacion(),
                     p.getFechaInicioPreparacion(), p.getFechaListo(), p.getFechaEntrega(), p.getFechaCierre());
+            if (p.getNumeroDelDia() != null) {
+                copia.asignarNumeroDelDia(p.getNumeroDelDia());
+            }
+            if (p.getMetodoPago() != null) {
+                copia.asignarMetodoPago(p.getMetodoPago());
+            }
+            copia.restaurarFechaAdicion(p.getFechaAdicion());
             datos.put(id, copia);
             return copia;
         }
@@ -93,6 +103,31 @@ final class DoblesPedidos {
             return datos.values().stream()
                     .filter(Pedido::estaPendienteEnCocina)
                     .sorted(Comparator.comparing(Pedido::getFechaCreacion))
+                    .toList();
+        }
+
+        @Override
+        public List<Pedido> creadosEntre(LocalDateTime desde, LocalDateTime hasta, EstadoPedido estadoPedido) {
+            return datos.values().stream()
+                    .filter(p -> !p.getFechaCreacion().isBefore(desde) && p.getFechaCreacion().isBefore(hasta))
+                    .filter(p -> estadoPedido == null || p.getEstadoPedido() == estadoPedido)
+                    .sorted(Comparator.comparing(Pedido::getFechaCreacion).reversed())
+                    .toList();
+        }
+
+        @Override
+        public int ultimoNumeroDelDia(LocalDate dia) {
+            return datos.values().stream()
+                    .filter(p -> p.getFechaCreacion().toLocalDate().equals(dia) && p.getNumeroDelDia() != null)
+                    .mapToInt(Pedido::getNumeroDelDia).max().orElse(0);
+        }
+
+        @Override
+        public List<Pedido> pagadosEntre(LocalDateTime desde, LocalDateTime hasta) {
+            return datos.values().stream()
+                    .filter(p -> p.getEstadoPedido() == EstadoPedido.PAGADO)
+                    .filter(p -> !p.getFechaCierre().isBefore(desde) && p.getFechaCierre().isBefore(hasta))
+                    .sorted(Comparator.comparing(Pedido::getFechaCierre).reversed())
                     .toList();
         }
     }

@@ -65,3 +65,12 @@
   }
   span { font-size: 13px; color: var(--rf-texto-claro); }
 }
+
+// Celular y tableta: solo una franja con el logo, para que el formulario quede en la primera pantalla.
+// (Antes styles.scss intentaba ocultar el panel con "app-panel-marca { display: none }", pero ":host" de este
+// componente es más específico y ganaba: el panel completo empujaba el formulario hacia abajo.)
+@media (max-width: 900px) {
+  .panel-marca { padding: 20px 24px; }
+  .mensaje, .estadisticas { display: none; }
+}
+

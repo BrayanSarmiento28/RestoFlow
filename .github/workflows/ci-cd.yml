@@ -6,8 +6,8 @@
 #   rama main     ──►  entorno "produccion"   (requiere aprobación)
 #
 # En cada push o pull request a esas ramas:
-#   1. Backend:  compila y ejecuta las pruebas automáticas (JUnit con H2).
-#   2. Frontend: instala dependencias y compila Angular con la
+#   1. Backend:  compila y ejecuta las pruebas JUnit (con H2) y mide la cobertura con JaCoCo.
+#   2. Frontend: ejecuta las pruebas Jest con cobertura y compila Angular con la
 #                configuración del entorno (development / preprod / production).
 #   3. Despliegue: solo en push (cuando el PR ya se unió), empaqueta los
 #                artefactos del entorno correspondiente.
@@ -44,8 +44,17 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Pruebas automáticas y empaquetado (.jar)
+      # JUnit + cobertura JaCoCo: si una prueba falla o la cobertura baja del 70 %, el pipeline se detiene
+      - name: Pruebas JUnit, cobertura (JaCoCo) y empaquetado (.jar)
         run: mvn -B verify
+
+      - name: Guardar el informe de cobertura JUnit (JaCoCo)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-junit
+          path: backend/target/site/jacoco/
+          retention-days: 14
 
       - name: Guardar el .jar
         uses: actions/upload-artifact@v4
@@ -72,6 +81,21 @@ jobs:
 
       - name: Instalar dependencias
         run: npm ci
+
+      # Pruebas unitarias con Jest de la lógica del frontend (si una falla, no se compila ni se despliega)
+      - name: Pruebas unitarias (Jest) con cobertura
+        run: npm run test:jest:cobertura
+
+      - name: Revisar los tipos de las pruebas
+        run: npm run test:jest:tipos
+
+      - name: Guardar el informe de cobertura Jest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-jest
+          path: frontend/coverage/jest/
+          retention-days: 14
 
       - name: Elegir la configuración de Angular según la rama
         id: config

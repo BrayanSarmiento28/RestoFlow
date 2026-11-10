@@ -6,6 +6,7 @@ import com.udec.restoflow.domain.model.Categoria;
 import com.udec.restoflow.domain.model.DetallePedido;
 import com.udec.restoflow.domain.model.EstadoCocina;
 import com.udec.restoflow.domain.model.EstadoPedido;
+import com.udec.restoflow.domain.model.MetodoPago;
 import com.udec.restoflow.domain.model.Pedido;
 import com.udec.restoflow.domain.model.Producto;
 import com.udec.restoflow.domain.model.Rol;
@@ -151,22 +152,121 @@ class PedidoTest {
     @DisplayName("La venta solo se registra si el pedido fue Entregado; después queda cerrado")
     void ventaSoloDeEntregados() {
         Pedido pedido = pedidoDeEjemplo();
-        assertThrows(OperacionNoPermitidaException.class, () -> pedido.registrarVenta(AHORA));
+        assertThrows(OperacionNoPermitidaException.class, () -> pedido.registrarVenta(AHORA, MetodoPago.EFECTIVO));
 
         pedido.cambiarEstadoCocina(EstadoCocina.EN_PREPARACION, AHORA);
         pedido.cambiarEstadoCocina(EstadoCocina.LISTO, AHORA);
         pedido.cambiarEstadoCocina(EstadoCocina.ENTREGADO, AHORA);
-        pedido.registrarVenta(AHORA.plusMinutes(40));
+        pedido.registrarVenta(AHORA.plusMinutes(40), MetodoPago.EFECTIVO);
 
         assertEquals(EstadoPedido.PAGADO, pedido.getEstadoPedido());
         assertEquals(AHORA.plusMinutes(40), pedido.getFechaCierre());
         assertThrows(OperacionNoPermitidaException.class, () -> pedido.cancelar(AHORA));
-        assertThrows(OperacionNoPermitidaException.class, () -> pedido.registrarVenta(AHORA));
+        assertThrows(OperacionNoPermitidaException.class, () -> pedido.registrarVenta(AHORA, MetodoPago.EFECTIVO));
     }
 
     @Test
     @DisplayName("Un pedido abierto y no entregado aparece en la cocina")
     void apareceEnCocina() {
         assertTrue(pedidoDeEjemplo().estaPendienteEnCocina());
+    }
+
+    @Test
+    @DisplayName("RN · El pedido ocupa su mesa mientras está abierto; cambiar de mesa solo si sigue abierto")
+    void mesaDelPedido() {
+        Pedido pedido = pedidoDeEjemplo();
+        assertTrue(pedido.ocupaMesa());
+
+        pedido.cambiarMesa(9);
+        assertEquals(9, pedido.getNumeroMesa());
+        assertThrows(DomainException.class, () -> pedido.cambiarMesa(9));       // ya está en esa mesa
+        assertThrows(DomainException.class, () -> pedido.cambiarMesa(-1));
+
+        pedido.cancelar(AHORA);
+        assertFalse(pedido.ocupaMesa());                                       // cancelado: libera la mesa
+        assertThrows(OperacionNoPermitidaException.class, () -> pedido.cambiarMesa(3));
+    }
+
+    @Test
+    @DisplayName("RN · El número del día empieza en 1 y no se cambia una vez asignado")
+    void numeroDelDia() {
+        Pedido pedido = pedidoDeEjemplo();
+        assertThrows(DomainException.class, () -> pedido.asignarNumeroDelDia(0));
+        pedido.asignarNumeroDelDia(7);
+        pedido.asignarNumeroDelDia(7);                                          // el mismo: no pasa nada
+        assertEquals(7, pedido.getNumeroDelDia());
+        assertThrows(OperacionNoPermitidaException.class, () -> pedido.asignarNumeroDelDia(8));
+    }
+
+    @Test
+    @DisplayName("RN · La venta se registra con su método de pago (efectivo o transferencia), que es obligatorio")
+    void metodoDePago() {
+        Pedido pedido = pedidoDeEjemplo();
+        pedido.cambiarEstadoCocina(EstadoCocina.EN_PREPARACION, AHORA);
+        pedido.cambiarEstadoCocina(EstadoCocina.LISTO, AHORA);
+        pedido.cambiarEstadoCocina(EstadoCocina.ENTREGADO, AHORA);
+        assertThrows(DomainException.class, () -> pedido.registrarVenta(AHORA, null));
+        assertThrows(OperacionNoPermitidaException.class, () -> pedidoDeEjemplo().asignarMetodoPago(MetodoPago.EFECTIVO));
+
+        pedido.registrarVenta(AHORA, MetodoPago.TRANSFERENCIA);
+        assertEquals(MetodoPago.TRANSFERENCIA, pedido.getMetodoPago());
+        assertFalse(pedido.ocupaMesa());
+    }
+
+    @Test
+    @DisplayName("RN · Adición: con el pedido en preparación se suman productos a la misma cuenta, marcados como adición")
+    void adicionEnPreparacion() {
+        Pedido pedido = pedidoDeEjemplo();
+        pedido.cambiarEstadoCocina(EstadoCocina.EN_PREPARACION, AHORA);
+        LocalDateTime despues = AHORA.plusMinutes(10);
+        pedido.agregarAdicion(List.of(DetallePedido.adicionDe(producto(3, "Gaseosa", "5000"), 2, null)), despues);
+
+        assertEquals(3, pedido.getDetalles().size());
+        assertTrue(pedido.getDetalles().get(2).isAdicion());
+        assertFalse(pedido.getDetalles().get(0).isAdicion());
+        assertEquals(0, new BigDecimal("101000").compareTo(pedido.getTotal()));   // 64.000 + 27.000 + 10.000
+        assertEquals(EstadoCocina.EN_PREPARACION, pedido.getEstadoCocina());
+        assertTrue(pedido.tieneAdicion());
+        assertEquals(despues, pedido.getInicioEspera());                       // la demora se mide desde la adición
+    }
+
+    @Test
+    @DisplayName("RN · Adición a un pedido Listo o Entregado: vuelve a En preparación para que la cocina la prepare")
+    void adicionVuelveACocina() {
+        Pedido pedido = pedidoDeEjemplo();
+        pedido.cambiarEstadoCocina(EstadoCocina.EN_PREPARACION, AHORA);
+        pedido.cambiarEstadoCocina(EstadoCocina.LISTO, AHORA);
+        pedido.cambiarEstadoCocina(EstadoCocina.ENTREGADO, AHORA);
+        assertFalse(pedido.tieneAdicion());
+        assertEquals(AHORA, pedido.getInicioEspera());
+
+        pedido.agregarAdicion(List.of(DetallePedido.adicionDe(producto(3, "Gaseosa", "5000"), 1, "Bien fría")), AHORA);
+        assertEquals(EstadoCocina.EN_PREPARACION, pedido.getEstadoCocina());
+        assertEquals(null, pedido.getFechaListo());
+        assertEquals(null, pedido.getFechaEntrega());
+        assertTrue(pedido.estaPendienteEnCocina());
+        // Antes de cobrar, la cocina debe entregar la adición
+        assertThrows(OperacionNoPermitidaException.class, () -> pedido.registrarVenta(AHORA, MetodoPago.EFECTIVO));
+    }
+
+    @Test
+    @DisplayName("RN · Adición: no en un pedido Pendiente (se usa Editar), cobrado o cancelado, ni vacía")
+    void adicionReglas() {
+        DetallePedido gaseosa = DetallePedido.adicionDe(producto(3, "Gaseosa", "5000"), 1, null);
+        Pedido pendiente = pedidoDeEjemplo();
+        assertThrows(OperacionNoPermitidaException.class, () -> pendiente.agregarAdicion(List.of(gaseosa), AHORA));
+
+        Pedido cancelado = pedidoDeEjemplo();
+        cancelado.cancelar(AHORA);
+        assertThrows(OperacionNoPermitidaException.class, () -> cancelado.agregarAdicion(List.of(gaseosa), AHORA));
+
+        Pedido enCocina = pedidoDeEjemplo();
+        enCocina.cambiarEstadoCocina(EstadoCocina.EN_PREPARACION, AHORA);
+        assertThrows(DomainException.class, () -> enCocina.agregarAdicion(List.of(), AHORA));
+        DetallePedido normal = DetallePedido.de(producto(3, "Gaseosa", "5000"), 1, null);
+        assertThrows(DomainException.class, () -> enCocina.agregarAdicion(List.of(normal), AHORA));
+
+        enCocina.restaurarFechaAdicion(AHORA);
+        assertTrue(enCocina.tieneAdicion());
     }
 }

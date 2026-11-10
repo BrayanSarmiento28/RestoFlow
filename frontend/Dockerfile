@@ -4,7 +4,7 @@
 #   1. "build": instala dependencias y compila Angular con Node
 #   2. imagen final: solo Nginx sirviendo los archivos compilados
 #      (sin Node, sin node_modules ni código fuente)
-# Construir:  docker build -t restoflow-frontend:0.2.0 ./frontend
+# Construir:  docker build -t restoflow-frontend:0.3.0 ./frontend
 # =====================================================================
 
 # ---------- Etapa 1: compilación ----------
@@ -27,7 +27,7 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 LABEL org.opencontainers.image.title="restoflow-frontend" \
       org.opencontainers.image.description="Aplicación web de RestoFlow (Angular servida con Nginx)" \
-      org.opencontainers.image.version="0.2.0"
+      org.opencontainers.image.version="0.3.0"
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist/restoflow-frontend/browser /usr/share/nginx/html

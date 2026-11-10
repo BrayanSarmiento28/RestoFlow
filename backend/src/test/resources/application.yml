@@ -23,3 +23,42 @@ restoflow:
     nombre: Administrador Pruebas
     email: admin@pruebas.com
     contrasena: Admin2026*
+  # Las pruebas nunca llaman a internet: el adaptador se prueba con un servidor simulado
+  # La tarea programada de RestoFlow AI no corre en las pruebas (se prueba llamando al caso de uso)
+  ia:
+    alertas-programadas: false
+  # En las pruebas el registro en base de datos sí está activo (se prueba); la limpieza programada no
+  registro:
+    limpieza-programada: false
+  apis-externas:
+    tiempo-espera-segundos: 1
+    open-food-facts:
+      url: http://localhost:9
+    # Sin clave de Gemini en las pruebas (aunque el computador tenga GEMINI_API_KEY): se prueba el plan B y el
+    # adaptador con un servidor simulado
+    gemini:
+      api-key: ""
+      url: http://localhost:9
+
+# Igual que en application.yml: Actuator con salud (liveness/readiness) e información
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    mail:
+      enabled: false
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    nombre: RestoFlow
+    version: pruebas

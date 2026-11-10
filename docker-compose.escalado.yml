@@ -1,0 +1,25 @@
+# =====================================================================
+# RestoFlow · Escalado horizontal del backend (factor VIII de los 12 factores: concurrencia)
+#
+# El backend no guarda estado en memoria (sesión con JWT, datos en SQL Server), así que se pueden
+# levantar VARIAS copias iguales y Nginx (el frontend) reparte las peticiones entre ellas.
+#
+# Uso (después de haber levantado RestoFlow normal al menos una vez, para que exista la base de datos):
+#   docker compose -f docker-compose.yml -f docker-compose.escalado.yml up -d --build
+#   docker compose ps                                  → aparecen restoflow-backend-1 y restoflow-backend-2
+#   (repetir varias veces)  Invoke-RestMethod http://localhost:4200/api/salud
+#                                                      → el campo "instancia" cambia: responde una u otra copia
+# Volver a una sola copia:
+#   docker compose -f docker-compose.yml -f docker-compose.escalado.yml down
+#   docker compose up -d
+#
+# Requiere Docker Compose 2.24 o superior (Docker Desktop reciente) por la etiqueta !reset.
+# =====================================================================
+services:
+  backend:
+    # Con varias copias no puede haber un nombre fijo ni un puerto fijo del computador:
+    # se llega a ellas por la red interna a través de Nginx (http://localhost:4200/api/...)
+    container_name: !reset null
+    ports: !reset []
+    deploy:
+      replicas: ${BACKEND_REPLICAS:-2}

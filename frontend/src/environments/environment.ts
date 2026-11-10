@@ -4,7 +4,8 @@ export const environment = {
   produccion: false,
   apiUrl: 'http://localhost:8080/api',
   version: '0.2.0',
-  // Cada cuánto se consultan de nuevo las comandas de cocina y la lista de pedidos (milisegundos)
-  refrescoCocinaMs: 5000,
-  refrescoPedidosMs: 10000,
+  // Cada cuánto se consultan de nuevo las comandas de cocina y la lista de pedidos (milisegundos).
+  // 2,5 s: un cambio de estado se ve en las otras pantallas en menos de 3 segundos (RES-28, docs/pruebas/rendimiento.md).
+  refrescoCocinaMs: 2500,
+  refrescoPedidosMs: 2500,
 };

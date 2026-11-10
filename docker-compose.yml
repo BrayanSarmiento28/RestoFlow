@@ -25,7 +25,9 @@ services:
     container_name: restoflow-db
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_PID: Developer
+      # Edición de SQL Server. Developer: gratis, solo para desarrollo y pruebas (PC local).
+      # Express: gratis y con licencia para producción (máx. 10 GB por base de datos): úsela en el servidor de AWS.
+      MSSQL_PID: ${MSSQL_PID:-Developer}
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD en el archivo .env}
     ports:
       # 14330 en el computador para no chocar con un SQL Server instalado (1433)
@@ -56,11 +58,15 @@ services:
       - ./docker/sqlserver/00_inicializar.sql:/scripts/00_inicializar.sql:ro
       - ./backend/database/01_crear_base_de_datos.sql:/scripts/01_crear_base_de_datos.sql:ro
       - ./backend/database/02_menu_pedidos_inventario.sql:/scripts/02_menu_pedidos_inventario.sql:ro
+      - ./backend/database/03_registro_peticiones.sql:/scripts/03_registro_peticiones.sql:ro
+      - ./backend/database/04_numero_pedido_dia.sql:/scripts/04_numero_pedido_dia.sql:ro
+      - ./backend/database/05_adiciones.sql:/scripts/05_adiciones.sql:ro
+      - ./backend/database/06_lecturas_sin_bloqueo.sql:/scripts/06_lecturas_sin_bloqueo.sql:ro
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
         set -e
-        for script in /scripts/00_inicializar.sql /scripts/01_crear_base_de_datos.sql /scripts/02_menu_pedidos_inventario.sql; do
+        for script in /scripts/00_inicializar.sql /scripts/01_crear_base_de_datos.sql /scripts/02_menu_pedidos_inventario.sql /scripts/03_registro_peticiones.sql /scripts/04_numero_pedido_dia.sql /scripts/05_adiciones.sql /scripts/06_lecturas_sin_bloqueo.sql; do
           echo "Ejecutando $$script"
           /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -v APP_PASSWORD="$$APP_PASSWORD" -i "$$script"
         done
@@ -74,7 +80,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: restoflow-backend:${RESTOFLOW_VERSION:-0.2.0}
+    image: restoflow-backend:${RESTOFLOW_VERSION:-0.3.0}
     container_name: restoflow-backend
     depends_on:
       db-init:
@@ -94,6 +100,24 @@ services:
       CORREO_MODO: ${CORREO_MODO:-consola}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      LOG_DIR: /app/logs
+      # Hora de Colombia: sin esto el contenedor usa UTC y después de las 7 p. m. "hoy" sería mañana
+      TZ: ${TZ:-America/Bogota}
+      # API externa Open Food Facts (gratuita, sin clave): datos de un insumo por código de barras
+      OPENFOODFACTS_URL: ${OPENFOODFACTS_URL:-https://world.openfoodfacts.org}
+      # RestoFlow AI: alertas anticipadas cada hora y, solo para demostraciones, 3 semanas de ventas de ejemplo
+      IA_ALERTAS_PROGRAMADAS: ${IA_ALERTAS_PROGRAMADAS:-true}
+      IA_HISTORIAL_DEMO: ${IA_HISTORIAL_DEMO:-false}
+      # IA externa (Google Gemini): sin clave, RestoFlow AI funciona con sus reglas
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODELO: ${GEMINI_MODELO:-gemini-3.5-flash-lite}
+      GEMINI_MODELOS_RESPALDO: ${GEMINI_MODELOS_RESPALDO:-gemini-3.8-flash}
+      # Registro de actividad: cada petición se guarda en la tabla registro_peticiones y se conserva N días
+      REGISTRO_BD_HABILITADO: ${REGISTRO_BD_HABILITADO:-true}
+      REGISTRO_BD_DIAS: ${REGISTRO_BD_DIAS:-30}
+    volumes:
+      # Los archivos restoflow.log y auditoria.log sobreviven aunque se borre el contenedor
+      - backend_logs:/app/logs
     ports:
       # Expuesto solo para usar Swagger desde el navegador; el frontend llega por la red interna
       - "${BACKEND_PUERTO:-8080}:8080"
@@ -108,7 +132,7 @@ services:
       dockerfile: Dockerfile
       args:
         CONFIGURACION: production
-    image: restoflow-frontend:${RESTOFLOW_VERSION:-0.2.0}
+    image: restoflow-frontend:${RESTOFLOW_VERSION:-0.3.0}
     container_name: restoflow-frontend
     depends_on:
       backend:
@@ -121,6 +145,7 @@ services:
 
 volumes:
   sqlserver_datos:
+  backend_logs:
 
 networks:
   restoflow-red:

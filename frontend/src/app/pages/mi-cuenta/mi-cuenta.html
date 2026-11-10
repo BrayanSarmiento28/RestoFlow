@@ -1,0 +1,65 @@
+<div class="pagina">
+  <header class="encabezado">
+    <div>
+      <h1>Mi cuenta</h1>
+      <p class="fecha">Tus datos y tu contraseña.</p>
+    </div>
+  </header>
+
+  <div class="columnas">
+    <section class="tarjeta">
+      <h2>Mis datos</h2>
+      @if (usuario; as u) {
+        <dl class="datos">
+          <dt>Nombre</dt>
+          <dd>{{ u.nombre }}</dd>
+          <dt>Correo</dt>
+          <dd>{{ u.email }}</dd>
+          <dt>Rol</dt>
+          <dd><span class="rf-chip rf-chip--neutro">{{ nombreRol }}</span></dd>
+        </dl>
+        <p class="ayuda">Para cambiar tu nombre, correo o rol, pídeselo al administrador.</p>
+      }
+    </section>
+
+    <section class="tarjeta">
+      <form class="formulario" [formGroup]="form" (ngSubmit)="cambiar()" novalidate>
+        <h2>Cambiar contraseña</h2>
+
+        @if (exito()) {
+          <output class="alerta alerta--exito">{{ exito() }}</output>
+        }
+        @if (error()) {
+          <div class="alerta" role="alert">{{ error() }}</div>
+        }
+
+        <label for="actual">Contraseña actual</label>
+        <input id="actual" type="password" formControlName="actual" autocomplete="current-password"
+               [class.con-error]="invalido('actual')" />
+        @if (invalido('actual')) {
+          <small class="error-campo">Escribe tu contraseña actual</small>
+        }
+
+        <label for="nueva">Contraseña nueva</label>
+        <input id="nueva" type="password" formControlName="nueva" autocomplete="new-password"
+               placeholder="Mínimo 8 caracteres" [class.con-error]="invalido('nueva')" />
+        @if (invalido('nueva')) {
+          <small class="error-campo">Mínimo 8 caracteres, con al menos una letra y un número</small>
+        }
+
+        <label for="confirmar">Confirma la contraseña nueva</label>
+        <input id="confirmar" type="password" formControlName="confirmar" autocomplete="new-password"
+               [class.con-error]="invalido('confirmar') || noCoinciden()" />
+        @if (noCoinciden()) {
+          <small class="error-campo">Las contraseñas no coinciden</small>
+        } @else if (invalido('confirmar')) {
+          <small class="error-campo">Confirma la contraseña nueva</small>
+        }
+
+        <button type="submit" class="boton" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando...' : 'Cambiar contraseña' }}
+        </button>
+      </form>
+    </section>
+  </div>
+</div>

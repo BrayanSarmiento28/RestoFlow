@@ -53,26 +53,73 @@
     </section>
 
     <section class="tarjeta">
-      <h2>Personal registrado ({{ usuarios().length }})</h2>
+      <h2>Personal registrado</h2>
+      <nav class="rf-pildoras filtro-cuentas" aria-label="Mostrar cuentas">
+        @for (f of filtros; track f.valor) {
+          <button type="button" class="rf-pildora" [attr.aria-pressed]="filtro() === f.valor" (click)="filtro.set(f.valor)">
+            {{ f.etiqueta }} <span class="rf-pildora__cuenta">{{ cuenta()[f.valor] }}</span>
+          </button>
+        }
+      </nav>
       <div class="tabla-contenedor">
         <table class="tabla">
           <thead>
-            <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th></tr>
+            <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th><span class="rf-oculto-visual">Acciones</span></th></tr>
           </thead>
           <tbody>
-            @for (u of usuarios(); track u.id) {
-              <tr>
+            @for (u of visibles(); track u.id) {
+              <tr [class.inactiva]="!u.activo">
                 <td>{{ u.nombre }}</td>
                 <td>{{ u.email }}</td>
                 <td><span [class]="'rol rol--' + u.rol.toLowerCase()">{{ nombreRol(u.rol) }}</span></td>
-                <td>{{ u.activo ? 'Activa' : 'Inactiva' }}</td>
+                <td>
+                  <span [class]="'estado ' + (u.activo ? 'estado--activa' : 'estado--inactiva')">
+                    {{ u.activo ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+                <td class="acciones">
+                  @if (esMiCuenta(u)) {
+                    <small class="tu-cuenta">Tu cuenta</small>
+                  } @else {
+                    <button type="button" class="accion" [class.accion--peligro]="u.activo" (click)="cambiarEstado(u)">
+                      {{ u.activo ? 'Desactivar' : 'Reactivar' }}
+                    </button>
+                  }
+                </td>
               </tr>
             } @empty {
-              <tr><td colspan="4" class="vacio">Aún no hay cuentas registradas</td></tr>
+              <tr><td colspan="5" class="vacio">
+                {{ usuarios().length === 0 ? 'Aún no hay cuentas registradas' : (filtro() === 'inactivas' ? 'No hay cuentas inactivas' : 'No hay cuentas activas') }}
+              </td></tr>
             }
           </tbody>
         </table>
       </div>
     </section>
   </div>
+
+  <!-- Confirmación para desactivar o reactivar una cuenta (mismo estilo de las ventanas de Pedidos) -->
+  @if (porCambiarEstado(); as u) {
+    <div class="ventana-fondo" (click)="cerrarVentana()" (keydown.escape)="cerrarVentana()">
+      <dialog open class="ventana" aria-modal="true" aria-labelledby="t-estado" aria-describedby="d-estado"
+              (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+        <h2 id="t-estado">{{ u.activo ? 'Desactivar cuenta' : 'Reactivar cuenta' }}</h2>
+        <p class="ventana__cuenta">{{ u.nombre }} · {{ u.email }} · {{ nombreRol(u.rol) }}</p>
+        <p class="ventana__nota" id="d-estado">
+          @if (u.activo) {
+            No podrá iniciar sesión y, si tiene una sesión abierta, se cerrará. Sus pedidos, ventas y movimientos
+            se conservan. Puedes reactivarla cuando quieras.
+          } @else {
+            Podrá iniciar sesión de nuevo con su misma contraseña.
+          }
+        </p>
+        <div class="ventana__botones">
+          <button type="button" class="boton-secundario" (click)="cerrarVentana()">Volver</button>
+          <button type="button" class="boton" [disabled]="cambiandoEstado()" (click)="confirmarCambioEstado()">
+            {{ cambiandoEstado() ? 'Guardando...' : (u.activo ? 'Desactivar' : 'Reactivar') }}
+          </button>
+        </div>
+      </dialog>
+    </div>
+  }
 </div>
