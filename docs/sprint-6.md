@@ -539,3 +539,47 @@ puede deshacer. Es la práctica habitual en sistemas de punto de venta.
   `CuentaIntegracionTest` (+2 por el API real: el mesero no puede, cuerpo vacío 400, cuenta inexistente 404, el token
   abierto pasa a 401, al iniciar sesión recibe 403 "La cuenta está desactivada", sigue en la lista, al reactivarla entra con la misma contraseña; el
   administrador no puede desactivarse) y Jest (`usuarios.test.ts` +6, `servicios-api.test.ts`).
+
+### 6.8 Error de concurrencia encontrado con la prueba de carga (RES-45)
+
+La primera prueba de carga (RES-56, 30 usuarios durante 5 minutos, RestoFlow en Docker en el PC) **no cumplió** los
+3 s. La mayor parte del tiempo respondía en menos de 60 ms (P95), pero en 6 momentos todo el sistema se detuvo de 5 a
+11 segundos y 18 cobros terminaron con error 500. Los registros del backend lo explicaron: **23 deadlocks de SQL
+Server** (error 1205, *"chosen as the deadlock victim"*). 21 ocurrieron al cobrar, en el descuento de inventario, y 2
+al leer las comandas de Cocina.
+
+**Causa (dos problemas que se sumaban):**
+
+1. **El descuento de inventario no reservaba el insumo.** Cada cobro hacía *leer stock → restar → guardar*. Con dos
+   cobros simultáneos del mismo insumo, los dos leían el mismo valor: una de las restas **se perdía** (el inventario
+   quedaba con más de lo real, sin ningún error visible) o SQL Server cancelaba uno de los dos por deadlock.
+2. **En SQL Server, por defecto, quien lee espera a quien escribe.** La consulta de alertas pendientes que se hace
+   después de cada descuento recorría la tabla de alertas y quedaba esperando los bloqueos de otro cobro, que a su vez
+   esperaba los suyos (espera en círculo). Mientras tanto, las pantallas de Cocina, Pedidos y el Dashboard también
+   esperaban: por eso se detenía todo a la vez.
+
+**Corrección:**
+
+| Cambio | Dónde | Efecto |
+|---|---|---|
+| Reservar los insumos antes de cambiar su stock (bloqueo pesimista de escritura, en orden de id) y volver a leerlos después del bloqueo | `IngredienteRepositoryPort.bloquearPorIds` (implementado en `IngredientePersistenceAdapter` con `EntityManager.find(..., PESSIMISTIC_WRITE)` + `refresh`), `DescontarInventarioService` y las entradas, salidas, ajustes y cambios de `GestionarInventarioService` | Dos ventas del mismo insumo se hacen una después de la otra y la segunda lee el stock ya descontado. Al reservar siempre en el mismo orden, no hay esperas en círculo |
+| Lecturas sin bloqueo (`READ_COMMITTED_SNAPSHOT`) | Script nuevo `backend/database/06_lecturas_sin_bloqueo.sql`, que Docker Compose ejecuta al iniciar | Las pantallas leen la última versión confirmada sin esperar a los cobros. Es la configuración que Microsoft recomienda para aplicaciones web |
+| Índice `ix_alertas_ingrediente_atendida` | El mismo script `06` | La consulta de alertas pendientes de un insumo ya no recorre toda la tabla |
+
+**La primera versión de la corrección no bastó, y la prueba nueva lo detectó.** Solo con el bloqueo
+(`@Lock(PESSIMISTIC_WRITE)` en una consulta), los 10 cobros simultáneos respondían 200, pero el stock bajaba 1 en vez de 10. Al leer la receta,
+Hibernate ya había cargado el insumo en la memoria de la transacción, antes del bloqueo. Cuando la consulta con
+bloqueo traía el valor nuevo, Hibernate conservaba la copia vieja: dentro de una transacción no reemplaza un objeto
+que ya cargó. Para descartar la base de datos se probó H2 2.3.232 directamente con JDBC: con `FOR UPDATE` el stock
+quedó bien (90 de 90). Por eso ahora, después del bloqueo, se hace `refresh` para leer el valor confirmado.
+
+**Por qué un bloqueo pesimista y no uno optimista (`@Version`):** con el optimista, el segundo cobro fallaría y habría
+que reintentarlo. En la hora pico los cobros del mismo insumo son frecuentes, y reservar el insumo unos milisegundos
+es más simple y no pierde ninguna venta.
+
+**Pruebas:**
+- `DescontarInventarioServiceTest` (+1) y `GestionarInventarioServiceTest` (+1): toda operación que cambia un insumo lo
+  reserva primero; consultarlo no lo reserva.
+- `ConcurrenciaInventarioIntegracionTest` (nueva): 10 cobros **al mismo tiempo**, en 10 hilos, de pedidos con el mismo
+  insumo. Todos responden 200 y el stock baja exactamente 10.
+- Prueba de carga repetida después de la corrección: resultados en `docs/pruebas/carga-y-estres.md`.

@@ -5,8 +5,12 @@ import com.udec.restoflow.domain.model.Ingrediente;
 import com.udec.restoflow.infrastructure.adapter.out.persistence.entity.IngredienteEntity;
 import com.udec.restoflow.infrastructure.adapter.out.persistence.mapper.PersistenceMapper;
 import com.udec.restoflow.infrastructure.adapter.out.persistence.repository.IngredienteJpaRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +20,9 @@ import java.util.Optional;
 public class IngredientePersistenceAdapter implements IngredienteRepositoryPort {
 
     private final IngredienteJpaRepository repositorio;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public IngredientePersistenceAdapter(IngredienteJpaRepository repositorio) {
         this.repositorio = repositorio;
@@ -42,6 +49,29 @@ public class IngredientePersistenceAdapter implements IngredienteRepositoryPort 
     @Override
     public List<Ingrediente> buscarPorIds(Collection<Long> ids) {
         return repositorio.findAllById(ids).stream().map(PersistenceMapper::aDominio).toList();
+    }
+
+    /**
+     * Reserva cada insumo con un bloqueo pesimista de escritura (SQL Server: UPDLOCK; H2: FOR UPDATE), siempre en orden
+     * de id para que dos transacciones no se esperen en círculo, y DESPUÉS de obtener el bloqueo lo vuelve a leer
+     * ({@code refresh}).
+     * <p>
+     * Por qué el {@code refresh}: al leer la receta, Hibernate ya cargó el insumo en la memoria de la transacción (sin
+     * bloqueo). Cuando luego llega la consulta con bloqueo, la base de datos devuelve el stock actualizado, pero Hibernate
+     * conserva la copia que ya tenía. La prueba ConcurrenciaInventarioIntegracionTest lo demostró: con 10 cobros
+     * simultáneos y solo el bloqueo, el stock bajaba 1 en vez de 10.
+     */
+    @Override
+    public List<Ingrediente> bloquearPorIds(Collection<Long> ids) {
+        List<Ingrediente> reservados = new ArrayList<>();
+        for (Long id : ids.stream().distinct().sorted().toList()) {
+            IngredienteEntity entidad = entityManager.find(IngredienteEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
+            if (entidad != null) {
+                entityManager.refresh(entidad);
+                reservados.add(PersistenceMapper.aDominio(entidad));
+            }
+        }
+        return reservados;
     }
 
     @Override

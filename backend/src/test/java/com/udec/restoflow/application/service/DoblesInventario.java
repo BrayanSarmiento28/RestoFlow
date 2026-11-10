@@ -48,6 +48,16 @@ final class DoblesInventario {
             return ids.stream().map(datos::get).filter(java.util.Objects::nonNull).map(this::copia).toList();
         }
 
+        /** Cada llamada queda registrada para comprobar que los servicios reservan antes de cambiar el stock. */
+        final List<List<Long>> bloqueos = new ArrayList<>();
+
+        @Override
+        public List<Ingrediente> bloquearPorIds(Collection<Long> ids) {
+            List<Long> ordenados = ids.stream().sorted().toList();
+            bloqueos.add(ordenados);
+            return ordenados.stream().map(datos::get).filter(java.util.Objects::nonNull).map(this::copia).toList();
+        }
+
         @Override
         public List<Ingrediente> listar(boolean soloActivos) {
             return datos.values().stream().filter(i -> !soloActivos || i.isActivo())

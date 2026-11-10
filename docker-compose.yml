@@ -59,11 +59,12 @@ services:
       - ./backend/database/03_registro_peticiones.sql:/scripts/03_registro_peticiones.sql:ro
       - ./backend/database/04_numero_pedido_dia.sql:/scripts/04_numero_pedido_dia.sql:ro
       - ./backend/database/05_adiciones.sql:/scripts/05_adiciones.sql:ro
+      - ./backend/database/06_lecturas_sin_bloqueo.sql:/scripts/06_lecturas_sin_bloqueo.sql:ro
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
         set -e
-        for script in /scripts/00_inicializar.sql /scripts/01_crear_base_de_datos.sql /scripts/02_menu_pedidos_inventario.sql /scripts/03_registro_peticiones.sql /scripts/04_numero_pedido_dia.sql /scripts/05_adiciones.sql; do
+        for script in /scripts/00_inicializar.sql /scripts/01_crear_base_de_datos.sql /scripts/02_menu_pedidos_inventario.sql /scripts/03_registro_peticiones.sql /scripts/04_numero_pedido_dia.sql /scripts/05_adiciones.sql /scripts/06_lecturas_sin_bloqueo.sql; do
           echo "Ejecutando $$script"
           /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -v APP_PASSWORD="$$APP_PASSWORD" -i "$$script"
         done
