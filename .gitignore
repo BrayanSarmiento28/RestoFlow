@@ -26,6 +26,13 @@ npm-debug.log*
 !.env*.example
 backend/src/main/resources/application-local.yml
 
+# ===== Pruebas de carga (Apache JMeter): JMeter se descarga en herramientas/. Del resultado de cada prueba se sube
+# solo el resumen .md; el detalle por petición (.jtl) y el informe HTML (que incluye librerías de terceros y se
+# regenera con el .jtl) se quedan en el computador =====
+herramientas/
+docs/pruebas/jmeter/resultados/*.jtl
+docs/pruebas/jmeter/resultados/*/
+
 # ===== Editores, extensiones y sistema operativo =====
 .github/modernize/
 .idea/
