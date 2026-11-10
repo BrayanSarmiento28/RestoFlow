@@ -120,6 +120,18 @@ class DescontarInventarioServiceTest {
     }
 
     @Test
+    @DisplayName("RES-45 · Antes de descontar reserva los insumos del pedido, una sola vez y en orden de id")
+    void reservaLosInsumosAntesDeDescontar() {
+        ingredientes.bloqueos.clear();
+
+        vender(new LineaPedido(bandejaId, 1, null), new LineaPedido(ajiacoId, 1, null));
+
+        // Prueba de carga: sin esta reserva, dos ventas simultáneas del mismo insumo perdían un descuento o se
+        // bloqueaban en círculo (deadlock de SQL Server, error 500 al cobrar)
+        assertEquals(List.of(List.of(Math.min(arrozId, huevoId), Math.max(arrozId, huevoId))), ingredientes.bloqueos);
+    }
+
+    @Test
     @DisplayName("Si no alcanza, la venta igual se registra, el insumo queda en 0 y se crea una alerta ALTA")
     void sinStockSuficiente() {
         Pedido venta = vender(new LineaPedido(bandejaId, 5, null));   // pide 5 huevos y solo hay 3

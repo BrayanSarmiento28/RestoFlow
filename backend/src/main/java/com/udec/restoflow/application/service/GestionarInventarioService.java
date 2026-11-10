@@ -49,6 +49,15 @@ public class GestionarInventarioService implements GestionarInventarioUseCase {
         return ingredientes.buscarPorId(id).orElseThrow(() -> new RecursoNoEncontradoException("Ingrediente", id));
     }
 
+    /**
+     * Lee el insumo reservándolo hasta el fin de la transacción: así una venta simultánea no se pierde entre la lectura
+     * y el guardado (el guardado escribe el stock completo). Hallazgo de la prueba de carga (RES-45).
+     */
+    private Ingrediente paraModificar(Long id) {
+        return ingredientes.bloquearPorIds(List.of(id)).stream().findFirst()
+                .orElseThrow(() -> new RecursoNoEncontradoException("Ingrediente", id));
+    }
+
     @Override
     public Ingrediente crear(ComandoIngrediente comando, Long usuarioId) {
         Ingrediente nuevo = Ingrediente.nuevo(comando.nombre(), comando.unidad(), comando.stockInicial(),
@@ -68,7 +77,7 @@ public class GestionarInventarioService implements GestionarInventarioUseCase {
 
     @Override
     public Ingrediente actualizar(Long id, ComandoIngrediente comando) {
-        Ingrediente ingrediente = obtener(id);
+        Ingrediente ingrediente = paraModificar(id);
         String nombreAnterior = ingrediente.getNombre();
         ingrediente.actualizar(comando.nombre(), comando.unidad(), comando.stockMinimo());
         if (!ingrediente.getNombre().equalsIgnoreCase(nombreAnterior) && ingredientes.existePorNombre(ingrediente.getNombre())) {
@@ -81,7 +90,7 @@ public class GestionarInventarioService implements GestionarInventarioUseCase {
 
     @Override
     public Ingrediente cambiarEstado(Long id, boolean activo) {
-        Ingrediente ingrediente = obtener(id);
+        Ingrediente ingrediente = paraModificar(id);
         if (activo) {
             ingrediente.activar();
         } else {
@@ -92,7 +101,7 @@ public class GestionarInventarioService implements GestionarInventarioUseCase {
 
     @Override
     public Ingrediente registrarEntrada(Long id, BigDecimal cantidad, String motivo, Long usuarioId) {
-        Ingrediente ingrediente = obtener(id);
+        Ingrediente ingrediente = paraModificar(id);
         ingrediente.ingresar(cantidad);
         return guardarConMovimiento(ingrediente, TipoMovimiento.ENTRADA, cantidad, motivo, usuarioId);
     }
@@ -102,14 +111,14 @@ public class GestionarInventarioService implements GestionarInventarioUseCase {
         if (motivo == null || motivo.isBlank()) {
             throw new DomainException("Indique el motivo de la salida (merma, daño, vencimiento...)");
         }
-        Ingrediente ingrediente = obtener(id);
+        Ingrediente ingrediente = paraModificar(id);
         ingrediente.descontar(cantidad);
         return guardarConMovimiento(ingrediente, TipoMovimiento.SALIDA, cantidad, motivo, usuarioId);
     }
 
     @Override
     public Ingrediente ajustar(Long id, BigDecimal stockContado, String motivo, Long usuarioId) {
-        Ingrediente ingrediente = obtener(id);
+        Ingrediente ingrediente = paraModificar(id);
         BigDecimal anterior = ingrediente.getStockActual();
         ingrediente.ajustarA(stockContado);
         String detalle = "Conteo físico: había " + ControlAlertas.numero(anterior) + " registrado"

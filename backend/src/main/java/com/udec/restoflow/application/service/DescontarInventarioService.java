@@ -64,7 +64,9 @@ public class DescontarInventarioService implements DescontarInventarioUseCase {
             return List.of();                    // ningún producto del pedido tiene receta
         }
 
-        Map<Long, Ingrediente> porId = ingredientes.buscarPorIds(consumoPorIngrediente.keySet()).stream()
+        // Reserva los insumos (en orden de id) antes de leer su stock: dos ventas simultáneas del mismo insumo ya no
+        // pierden un descuento ni se bloquean en círculo (hallazgo de la prueba de carga, RES-45)
+        Map<Long, Ingrediente> porId = ingredientes.bloquearPorIds(consumoPorIngrediente.keySet()).stream()
                 .collect(Collectors.toMap(Ingrediente::getId, Function.identity()));
         LocalDateTime ahora = LocalDateTime.now(reloj);
         // El número del día (#1, #2...) es el que ve el administrador; los pedidos antiguos sin él usan el id

@@ -3,6 +3,7 @@ package com.udec.restoflow.application.service;
 import com.udec.restoflow.application.port.in.GestionarInventarioUseCase.ComandoIngrediente;
 import com.udec.restoflow.domain.exception.DomainException;
 import com.udec.restoflow.domain.exception.OperacionNoPermitidaException;
+import com.udec.restoflow.domain.exception.RecursoNoEncontradoException;
 import com.udec.restoflow.domain.model.Alerta;
 import com.udec.restoflow.domain.model.Ingrediente;
 import com.udec.restoflow.domain.model.MovimientoInventario;
@@ -79,6 +80,26 @@ class GestionarInventarioServiceTest {
                 () -> servicio.registrarSalida(id, new BigDecimal("9999"), "Merma", USUARIO));
         assertTrue(igual("6500", servicio.obtener(id).getStockActual()));
         assertEquals(3, movimientos.datos.size());
+    }
+
+    @Test
+    @DisplayName("RES-45 · Toda operación que cambia un insumo lo reserva primero; consultarlo no lo reserva")
+    void reservaAntesDeModificar() {
+        Long id = arroz().getId();
+        ingredientes.bloqueos.clear();
+
+        servicio.obtener(id);
+        assertTrue(ingredientes.bloqueos.isEmpty());
+
+        servicio.registrarEntrada(id, BigDecimal.TEN, "Compra", USUARIO);
+        servicio.registrarSalida(id, BigDecimal.ONE, "Merma", USUARIO);
+        servicio.ajustar(id, new BigDecimal("4000"), null, USUARIO);
+        servicio.actualizar(id, new ComandoIngrediente("Arroz", UnidadMedida.GRAMO, new BigDecimal("900"), null));
+        servicio.cambiarEstado(id, false);
+        assertEquals(5, ingredientes.bloqueos.size());
+        assertTrue(ingredientes.bloqueos.stream().allMatch(b -> b.equals(java.util.List.of(id))));
+        assertThrows(RecursoNoEncontradoException.class,
+                () -> servicio.registrarEntrada(999L, BigDecimal.ONE, "Compra", USUARIO));
     }
 
     @Test

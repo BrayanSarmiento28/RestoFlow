@@ -15,6 +15,13 @@ public interface IngredienteRepositoryPort {
 
     List<Ingrediente> buscarPorIds(Collection<Long> ids);
 
+    /**
+     * Lee los insumos para MODIFICAR su stock y los deja reservados hasta que termine la transacción: otra venta o
+     * movimiento del mismo insumo espera su turno y luego lee el stock ya actualizado (sin descuentos perdidos).
+     * Se reservan siempre en orden de id, para que dos transacciones no se esperen en círculo (deadlock).
+     */
+    List<Ingrediente> bloquearPorIds(Collection<Long> ids);
+
     /** Ordenados por nombre. */
     List<Ingrediente> listar(boolean soloActivos);
 
