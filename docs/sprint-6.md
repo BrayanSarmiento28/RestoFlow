@@ -621,7 +621,7 @@ que **no se recuperara** cuando la carga bajó.
 |---|---|---|
 | El resumen del Dashboard se calcula como máximo una vez cada 5 s y se comparte entre todos los que lo piden. Si varios llegan cuando venció, solo uno lo calcula | `ConsultarPanelEnCacheService` (nuevo), que envuelve a `ConsultarPanelService` (patrón decorador). Se configura en `BeanConfig` con `restoflow.panel.vigencia-segundos` | 40 administradores = 1 cálculo cada 5 s, no 40. El Dashboard del frontend se actualiza cada 10 s, así que las cifras siguen al día |
 | Fallar rápido: máximo 5 s esperando una conexión libre y máximo 10 s por transacción | `application.yml`: `spring.datasource.hikari.connection-timeout` y `spring.transaction.default-timeout` | Una petición que no consigue capacidad sale de la fila en vez de acumularse. Las consultas se cancelan en SQL Server al pasar el tiempo |
-| Si el sistema está saturado se responde **503 "El sistema está ocupado"** con `Retry-After: 5` | `GlobalExceptionHandler` y `JwtAuthenticationFilter` (el filtro corre antes que los controladores) | El cliente recibe una respuesta clara al instante, no un error 500 ni 30 s de espera |
+| Si el sistema está saturado se responde **503 "El sistema está ocupado"** con `Retry-After: 5` | `GlobalExceptionHandler` y `JwtAuthenticationFilter` (el filtro corre antes que los controladores) | El cliente recibe una respuesta clara ("intente de nuevo") en vez de un error 500 o de una espera sin fin |
 | Chequeo de salud del frontend con `127.0.0.1` | `frontend/Dockerfile` | Docker muestra el estado real del frontend |
 
 **Por qué no simplemente más conexiones:** el servidor tiene 2 CPU para SQL Server. Más conexiones harían más
@@ -637,4 +637,13 @@ El tamaño de la reserva quedó configurable (`DB_POOL_MAXIMO`) por si se cambia
   con `Retry-After`. El filtro del token también responde 503 y no deja pasar la petición, y sin saturación sigue
   autenticando igual que antes.
 - En las pruebas de integración la vigencia es 0, porque leen el Dashboard justo después de cobrar.
-- Carga y estrés repetidos en AWS después de la corrección: resultados en `docs/pruebas/carga-y-estres.md`.
+- Carga y estrés repetidos en AWS después de la corrección (detalle en `docs/pruebas/carga-y-estres.md`):
+
+| | Antes | Después |
+|---|---|---|
+| Carga, 100 usuarios | 0 errores, P95 234 ms | 0 errores, P95 284 ms (con el triple de pedidos en el día) |
+| Estrés: peticiones atendidas | 21 962 | 43 829 |
+| Estrés: ventas completas | 1 213 | 2 810 |
+| Estrés: errores | 31,2 %, casi todos esperas cortadas a los 30 s | 9,1 %, casi todos 503 "sistema ocupado" |
+| Colapso total | desde ~330 usuarios | nunca |
+| Recuperación con 5 usuarios | no se recuperó | mediana 110 ms y 0 errores a los 10 s |
