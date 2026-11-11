@@ -150,6 +150,67 @@ con las gráficas queda en el computador donde se ejecutó (`resultados/carga-20
 - Iniciar sesión (179 ms) es lento *a propósito*: BCrypt está diseñado para que adivinar contraseñas sea costoso.
 - Todo queda muy por debajo del límite de 3 s, aun con más de 3 veces la hora pico de un restaurante mediano.
 
-### Servidor AWS · pre-producción (RES-57)
+### Servidor AWS · pre-producción (RES-57) · 10 de noviembre
 
-*Pendiente de ejecutar.*
+RestoFlow en un servidor EC2 `m7i-flex.large` (2 CPU, 8 GB) en Ohio, con SQL Server 2022 Express, el perfil
+`preprod` y Docker Compose (ver [despliegue en AWS](../despliegue-aws.md)). JMeter corrió en el portátil, en
+Colombia: cada petición viaja por internet hasta Ohio y vuelve, como la de un usuario real. Solo ese viaje suma unos
+90 ms; por eso el tiempo mínimo nunca bajó de 88 ms.
+
+**Humo:** 11 peticiones, 0 errores, P95 298 ms. Resumen:
+[`humo-2026-11-10-22-05.md`](jmeter/resultados/humo-2026-11-10-22-05.md).
+
+**Carga: 100 usuarios a la vez durante 5 minutos → CUMPLE.** Resumen:
+[`carga-2026-11-10-22-07.md`](jmeter/resultados/carga-2026-11-10-22-07.md).
+
+- 16 393 peticiones (45,5 por segundo), **0 errores** y **1 381 ventas completas**.
+- Tiempo global: promedio 142 ms, **P95 234 ms**, máximo 1 208 ms (un solo pico, en el minuto 5).
+
+| Operación | Peticiones | Promedio (ms) | Mediana (ms) | P95 (ms) | Máximo (ms) | Errores | Cumple 3 s |
+|---|---:|---:|---:|---:|---:|---:|:---:|
+| iniciar sesión | 155 | 227,2 | 203,0 | 332,2 | 594,0 | 0,00 % | Sí |
+| ver menú | 1 429 | 106,2 | 97,0 | 147,5 | 425,0 | 0,00 % | Sí |
+| crear pedido | 1 415 | 121,5 | 109,0 | 196,0 | 505,0 | 0,00 % | Sí |
+| cocina: en preparación | 1 402 | 113,2 | 104,0 | 160,9 | 414,0 | 0,00 % | Sí |
+| cocina: listo | 1 396 | 113,1 | 104,0 | 157,2 | 532,0 | 0,00 % | Sí |
+| cocina: entregado | 1 385 | 113,8 | 104,0 | 160,7 | 1 208,0 | 0,00 % | Sí |
+| cobrar | 1 381 | 144,7 | 132,0 | 228,9 | 524,0 | 0,00 % | Sí |
+| pantalla cocina | 1 222 | 202,5 | 193,0 | 279,0 | 758,0 | 0,00 % | Sí |
+| lista de pedidos | 3 054 | 206,0 | 194,0 | 283,0 | 1 020,0 | 0,00 % | Sí |
+| mesas ocupadas | 3 052 | 106,5 | 101,0 | 137,0 | 472,0 | 0,00 % | Sí |
+| panel administrador | 448 | 183,3 | 168,0 | 282,6 | 582,0 | 0,00 % | Sí |
+| avisos | 54 | 146,4 | 138,0 | 210,0 | 230,0 | 0,00 % | Sí |
+
+| | PC (Docker local) | AWS (Ohio) |
+|---|---:|---:|
+| Errores | 0 | 0 |
+| Ventas completas | 1 442 | 1 381 |
+| P95 global | 150 ms | 234 ms |
+| P95 de cobrar | 239 ms | 229 ms |
+
+Casi todas las operaciones suben unos 90 ms en AWS por la distancia. **Cobrar quedó igual o mejor** que en el PC:
+en el servidor, SQL Server no comparte la máquina con JMeter ni con Docker Desktop.
+
+**Estrés: hasta 600 usuarios → encontró el límite y un problema de recuperación (RES-59).** Resumen:
+[`estres-2026-11-10-22-18.md`](jmeter/resultados/estres-2026-11-10-22-18.md).
+
+| Momento | Usuarios a la vez | Qué pasó |
+|---|---:|---|
+| 0:00 – 2:50 | hasta ~180 | Mediana ~110 ms, 0 errores |
+| 3:00 – 5:00 | 180 – 300 | Se degrada: respuestas de 1 a 6 s, casi sin errores |
+| 5:30 – 12:00 | 330 – 600 | El 100 % de las peticiones espera 30 s y se corta (`Read timed out`) |
+| 12:30 – 15:00 | 5 (recuperación) | **Siguió sin responder** |
+
+- En total: 21 962 peticiones, 31,2 % con error y 1 213 ventas completas.
+- Todos los errores fueron `Read timed out`: JMeter se conectaba al servidor (92 ms), pero el backend no alcanzaba a
+  responder. No hubo errores 500.
+- **Límite medido:** RestoFlow atiende bien hasta **unos 180 usuarios a la vez**, casi el doble de la prueba de
+  carga, que ya es más de 3 veces la hora pico de un restaurante mediano.
+- **El problema:** al bajar a 5 usuarios, los tiempos no volvieron a la normalidad. El diagnóstico y la corrección
+  están en [`docs/sprint-6.md` §6.9](../sprint-6.md) (RES-59). En resumen: el Dashboard recorría todos los pedidos
+  del día y ocupaba las conexiones a la base de datos, y las peticiones que el cliente ya había abandonado se
+  seguían procesando, así que se formaba una fila de trabajo que nadie esperaba.
+
+### Servidor AWS después de RES-59
+
+*Pendiente de ejecutar:* carga y estrés repetidos en el mismo orden, para comparar el antes y el después.

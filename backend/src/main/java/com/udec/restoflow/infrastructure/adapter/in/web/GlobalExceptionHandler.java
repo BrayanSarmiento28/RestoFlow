@@ -12,9 +12,14 @@ import com.udec.restoflow.domain.exception.ServicioExternoNoDisponibleException;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.transaction.TransactionTimedOutException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -36,6 +41,8 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    /** Segundos que el cliente debe esperar antes de reintentar cuando el sistema está ocupado (503). */
+    static final int SEGUNDOS_PARA_REINTENTAR = 5;
 
     /** Reloj de la aplicación (zona horaria de Colombia en Docker); en las pruebas se puede fijar. */
     private final Clock reloj;
@@ -75,6 +82,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ServicioExternoNoDisponibleException.class)
     public ResponseEntity<ErrorResponse> servicioExterno(ServicioExternoNoDisponibleException e) {
         return respuesta(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), null);   // 503
+    }
+
+    /**
+     * RES-59 · El servidor está saturado: no hubo una conexión libre a la base de datos en el tiempo máximo
+     * (spring.datasource.hikari.connection-timeout) o la consulta pasó su tiempo máximo
+     * (spring.transaction.default-timeout). Se responde 503 de inmediato, en vez de dejar la petición en una
+     * fila que nadie espera, y se le dice al cliente cuándo reintentar.
+     */
+    @ExceptionHandler({CannotCreateTransactionException.class, QueryTimeoutException.class,
+            TransactionTimedOutException.class, DataAccessResourceFailureException.class})
+    public ResponseEntity<ErrorResponse> sistemaOcupado(Exception e) {
+        log.warn("Sistema ocupado, se responde 503: {}", e.getMessage());
+        HttpStatus status = HttpStatus.SERVICE_UNAVAILABLE;
+        return ResponseEntity.status(status)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(SEGUNDOS_PARA_REINTENTAR))
+                .body(new ErrorResponse(LocalDateTime.now(reloj), status.value(), status.getReasonPhrase(),
+                        "El sistema está ocupado en este momento. Intente de nuevo en unos segundos.", null));
     }
 
     @ExceptionHandler(RecursoNoEncontradoException.class)
