@@ -66,9 +66,21 @@ public class ControlAlertas {
         Auditoria.alertaCreada(ingrediente.getNombre(), prioridad.name());
     }
 
-    /** RF-06 · Se vendió más de lo que había registrado: hay una diferencia en el inventario. */
+    /**
+     * RF-06 · Se vendió más de lo que había registrado: hay una diferencia en el inventario.
+     * <p>
+     * RES-60 · Si el insumo ya tiene una alerta de faltante pendiente, no se crea otra: el aviso es el mismo
+     * ("revise el inventario con un conteo físico") y basta con uno hasta que alguien lo atienda o se reabastezca.
+     * Antes se creaba una por cada venta: en las pruebas de carga, con los insumos en 0, se acumularon más de
+     * 33 000 alertas, la pantalla de Inventario tardaba en cargar y cada cobro revisaba miles de alertas. Cada
+     * faltante sigue quedando en el movimiento de la venta ("faltaron …") y en el registro de auditoría.
+     */
     public void faltante(Ingrediente ingrediente, BigDecimal faltante, Long pedidoId) {
-        String mensaje = "La venta del pedido #" + pedidoId + " necesitaba " + numero(faltante) + " "
+        boolean yaAvisado = alertas.pendientesDe(ingrediente.getId()).stream().anyMatch(Alerta::esDeFaltante);
+        if (yaAvisado) {
+            return;
+        }
+        String mensaje = Alerta.PREFIJO_FALTANTE + pedidoId + " necesitaba " + numero(faltante) + " "
                 + abreviatura(ingrediente.getUnidad()) + " más de " + ingrediente.getNombre()
                 + " de lo registrado. Revise el inventario con un conteo físico.";
         alertas.guardar(Alerta.nueva(ingrediente.getId(), mensaje, PrioridadAlerta.ALTA, LocalDateTime.now(reloj)));
