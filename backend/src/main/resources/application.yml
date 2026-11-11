@@ -22,6 +22,19 @@ spring:
     username: ${DB_USER:restoflow_app}
     password: ${DB_PASSWORD:}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    # RES-59 · Fallar rápido cuando el sistema está saturado (prueba de estrés)
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAXIMO:10}   # conexiones a SQL Server que se mantienen abiertas
+      # Si en 5 s no hay una conexión libre, la petición responde 503 "sistema ocupado" en vez de quedarse en
+      # una fila que el cliente ya abandonó (antes esperaba hasta 30 s y el trabajo pendiente se acumulaba)
+      connection-timeout: 5000
+
+  # ---------- Transacciones ----------
+  transaction:
+    # RES-59 · Tiempo máximo de una transacción: sus consultas se cancelan en SQL Server al pasarlo, así una
+    # consulta lenta no ocupa una conexión indefinidamente. La operación más pesada (cobrar) tarda menos de 1 s.
+    default-timeout: 10s
+
   # ---------- Correo: Gmail SMTP ----------
   mail:
     host: smtp.gmail.com
@@ -98,6 +111,9 @@ logging:
 
 # ---------- Configuración propia de RestoFlow ----------
 restoflow:
+  panel:
+    # RES-59 · Segundos que se reutiliza el resumen del Dashboard antes de recalcularlo (0 = siempre se recalcula)
+    vigencia-segundos: ${PANEL_VIGENCIA_SEGUNDOS:5}
   logs:
     # Carpeta de los archivos de log; en Docker es /app/logs (montada en un volumen)
     directorio: ${LOG_DIR:logs}

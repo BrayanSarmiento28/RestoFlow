@@ -583,3 +583,58 @@ es más simple y no pierde ninguna venta.
 - `ConcurrenciaInventarioIntegracionTest` (nueva): 10 cobros **al mismo tiempo**, en 10 hilos, de pedidos con el mismo
   insumo. Todos responden 200 y el stock baja exactamente 10.
 - Prueba de carga repetida después de la corrección: resultados en `docs/pruebas/carga-y-estres.md`.
+
+### 6.9 El sistema no se recuperaba después del pico de la prueba de estrés (RES-59)
+
+La prueba de estrés en el servidor de AWS (RES-56 y RES-57, 10 de noviembre) mostró dos cosas:
+
+| Usuarios a la vez | Qué pasó |
+|---:|---|
+| hasta ~180 | Mediana de ~110 ms y 0 errores |
+| 180 a 300 | Se degrada: respuestas de 1 a 6 s, casi sin errores |
+| desde ~330 | El 100 % de las peticiones espera 30 s y JMeter las corta (`Read timed out`) |
+| 5 (fase de recuperación) | **Siguió sin responder.** Cinco minutos después de terminar, el Dashboard todavía tardaba 55 s |
+
+Que el sistema se sature con 6 veces la carga normal es esperado: para eso es la prueba. Lo que no estaba bien era
+que **no se recuperara** cuando la carga bajó.
+
+**Diagnóstico (en el servidor, con `docker stats`, `free -h` y los registros del backend):**
+
+- **No fue la memoria:** el backend usaba 1,2 GB y quedaban 4,9 GB libres. Ningún contenedor se reinició.
+- **No fue el inventario en cero:** en la prueba de carga los insumos ya estaban en 0 y hubo 1 381 cobros sin errores.
+  Además fallaron sobre todo el inicio de sesión (67 %) y el menú (71 %), que no usan inventario, y cobrar solo
+  falló en el 1,9 %.
+- **El Dashboard ocupaba la base de datos.** `GET /api/panel/resumen` carga todos los pedidos del día para calcular
+  ventas, ventas por hora, por mesero y los más vendidos. Cada venta lo vuelve un poco más pesado. Con ~2 600 ventas
+  en el día y 40 administradores pidiéndolo cada 5 s, ocupaba las 10 conexiones a SQL Server (el valor por defecto
+  de HikariCP). Las demás peticiones, incluso el filtro del token, que revisa si la cuenta sigue activa, esperaban
+  turno hasta 30 s.
+- **Nada se cancelaba.** Cuando JMeter se rendía a los 30 s, el backend seguía trabajando en esa petición (en los
+  registros aparecía `Broken pipe` al responder a un cliente que ya no estaba). Se formó una fila de trabajo que
+  nadie esperaba, y por eso los 5 usuarios de la recuperación seguían esperando.
+- Aparte, el chequeo de salud del frontend preguntaba a `localhost`. En la imagen Alpine eso apunta a la dirección
+  IPv6 y Nginx escucha en IPv4, así que Docker mostraba el frontend como `unhealthy` aunque funcionaba.
+
+**Corrección:**
+
+| Cambio | Dónde | Efecto |
+|---|---|---|
+| El resumen del Dashboard se calcula como máximo una vez cada 5 s y se comparte entre todos los que lo piden. Si varios llegan cuando venció, solo uno lo calcula | `ConsultarPanelEnCacheService` (nuevo), que envuelve a `ConsultarPanelService` (patrón decorador). Se configura en `BeanConfig` con `restoflow.panel.vigencia-segundos` | 40 administradores = 1 cálculo cada 5 s, no 40. El Dashboard del frontend se actualiza cada 10 s, así que las cifras siguen al día |
+| Fallar rápido: máximo 5 s esperando una conexión libre y máximo 10 s por transacción | `application.yml`: `spring.datasource.hikari.connection-timeout` y `spring.transaction.default-timeout` | Una petición que no consigue capacidad sale de la fila en vez de acumularse. Las consultas se cancelan en SQL Server al pasar el tiempo |
+| Si el sistema está saturado se responde **503 "El sistema está ocupado"** con `Retry-After: 5` | `GlobalExceptionHandler` y `JwtAuthenticationFilter` (el filtro corre antes que los controladores) | El cliente recibe una respuesta clara al instante, no un error 500 ni 30 s de espera |
+| Chequeo de salud del frontend con `127.0.0.1` | `frontend/Dockerfile` | Docker muestra el estado real del frontend |
+
+**Por qué no simplemente más conexiones:** el servidor tiene 2 CPU para SQL Server. Más conexiones harían más
+consultas al mismo tiempo, cada una más lenta, y el problema volvería a aparecer con un poco más de usuarios. Lo que
+evita el colapso es no repetir trabajo (el caché) y no aceptar más trabajo del que se puede hacer (fallar rápido).
+El tamaño de la reserva quedó configurable (`DB_POOL_MAXIMO`) por si se cambia el servidor.
+
+**Pruebas:**
+- `ConsultarPanelEnCacheServiceTest` (nueva, 5 pruebas): reutiliza el resumen durante la vigencia, lo recalcula al
+  vencer, no confunde días, con vigencia 0 siempre recalcula, y **40 administradores al mismo tiempo producen un solo
+  cálculo**.
+- `SistemaOcupadoTest` (nueva, 4 pruebas): sin conexión libre o con una consulta vencida, el controlador responde 503
+  con `Retry-After`. El filtro del token también responde 503 y no deja pasar la petición, y sin saturación sigue
+  autenticando igual que antes.
+- En las pruebas de integración la vigencia es 0, porque leen el Dashboard justo después de cobrar.
+- Carga y estrés repetidos en AWS después de la corrección: resultados en `docs/pruebas/carga-y-estres.md`.

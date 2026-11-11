@@ -34,6 +34,7 @@ import com.udec.restoflow.application.port.out.RegistroPeticionRepositoryPort;
 import com.udec.restoflow.application.service.CambiarContrasenaService;
 import com.udec.restoflow.application.service.BuscarProductoExternoService;
 import com.udec.restoflow.application.service.ConsultarHistorialService;
+import com.udec.restoflow.application.service.ConsultarPanelEnCacheService;
 import com.udec.restoflow.application.service.ConsultarPanelService;
 import com.udec.restoflow.application.service.ControlAlertas;
 import com.udec.restoflow.application.service.DescontarInventarioService;
@@ -53,8 +54,10 @@ import com.udec.restoflow.application.service.RegistroActividadService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import java.time.Clock;
+import java.time.Duration;
 
 /**
  * Aquí se "conecta" el hexágono: Spring crea cada caso de uso y le entrega los adaptadores
@@ -147,11 +150,22 @@ public class BeanConfig {
         return new GestionarAlertasService(alertas, reloj);
     }
 
+    /** Cálculo real del resumen (con su transacción de solo lectura). */
     @Bean
-    public ConsultarPanelUseCase consultarPanelUseCase(PedidoRepositoryPort pedidos,
-                                                       IngredienteRepositoryPort ingredientes,
-                                                       AlertaRepositoryPort alertas) {
+    public ConsultarPanelService calculoPanel(PedidoRepositoryPort pedidos, IngredienteRepositoryPort ingredientes,
+                                              AlertaRepositoryPort alertas) {
         return new ConsultarPanelService(pedidos, ingredientes, alertas);
+    }
+
+    /**
+     * RES-59: el que usa el controlador. Envuelve al cálculo real y lo reutiliza durante "vigencia" segundos.
+     * Es @Primary porque los dos beans implementan ConsultarPanelUseCase.
+     */
+    @Bean
+    @Primary
+    public ConsultarPanelUseCase consultarPanelUseCase(ConsultarPanelService calculoPanel, Clock reloj,
+                                                       @Value("${restoflow.panel.vigencia-segundos:5}") long vigencia) {
+        return new ConsultarPanelEnCacheService(calculoPanel, Duration.ofSeconds(vigencia), reloj);
     }
 
     @Bean
