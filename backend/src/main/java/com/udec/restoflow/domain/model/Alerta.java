@@ -13,6 +13,9 @@ public class Alerta {
     /** Las alertas que crea RestoFlow AI empiezan así; las cierra el propio análisis, no el control de stock. */
     public static final String PREFIJO_RESTOFLOW_AI = "RestoFlow AI: ";
 
+    /** RF-06 · Las alertas de faltante (se vendió más de lo registrado) empiezan así. */
+    public static final String PREFIJO_FALTANTE = "La venta del pedido #";
+
     private final Long id;
     private final Long ingredienteId;
     private final String mensaje;
@@ -53,6 +56,11 @@ public class Alerta {
     /** RES-40 · Alerta anticipada de RestoFlow AI ("se acaba en 2 días"), no del control de stock mínimo. */
     public boolean esDeRestoFlowAI() {
         return mensaje.startsWith(PREFIJO_RESTOFLOW_AI);
+    }
+
+    /** RF-06 · Alerta de faltante: una venta necesitó más de lo que había registrado (RES-60). */
+    public boolean esDeFaltante() {
+        return mensaje.startsWith(PREFIJO_FALTANTE);
     }
 
     public void marcarAtendida(LocalDateTime ahora) {
