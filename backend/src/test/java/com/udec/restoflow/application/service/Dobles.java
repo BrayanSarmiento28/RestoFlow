@@ -144,6 +144,10 @@ final class Dobles {
             instante = instante.plusSeconds(minutos * 60);
         }
 
+        void avanzarSegundos(long segundos) {
+            instante = instante.plusSeconds(segundos);
+        }
+
         @Override
         public ZoneId getZone() {
             return ZoneId.of("America/Bogota");

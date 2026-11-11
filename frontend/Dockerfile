@@ -34,5 +34,7 @@ COPY --from=build /app/dist/restoflow-frontend/browser /usr/share/nginx/html
 
 EXPOSE 8080
 
+# 127.0.0.1 y no localhost: en Alpine, localhost apunta primero a la dirección IPv6 (::1) y Nginx escucha
+# en IPv4, así que el chequeo fallaba y Docker mostraba "unhealthy" aunque el frontend funcionaba (RES-59)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost:8080/ > /dev/null || exit 1
+    CMD wget -qO- http://127.0.0.1:8080/ > /dev/null || exit 1

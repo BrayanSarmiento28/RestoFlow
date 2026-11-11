@@ -12,6 +12,9 @@ spring:
     open-in-view: false
 
 restoflow:
+  # El resumen del Dashboard se recalcula en cada consulta: las pruebas lo leen justo después de cobrar
+  panel:
+    vigencia-segundos: 0
   jwt:
     secret: clave-de-pruebas-restoflow-con-mas-de-32-caracteres
     expiracion-minutos: 60
