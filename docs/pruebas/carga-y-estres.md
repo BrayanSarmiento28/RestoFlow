@@ -211,6 +211,73 @@ en el servidor, SQL Server no comparte la máquina con JMeter ni con Docker Desk
   del día y ocupaba las conexiones a la base de datos, y las peticiones que el cliente ya había abandonado se
   seguían procesando, así que se formaba una fila de trabajo que nadie esperaba.
 
-### Servidor AWS después de RES-59
+### Servidor AWS después de RES-59 · 10 de noviembre
 
-*Pendiente de ejecutar:* carga y estrés repetidos en el mismo orden, para comparar el antes y el después.
+Mismo servidor, mismo plan y mismo orden (carga y luego estrés). Antes de empezar se cerraron como cancelados los
+109 pedidos de prueba que el estrés anterior dejó abiertos, porque su limpieza final también falló por la
+saturación. **La base de datos ya tenía unas 2 700 ventas del día**, contra unas 10 de la primera carga, así que esta
+vez el Dashboard y el cobro trabajaron con más datos.
+
+**Carga: 100 usuarios → CUMPLE.** 16 319 peticiones, **0 errores**, 1 369 ventas, P95 global **284 ms**. Resumen:
+[`carga-2026-11-10-23-06.md`](jmeter/resultados/carga-2026-11-10-23-06.md).
+
+| Operación | Peticiones | Promedio (ms) | Mediana (ms) | P95 (ms) | Máximo (ms) | Errores | Cumple 3 s |
+|---|---:|---:|---:|---:|---:|---:|:---:|
+| iniciar sesión | 154 | 232,4 | 205,0 | 361,5 | 698,0 | 0,00 % | Sí |
+| ver menú | 1 419 | 105,5 | 98,0 | 151,0 | 304,0 | 0,00 % | Sí |
+| crear pedido | 1 404 | 125,9 | 114,0 | 206,0 | 380,0 | 0,00 % | Sí |
+| cocina: en preparación | 1 396 | 114,8 | 106,0 | 172,3 | 409,0 | 0,00 % | Sí |
+| cocina: listo | 1 383 | 114,2 | 106,0 | 162,0 | 366,0 | 0,00 % | Sí |
+| cocina: entregado | 1 375 | 113,9 | 106,0 | 177,0 | 254,0 | 0,00 % | Sí |
+| cobrar | 1 369 | 214,7 | 183,0 | 388,5 | 1 354,0 | 0,00 % | Sí |
+| pantalla cocina | 1 225 | 204,7 | 195,0 | 285,0 | 543,0 | 0,00 % | Sí |
+| lista de pedidos | 3 061 | 204,6 | 197,0 | 285,0 | 542,0 | 0,00 % | Sí |
+| mesas ocupadas | 3 060 | 109,3 | 104,0 | 141,0 | 345,0 | 0,00 % | Sí |
+| panel administrador | 426 | 447,0 | 321,0 | 548,3 | 5 097,0 | 0,00 % | Sí |
+| avisos | 47 | 345,1 | 312,0 | 566,2 | 580,0 | 0,00 % | Sí |
+
+Cobrar (389 ms) y el Dashboard (548 ms) subieron frente a la primera carga porque trabajan sobre los pedidos y las
+alertas del día, que eran casi el triple. Siguen 5 veces por debajo de los 3 s.
+
+**Estrés: hasta 600 usuarios → ya no colapsa y se recupera solo.** Resumen:
+[`estres-2026-11-10-23-13.md`](jmeter/resultados/estres-2026-11-10-23-13.md).
+
+Por minuto (del archivo `.jtl`):
+
+| Minuto | Usuarios | Peticiones | Mediana | P95 | Errores | De ellos, 503 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0 | hasta 58 | 857 | 113 ms | 241 ms | 0 | 0 |
+| 2 | hasta 180 | 4 062 | 193 ms | 997 ms | 1 | 1 |
+| 3 | hasta 240 | 4 684 | 439 ms | 2 517 ms | 3 | 2 |
+| 4 | hasta 303 | 4 735 | 1 186 ms | 3 463 ms | 2 | 2 |
+| 6 | hasta 412 | 4 212 | 2 962 ms | 6 865 ms | 330 | 251 |
+| 8 | hasta 540 | 3 890 | 5 135 ms | 8 877 ms | 470 | 356 |
+| 10 | 600 | 3 736 | 6 563 ms | 10 244 ms | 487 | 335 |
+| 11 | 600 → bajan | 2 458 | 15 167 ms | 19 713 ms | 1 790 | 1 726 |
+| **13** | **5 (recuperación)** | 153 | **110 ms** | **290 ms** | **0** | 0 |
+
+**Antes y después de RES-59 (estrés en AWS):**
+
+| | Antes (22:18) | Después (23:13) |
+|---|---|---|
+| Peticiones atendidas | 21 962 | **43 829** (el doble) |
+| Ventas completas | 1 213 | **2 810** (2,3 veces) |
+| Peticiones con error | 31,2 % | **9,1 %** |
+| Tipo de error | 6 845 esperas cortadas a los 30 s | 3 372 respuestas **503 "sistema ocupado"**, 582 mesas ocupadas (409) y solo 30 esperas de 30 s |
+| Usuarios con P95 < 3 s | ~180 | **~240** |
+| Colapso total (100 % de errores) | desde ~330 usuarios | **nunca** |
+| Recuperación con 5 usuarios | **no se recuperó** (100 % de errores) | **10 s después: mediana 110 ms, 0 errores** |
+| Limpieza final | falló (quedaron 109 pedidos abiertos) | cerró los 210 pedidos de prueba |
+
+**Qué se lee del resultado:**
+- **Lo más importante es la recuperación.** Diez segundos después de que bajó la carga, los 5 usuarios ya respondían
+  en 110 ms. Antes, el servidor seguía ocupado con peticiones abandonadas.
+- **Ya no colapsa.** Con 600 usuarios a la vez (6 veces la prueba de carga) los tiempos suben, pero el sistema sigue
+  atendiendo: 2,3 veces más ventas que antes en la misma prueba.
+- **El límite cómodo es de unos 240 usuarios a la vez**, más de 2 veces la prueba de carga y unas 8 veces la hora
+  pico de un restaurante mediano. Desde ahí el sistema se degrada de forma controlada.
+- **Los 409 no son fallas del servidor:** cuando un cobro recibe 503, la mesa queda ocupada y el siguiente "crear
+  pedido" de esa mesa recibe 409, que es la regla de negocio funcionando. El plan libera la mesa y sigue.
+- **Mejora posible:** con 600 usuarios, un 503 tarda en promedio unos 11 s, no es inmediato. La petición espera
+  primero un hilo libre de Tomcat (200) y luego 5 s una conexión a la base de datos. Limitar también la fila de
+  Tomcat haría el rechazo más rápido. No es necesario para la entrega: el sistema ya no colapsa y se recupera solo.

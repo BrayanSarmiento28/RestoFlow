@@ -100,6 +100,39 @@ class AlertasServiceTest {
     }
 
     @Test
+    @DisplayName("RES-60 · Varias ventas con faltante del mismo insumo dejan una sola alerta pendiente (la primera)")
+    void faltanteSinDuplicados() {
+        control.faltante(huevo("0"), new BigDecimal("2"), 15L);
+        control.faltante(huevo("0"), new BigDecimal("1"), 16L);
+        control.faltante(huevo("0"), new BigDecimal("3"), 17L);
+
+        assertThat(alertas.pendientes()).singleElement()
+                .satisfies(a -> assertThat(a.getMensaje()).contains("pedido #15"));
+    }
+
+    @Test
+    @DisplayName("RES-60 · Después de atender la alerta de faltante, un nuevo faltante vuelve a avisar")
+    void faltanteDespuesDeAtender() {
+        control.faltante(huevo("0"), new BigDecimal("2"), 15L);
+        servicio.atender(alertas.pendientes().get(0).getId());
+
+        control.faltante(huevo("0"), new BigDecimal("1"), 16L);
+
+        assertThat(alertas.pendientes()).singleElement()
+                .satisfies(a -> assertThat(a.getMensaje()).contains("pedido #16"));
+    }
+
+    @Test
+    @DisplayName("RES-60 · El faltante de un insumo no impide avisar el faltante de otro")
+    void faltantePorInsumo() {
+        Ingrediente arroz = new Ingrediente(2L, "Arroz", UnidadMedida.GRAMO, BigDecimal.ZERO, new BigDecimal("500"), true);
+        control.faltante(huevo("0"), new BigDecimal("2"), 15L);
+        control.faltante(arroz, new BigDecimal("150"), 15L);
+
+        assertThat(alertas.pendientes()).hasSize(2);
+    }
+
+    @Test
     @DisplayName("El personal atiende una alerta manualmente y deja de estar pendiente")
     void atender() {
         control.revisar(huevo("3"));
