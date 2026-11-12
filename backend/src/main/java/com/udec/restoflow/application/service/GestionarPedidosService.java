@@ -62,7 +62,7 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
 
     @Override
     public Pedido modificar(Long pedidoId, ComandoPedido comando) {
-        Pedido pedido = obtener(pedidoId);
+        Pedido pedido = buscar(pedidoId);
         if (comando.numeroMesa() != pedido.getNumeroMesa()) {
             throw new DomainException("La mesa no se cambia al modificar el pedido; use la opción \"Cambiar mesa\"");
         }
@@ -72,7 +72,7 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
 
     @Override
     public Pedido cancelar(Long pedidoId) {
-        Pedido pedido = obtener(pedidoId);
+        Pedido pedido = buscar(pedidoId);
         pedido.cancelar(LocalDateTime.now(reloj));
         Pedido cancelado = pedidos.guardar(pedido);
         Auditoria.pedidoCancelado(cancelado.getId());
@@ -81,7 +81,7 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
 
     @Override
     public Pedido registrarVenta(Long pedidoId, MetodoPago metodo) {
-        Pedido pedido = obtener(pedidoId);
+        Pedido pedido = buscar(pedidoId);
         pedido.registrarVenta(LocalDateTime.now(reloj), metodo);
         Pedido vendido = pedidos.guardar(pedido);
         // RF-06 · Descuento automático según las recetas, en la misma transacción (RES-35)
@@ -93,6 +93,11 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
     @Override
     @Transactional(readOnly = true)
     public Pedido obtener(Long pedidoId) {
+        return buscar(pedidoId);
+    }
+
+    /** Uso interno: llamar a {@link #obtener} desde la misma clase saltaría su configuración transaccional. */
+    private Pedido buscar(Long pedidoId) {
         return pedidos.buscarPorId(pedidoId).orElseThrow(() -> new RecursoNoEncontradoException("Pedido", pedidoId));
     }
 
@@ -104,7 +109,7 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
 
     @Override
     public Pedido agregarAdicion(Long pedidoId, List<LineaPedido> lineas) {
-        Pedido pedido = obtener(pedidoId);
+        Pedido pedido = buscar(pedidoId);
         if (lineas == null || lineas.isEmpty()) {
             throw new DomainException("Agregue al menos un producto a la adición");
         }
@@ -120,7 +125,7 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
 
     @Override
     public Pedido cambiarMesa(Long pedidoId, int nuevaMesa) {
-        Pedido pedido = obtener(pedidoId);
+        Pedido pedido = buscar(pedidoId);
         int anterior = pedido.getNumeroMesa();
         validarMesaLibre(nuevaMesa, pedidoId);
         pedido.cambiarMesa(nuevaMesa);

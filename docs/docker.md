@@ -96,7 +96,7 @@ No se pueden tener las dos formas abiertas al tiempo: las dos usan los puertos 8
 | Aprovechar la caché de capas | Se copia primero `pom.xml` / `package.json` y se descargan las dependencias antes de copiar el código |
 | Archivo `.dockerignore` | Uno por imagen: excluye `target/`, `node_modules/`, `.git`, `.env` y `application-local.yml` |
 | Ejecutar como usuario sin privilegios | Backend con el usuario `restoflow` (`USER restoflow`); frontend con Nginx *unprivileged* (puerto 8080) |
-| Etiquetas versionadas, nunca `latest` | `restoflow-backend:0.3.0`, `restoflow-frontend:0.3.0`, SQL Server `2022-CU23-ubuntu-22.04` |
+| Etiquetas versionadas, nunca `latest` | `restoflow-backend:1.1.1`, `restoflow-frontend:1.1.1` (la versión sale de `RESTOFLOW_VERSION` y también queda en la etiqueta `org.opencontainers.image.version`), SQL Server `2022-CU23-ubuntu-22.04` |
 | `HEALTHCHECK` | Backend (`/actuator/health/readiness`, Actuator), frontend (Nginx) y SQL Server (`sqlcmd`); Compose espera a que cada servicio esté sano antes de iniciar el siguiente |
 | Sin credenciales en las imágenes ni en el código | Todas las contraseñas llegan desde `.env`, que está en `.gitignore`; Compose se niega a arrancar si falta una (`${VAR:?}`) |
 | Persistencia de datos | Volumen `sqlserver_datos`: los datos sobreviven al reiniciar o recrear los contenedores |

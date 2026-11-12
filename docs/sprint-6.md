@@ -739,3 +739,67 @@ La primera revisión encontró **dos requerimientos que se cumplían solo en par
 
 **Pruebas:** 4 nuevas en el backend (`ConsultarStockCocinaServiceTest` y la estadística de tiempos en
 `AvisosDominioTest`) y 5 en el frontend (Cocina, Reportes y la URL del servicio).
+
+### 6.13 Problemas nuevos de SonarQube corregidos y versión 1.1.1 (RES-61)
+
+El análisis de SonarQube de la versión 1.1.0 **no pasó la puerta de calidad** del backend. La regla de la puerta
+pide **0 problemas nuevos**, y desde la versión 0.3.0 se habían acumulado 50: 14 de confiabilidad y 36 de
+mantenibilidad. Ninguno era una vulnerabilidad, pero varios sí podían causar errores. Se corrigieron así:
+
+| Problema (regla) | Dónde | Corrección |
+|---|---|---|
+| Comparar `DayOfWeek` con `==` (S8696) | `AnalizadorVentas`, `HistorialDemoConfig`, una prueba | `.equals()` |
+| Restar fechas locales sin zona horaria (S8700) | `TiemposPreparacion`, `GeneradorAvisos` | Clase `Duraciones`: ubica las fechas en la zona del servidor (`TZ`) antes de restarlas |
+| Posible `NullPointerException` (S2259) | `TiemposPreparacion.minutosNormales`, `GeminiAdapter`, `HistorialDemoConfig` | Un pedido sin platos usa el tiempo por defecto; sin modelos de Gemini se responde "no disponible"; mesas ocupadas vacías si la consulta no devuelve nada |
+| `Optional` comparado con `null` (S2789) | `HistorialDemoConfig` | Se lee el usuario con `orElse(null)` |
+| `volatile` en un objeto (S3077) | `AsistenteIAService` | `AtomicReference` |
+| Mezcla de `Integer` y `Long` en un ternario (S2154) | `DescontarInventarioService` | Se convierte a texto cada rama |
+| Método transaccional llamado con `this` (S6809) | `GestionarPedidosService` | Método privado `buscar` para el uso interno |
+| Complejidad cognitiva 27 (S3776), ternario anidado, regex en un ciclo | `InstruccionesIA` | El contexto para la IA se arma en 4 métodos; la viñeta es un `Pattern` constante |
+| Registro (log) que calcula datos aunque el nivel esté apagado (S2629) | `Auditoria` | `if (log.isInfoEnabled())` |
+| `Thread.sleep` en pruebas (S2925) | 2 pruebas | Awaitility en la prueba de integración; espera con tiempo límite en la de la caché |
+| Lambdas de `assertThrows` con varias llamadas (S5778) | 15 pruebas | Los datos se preparan antes del `assertThrows` |
+| Literales repetidos, import sin usar, `equals` faltante en un `Clock` | Varios | Constante `MESA`, import borrado, `equals`/`hashCode` en `RelojAjustable` |
+| Comentarios con la palabra "todo" (S1135) | 3 comentarios | SonarQube los tomaba como tareas pendientes (*TODO*); se reescribieron |
+
+**Dos casos se dejaron con una justificación (`// NOSONAR`):**
+- `RegistroPeticionJpaRepository` recibe 8 y 9 parámetros (S107). Spring Data necesita un parámetro por cada
+  filtro de la consulta, y agruparlos obligaría a usar expresiones SpEL dentro del JPQL.
+- `MesaOcupadaException` tiene 6 niveles de herencia (S110). SonarQube cuenta también `Throwable`, `Exception` y
+  `RuntimeException`. Heredar de `OperacionNoPermitidaException` es lo que hace que el API responda 409.
+
+**Versión 1.1.1:** son correcciones que no cambian ninguna función. Por versionado semántico se sube el último número.
+
+**Segunda pasada:** al subir la versión, SonarQube empezó a medir el código nuevo desde la 1.1.0. Quedaba 1 problema
+(un ternario dentro de `String.valueOf`, regla S9358) y la cobertura del código nuevo era 65,6 %, por debajo del 80 %
+que pide la puerta. Se resolvió así:
+- **Menos ramas sin probar:** en `Auditoria` el texto del log se limpia en una variable antes de registrarlo, en vez
+  de preguntar por el nivel del log. En `TiemposPreparacion` y `GeminiAdapter`, los casos que no pueden ocurrir (un
+  pedido sin platos, un adaptador sin modelos) se dejan explícitos con `Objects.requireNonNull`.
+- **Pruebas nuevas:** `RelojAjustableTest`, `HistorialDemoIntegracionTest` (las 3 semanas de ventas de ejemplo de
+  RestoFlow AI), consultar un pedido por id, el resumen sin avisos urgentes y el máximo de recomendaciones de la IA.
+- **Error encontrado con la prueba nueva:** en una base vacía, el historial de ejemplo no se generaba en el primer
+  arranque. Corría antes de que existiera el administrador inicial y no tenía quién registrara los pedidos; solo
+  funcionaba al reiniciar. Ahora `AdministradorInicialConfig` corre primero (`@Order(0)`).
+
+**Pruebas:** 321 en el backend, todas pasan. La cobertura del código nuevo, medida con JaCoCo, es de 93 %.
+
+**Tercera pasada · cobertura total del backend:** la puerta ya pasaba en cobertura (94,9 % del código nuevo), pero
+quedaban partes del backend sin ninguna prueba: el envío de correo por Gmail, el flujo completo de recuperar la
+contraseña por el API, las dos tareas programadas y el escritor asíncrono del registro de actividad. Se agregaron
+45 pruebas:
+
+| Prueba nueva | Qué cubre |
+|---|---|
+| `RecuperacionContrasenaIntegracionTest` | HU-02 por el API: pedir el código, usarlo una sola vez e iniciar sesión con la contraseña nueva |
+| `ApiCompletaIntegracionTest` | Editar productos e insumos, ajustar un conteo, atender la alerta que crea, consultar y modificar un pedido |
+| `CorreoAdaptersTest` | El correo de Gmail (destinatario, asunto, código y nombre escapado contra HTML) y el error cuando no sale |
+| `TareasProgramadasTest` | Las tareas de RestoFlow AI y de limpieza siguen corriendo aunque una ejecución falle |
+| `EscritorRegistroAsincronoTest` | Registro deshabilitado, fallo de la base de datos y cola llena (descarta en vez de frenar el API) |
+| `GlobalExceptionHandlerTest` | Respuestas 404, 405, 409 y 500 con el formato de error del API |
+| `ValidacionesDominioTest` | Las validaciones de usuarios, insumos, recetas, movimientos, productos, pedidos y registros |
+| `ReglasRestoFlowAITest` | Casos límite de las recomendaciones, los avisos y los datos que se envían a Gemini |
+| `CasosLimiteSeguridadTest` | Clave de tokens corta, tokens ilegibles y configuración de Gemini sin mostrar la clave |
+
+**Resultado (JaCoCo):** 366 pruebas, todas pasan. Cobertura de líneas 98,2 %, de ramas 90,6 % y total 96,2 %
+(antes: 93,6 %, 82,4 % y 90,6 %).

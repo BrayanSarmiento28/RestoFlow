@@ -9,7 +9,6 @@ import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Pedido;
 import com.udec.restoflow.domain.model.Rol;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
@@ -43,6 +42,7 @@ public final class GeneradorAvisos {
     static final int SIN_COBRAR_ATENCION_MIN = 30;
     static final int SIN_COBRAR_URGENTE_MIN = 60;
     static final int DEMANDA_ALTA_PORCENTAJE = 20;
+    private static final String MESA = "Mesa ";
     private static final int PRODUCTOS_DEMANDA = 3;
     private static final Locale COLOMBIA = Locale.forLanguageTag("es-CO");
 
@@ -104,7 +104,7 @@ public final class GeneradorAvisos {
         // Urgente: también le llega al mesero de la mesa, para que le avise al cliente
         Set<Rol> para = urgente ? Set.of(Rol.COCINA, Rol.MESERO) : Set.of(Rol.COCINA);
         return new Aviso("demora-" + p.getId(), Tipo.PLATO_DEMORADO, urgente ? Nivel.URGENTE : Nivel.ATENCION,
-                "Mesa " + p.getNumeroMesa() + " · pedido demorado",
+                MESA + p.getNumeroMesa() + " · pedido demorado",
                 (p.tieneAdicion() ? "La adición lleva " : "Lleva ") + lleva + " min y " + base + ". " + estado,
                 "/cocina", p.getInicioEspera(), para,
                 p.getMeseroId());
@@ -122,7 +122,7 @@ public final class GeneradorAvisos {
         }
         return new Aviso("listo-" + p.getId(), Tipo.PEDIDO_LISTO,
                 espera >= LISTO_URGENTE_MIN ? Nivel.URGENTE : Nivel.ATENCION,
-                "Mesa " + p.getNumeroMesa() + " · pedido listo para llevar",
+                MESA + p.getNumeroMesa() + " · pedido listo para llevar",
                 "Está listo hace " + espera + " min. Llévelo a la mesa antes de que se enfríe.", "/pedidos",
                 p.getFechaListo(), Set.of(Rol.MESERO), p.getMeseroId());
     }
@@ -137,7 +137,7 @@ public final class GeneradorAvisos {
         }
         return new Aviso("cobro-" + p.getId(), Tipo.SIN_COBRAR,
                 espera >= SIN_COBRAR_URGENTE_MIN ? Nivel.URGENTE : Nivel.ATENCION,
-                "Mesa " + p.getNumeroMesa() + " · pedido sin cobrar",
+                MESA + p.getNumeroMesa() + " · pedido sin cobrar",
                 "Se entregó hace " + espera + " min y aún no se ha cobrado ("
                         + GeneradorRecomendaciones.pesos(p.getTotal()) + "). Pase la cuenta a la mesa.",
                 "/pedidos", p.getFechaEntrega(), Set.of(Rol.MESERO), p.getMeseroId());
@@ -191,6 +191,6 @@ public final class GeneradorAvisos {
     }
 
     private static long minutos(LocalDateTime desde, LocalDateTime hasta) {
-        return desde == null ? 0 : Math.max(0, Duration.between(desde, hasta).toMinutes());
+        return desde == null ? 0 : Math.max(0, Duraciones.minutosEntre(desde, hasta));
     }
 }
