@@ -126,6 +126,8 @@ describe('Servicios del API', () => {
     expect(ultima(cocina.http).url).toBe(`${API}/cocina/comandas`);
     cocina.servicio.cambiarEstado(4, 'LISTO').subscribe();
     expect(ultima(cocina.http)).toMatchObject({ url: `${API}/cocina/pedidos/4/estado`, cuerpo: { estado: 'LISTO' } });
+    cocina.servicio.stockBajo([1, 3]).subscribe();
+    expect(ultima(cocina.http)).toMatchObject({ url: `${API}/cocina/stock`, params: 'productos=1,3' });
 
     const usuarios = crearServicio(UsuarioService);
     usuarios.servicio.listar().subscribe();

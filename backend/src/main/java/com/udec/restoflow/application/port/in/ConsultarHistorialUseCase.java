@@ -1,5 +1,6 @@
 package com.udec.restoflow.application.port.in;
 
+import com.udec.restoflow.domain.ia.TiemposPreparacion.TiempoPlato;
 import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Pedido;
 
@@ -13,11 +14,14 @@ public interface ConsultarHistorialUseCase {
     /** Pedidos creados entre las dos fechas (incluidas), del más reciente al más antiguo. */
     List<Pedido> pedidos(LocalDate desde, LocalDate hasta, EstadoPedido estado);
 
-    /** Ventas (pedidos pagados) cerradas entre las dos fechas, con el total por día. */
+    /**
+     * Ventas (pedidos pagados) cerradas entre las dos fechas, con el total por día y (RF-09) el tiempo de
+     * preparación de cada plato vendido en el periodo.
+     */
     ResumenVentas ventas(LocalDate desde, LocalDate hasta);
 
     record ResumenVentas(LocalDate desde, LocalDate hasta, BigDecimal total, int cantidad, BigDecimal ticketPromedio,
-                         List<VentaPorDia> porDia, List<Pedido> ventas) { }
+                         List<VentaPorDia> porDia, List<Pedido> ventas, List<TiempoPlato> tiemposPreparacion) { }
 
     record VentaPorDia(LocalDate dia, BigDecimal total, int cantidad) { }
 }

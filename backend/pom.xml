@@ -14,7 +14,7 @@
 
     <groupId>com.udec</groupId>
     <artifactId>restoflow-backend</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <name>RestoFlow Backend</name>
     <description>API REST de RestoFlow - Spring Boot 3 con arquitectura hexagonal</description>
 

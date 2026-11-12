@@ -3,6 +3,7 @@ package com.udec.restoflow.application.service;
 import com.udec.restoflow.application.port.in.ConsultarHistorialUseCase;
 import com.udec.restoflow.application.port.out.PedidoRepositoryPort;
 import com.udec.restoflow.domain.exception.DomainException;
+import com.udec.restoflow.domain.ia.TiemposPreparacion;
 import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Pedido;
 import com.udec.restoflow.domain.model.Ventas;
@@ -46,7 +47,7 @@ public class ConsultarHistorialService implements ConsultarHistorialUseCase {
                 .toList();
         BigDecimal total = Ventas.total(ventas);
         return new ResumenVentas(desde, hasta, total, ventas.size(),
-                Ventas.ticketPromedio(total, ventas.size()), porDia, ventas);
+                Ventas.ticketPromedio(total, ventas.size()), porDia, ventas, TiemposPreparacion.porPlato(ventas));
     }
 
     private static void validar(LocalDate desde, LocalDate hasta) {

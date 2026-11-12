@@ -712,3 +712,30 @@ Docker (`RESTOFLOW_VERSION`), `.env.example` y `docs/doce-factores.md`.
 **Correo en producción:** `prod` usa Gmail para la recuperación de contraseña, así que el `.env` del servidor
 necesita `MAIL_USERNAME` y `MAIL_PASSWORD`. Se copian a mano, como la clave de Gemini, y nunca se suben al
 repositorio. Los pasos están en `docs/despliegue-aws.md` §8.
+
+### 6.12 Validación de requerimientos y versión 1.1.0 (RES-46)
+
+Se revisaron uno por uno los 12 requerimientos funcionales y los 7 no funcionales del documento *Identificación y
+Clasificación de los Requerimientos*. El resultado, con la evidencia de cada uno, está en
+[`docs/validacion-requisitos.md`](validacion-requisitos.md).
+
+La primera revisión encontró **dos requerimientos que se cumplían solo en parte**, y se completaron:
+
+| Requerimiento | Faltaba | Cambio |
+|---|---|---|
+| RF-09 Estadísticas | Un reporte de tiempos de preparación. El sistema los calculaba para los avisos, pero no los mostraba | `TiemposPreparacion.porPlato` y una tabla en Reportes con los pedidos medidos, el tiempo normal (mediana) y el promedio de cada plato |
+| Usabilidad | Que la comanda mostrara el stock | `ConsultarStockCocinaService` y `GET /api/cocina/stock`. Bajo cada plato se avisan los insumos en su mínimo o agotados |
+
+**Decisiones:**
+- **Solo se avisa lo que necesita atención:** la comanda no muestra el stock de los insumos que alcanzan, para no
+  llenarla de datos que la cocina no necesita.
+- **Pocas peticiones:** la pantalla de Cocina se actualiza cada pocos segundos, pero el stock solo se vuelve a
+  pedir si cambian los platos o cada 30 segundos. La prueba de carga mostró que la pantalla de cocina ya es una de
+  las más consultadas.
+- **Un caso de uso nuevo:** el stock se resolvió con `ConsultarStockCocinaUseCase` y no agregando dependencias a
+  `GestionarCocinaService`. Así la cocina no queda acoplada al inventario, y las pruebas existentes no cambian.
+- **Versión 1.1.0:** estos cambios llegan después de la etiqueta `v1.0.0`. Por versionado semántico la nueva versión
+  es **1.1.0**, porque agrega funciones sin cambiar las que ya existían.
+
+**Pruebas:** 4 nuevas en el backend (`ConsultarStockCocinaServiceTest` y la estadística de tiempos en
+`AvisosDominioTest`) y 5 en el frontend (Cocina, Reportes y la URL del servicio).
