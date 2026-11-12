@@ -5,6 +5,7 @@ import com.udec.restoflow.application.port.in.ConsultarAvisosUseCase;
 import com.udec.restoflow.application.port.in.ConsultarHistorialUseCase;
 import com.udec.restoflow.application.port.in.ConsultarPanelUseCase;
 import com.udec.restoflow.application.port.in.ConsultarRestoFlowAIUseCase;
+import com.udec.restoflow.application.port.in.ConsultarStockCocinaUseCase;
 import com.udec.restoflow.application.port.in.DescontarInventarioUseCase;
 import com.udec.restoflow.application.port.in.GestionarAlertasUseCase;
 import com.udec.restoflow.application.port.in.GestionarCatalogoUseCase;
@@ -40,6 +41,7 @@ import com.udec.restoflow.application.service.ControlAlertas;
 import com.udec.restoflow.application.service.DescontarInventarioService;
 import com.udec.restoflow.application.service.GestionarAlertasService;
 import com.udec.restoflow.application.service.GestionarCatalogoService;
+import com.udec.restoflow.application.service.ConsultarStockCocinaService;
 import com.udec.restoflow.application.service.GestionarCocinaService;
 import com.udec.restoflow.application.service.GestionarCuentasService;
 import com.udec.restoflow.application.service.GestionarInventarioService;
@@ -115,6 +117,13 @@ public class BeanConfig {
     @Bean
     public GestionarCocinaUseCase gestionarCocinaUseCase(PedidoRepositoryPort pedidos, Clock reloj) {
         return new GestionarCocinaService(pedidos, reloj);
+    }
+
+    /** Usabilidad · insumos en su mínimo de los platos que hay en las comandas. */
+    @Bean
+    public ConsultarStockCocinaUseCase consultarStockCocinaUseCase(RecetaRepositoryPort recetas,
+                                                                   IngredienteRepositoryPort ingredientes) {
+        return new ConsultarStockCocinaService(recetas, ingredientes);
     }
 
     // ---------- Inventario, panel e historial (Sprint 4: RF-05 a RF-08 y RF-12) ----------

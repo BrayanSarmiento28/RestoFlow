@@ -28,7 +28,7 @@ Para cada factor, este documento explica:
 | II | Dependencias | `pom.xml`, `package.json` + `package-lock.json`, imágenes con versión fija, Maven Wrapper | `npm ci` en CI y Docker |
 | III | Configuración | **`RestoFlowProperties.java`**: configuración tipada y **validada al arrancar** | `RestoFlowPropertiesTest` |
 | IV | Servicios de respaldo | Puertos y adaptadores: SQL Server, Gmail, **Open Food Facts**, **Google Gemini (IA)** | `OpenFoodFactsAdapterTest`, `CatalogoExternoIntegracionTest`, `GeminiAdapterTest`, `AsistenteIAIntegracionTest` |
-| V | Construir, publicar, ejecutar | CI/CD, Dockerfiles multi-etapa, versión 1.0.0 + `build-info` | `mvn verify` en CI |
+| V | Construir, publicar, ejecutar | CI/CD, Dockerfiles multi-etapa, versión 1.1.0 + `build-info` | `mvn verify` en CI |
 | VI | Procesos sin estado | JWT (`SessionCreationPolicy.STATELESS`) | `SeguridadAdaptadoresTest`, `sesion.test.ts` |
 | VII | Asignación de puertos | `server.port: ${PORT:8080}`, Tomcat embebido | — |
 | VIII | Concurrencia | **`docker-compose.escalado.yml`**: varias copias del backend | `/api/salud` muestra la `instancia` |
@@ -215,7 +215,7 @@ separados. En producción nunca se compila.
    - La primera etapa (`AS build`) de cada Dockerfile compila. La imagen final solo lleva el `.jar` o los archivos de
      `dist`: no lleva Maven, Node ni el código fuente.
 2. **Publicar**
-   - Versión **1.0.0** en `pom.xml`, en las imágenes (`restoflow-backend:${RESTOFLOW_VERSION}`) y en `.env.example`.
+   - Versión **1.1.0** en `pom.xml`, en las imágenes (`restoflow-backend:${RESTOFLOW_VERSION}`) y en `.env.example`.
    - El objetivo `build-info` guarda en el `.jar` la versión y la fecha de compilación. Se ven en `/actuator/info`.
    - GitHub guarda los artefactos de cada ejecución: el `.jar`, el `dist` de Angular y los **informes de cobertura**.
 3. **Ejecutar:** `docker compose up -d` arranca las imágenes con la configuración de `.env`.
@@ -381,7 +381,7 @@ analiza.
    ```json
    {"@timestamp":"2026-10-22T00:41:46.818Z","log":{"level":"WARN","logger":"restoflow.peticiones"},
     "message":"GET /api/pedidos → 401 en 40 ms · usuario=anónimo","requestId":"a1b2c3d4",
-    "service":{"name":"restoflow-backend","version":"1.0.0"}}
+    "service":{"name":"restoflow-backend","version":"1.1.0"}}
    ```
 
 3. **Archivos de respaldo** con rotación, en `LOG_DIR` (en Docker, el volumen `backend_logs`):

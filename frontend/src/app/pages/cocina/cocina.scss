@@ -109,6 +109,9 @@
     strong { margin-right: 6px; font-family: var(--rf-fuente-mono); color: var(--rf-ambar); }
     em { display: block; font-size: 14px; font-style: normal; color: #A9A497; }
     .adicion { margin-left: 6px; vertical-align: 2px; }
+    /* Usabilidad · insumo del plato en su mínimo (ámbar) o agotado (brasa), con los colores que ya usa la cocina */
+    .stock { display: block; margin-top: 2px; font-size: 14px; color: var(--rf-ambar); }
+    .stock--agotado { color: var(--rf-brasa); font-weight: 600; }
   }
   &__obs { margin: 0 0 14px; font-size: 14px; color: var(--rf-ambar); }
 
