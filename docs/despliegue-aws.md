@@ -166,7 +166,7 @@ conectada por SSH, `docker stats` muestra cuánta CPU y memoria usa cada contene
 
 ## 8. Pasar a producción (RES-58)
 
-Cuando `preprod` esté validado y unido a `main`, y `main` tenga la etiqueta `v1.0.0`:
+Cuando `preprod` esté validado y unido a `main`, y `main` tenga la etiqueta de la versión (por ejemplo `v1.1.0`):
 
 ```bash
 cd ~/RestoFlow
@@ -180,7 +180,7 @@ Luego se cambian cuatro valores del `.env` del servidor:
 ```bash
 sed -i \
   -e "s|^SPRING_PROFILES_ACTIVE=.*|SPRING_PROFILES_ACTIVE=prod|" \
-  -e "s|^RESTOFLOW_VERSION=.*|RESTOFLOW_VERSION=1.0.0|" \
+  -e "s|^RESTOFLOW_VERSION=.*|RESTOFLOW_VERSION=1.1.0|" \
   .env
 grep -q "^SWAGGER_HABILITADO=" .env || echo "SWAGGER_HABILITADO=true" >> .env
 ```
@@ -188,7 +188,7 @@ grep -q "^SWAGGER_HABILITADO=" .env || echo "SWAGGER_HABILITADO=true" >> .env
 | Variable | Valor | Por qué |
 |---|---|---|
 | `SPRING_PROFILES_ACTIVE` | `prod` | Sin menú de ejemplo, tablas solo por scripts SQL, registros de librerías solo desde `WARN` y correo real |
-| `RESTOFLOW_VERSION` | `1.0.0` | Las imágenes quedan con la versión de la entrega: `restoflow-backend:1.0.0` |
+| `RESTOFLOW_VERSION` | `1.1.0` | Las imágenes quedan con la versión de la entrega: `restoflow-backend:1.1.0` |
 | `SWAGGER_HABILITADO` | `true` | Para mostrar el API en la sustentación. En un restaurante real se deja en `false` |
 | `MAIL_USERNAME` y `MAIL_PASSWORD` | la cuenta de Gmail y su contraseña de aplicación | En `prod` la recuperación de contraseña envía el código por correo real |
 

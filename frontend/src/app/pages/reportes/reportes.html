@@ -59,6 +59,29 @@
           }
         </section>
 
+        <section class="rf-tarjeta" aria-labelledby="t-tiempos">
+          <div class="rf-tarjeta__titulo"><h2 id="t-tiempos">Tiempos de preparación</h2></div>
+          <p class="rf-ayuda">Desde que se registra el pedido hasta que la cocina lo marca Listo. El tiempo normal es la
+            mediana: no se dispara si un día un pedido se quedó olvidado.</p>
+          <div class="rf-tabla-caja">
+            <table class="rf-tabla">
+              <thead><tr><th scope="col">Plato</th><th scope="col" class="rf-num">Pedidos medidos</th><th scope="col" class="rf-num">Tiempo normal</th><th scope="col" class="rf-num">Promedio</th></tr></thead>
+              <tbody>
+                @for (t of v.tiemposPreparacion; track t.productoId) {
+                  <tr>
+                    <td>{{ t.nombre }}</td>
+                    <td class="rf-num">{{ t.pedidos }}</td>
+                    <td class="rf-num">{{ t.medianaMinutos }} min</td>
+                    <td class="rf-num">{{ t.promedioMinutos }} min</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="4" class="vacio">Sin pedidos medidos en este periodo</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section class="rf-tarjeta" aria-labelledby="t-ventas">
           <div class="rf-tarjeta__titulo"><h2 id="t-ventas">Detalle de ventas</h2></div>
           <div class="rf-tabla-caja">

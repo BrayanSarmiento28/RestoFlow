@@ -81,6 +81,35 @@ class AvisosDominioTest {
     }
 
     @Test
+    @DisplayName("RF-09 · Estadística por plato: pedidos medidos, tiempo normal (mediana) y promedio, del más lento al más rápido")
+    void estadisticaDeTiempos() {
+        List<Pedido> lista = new ArrayList<>();
+        int[] minutos = {20, 22, 25, 120};
+        for (int i = 0; i < minutos.length; i++) {
+            LocalDateTime creado = AHORA.minusDays(1 + i);
+            lista.add(new Pedido(100L + i, 1, LAURA, "Laura", List.of(bandeja()), null, EstadoCocina.ENTREGADO,
+                    EstadoPedido.PAGADO, creado, creado, creado.plusMinutes(minutos[i]), creado.plusMinutes(130),
+                    creado.plusMinutes(140)));
+        }
+        LocalDateTime creado = AHORA.minusDays(1);
+        lista.add(new Pedido(200L, 2, LAURA, "Laura", List.of(jugo()), null, EstadoCocina.ENTREGADO,
+                EstadoPedido.PAGADO, creado, creado, creado.plusMinutes(8), creado.plusMinutes(10),
+                creado.plusMinutes(30)));
+
+        List<TiemposPreparacion.TiempoPlato> tiempos = TiemposPreparacion.porPlato(lista);
+
+        assertEquals(2, tiempos.size());
+        TiemposPreparacion.TiempoPlato bandeja = tiempos.get(0);            // el más lento primero
+        assertEquals("Bandeja paisa", bandeja.nombre());
+        assertEquals(4, bandeja.pedidos());
+        assertEquals(24, bandeja.medianaMinutos());                        // (22 + 25) / 2
+        assertEquals(47, bandeja.promedioMinutos());                       // 187 / 4: el olvidado sube el promedio
+        assertEquals("Jugo natural", tiempos.get(1).nombre());
+        assertEquals(1, tiempos.get(1).pedidos());                         // el reporte incluye platos con pocas muestras
+        assertEquals(8, tiempos.get(1).medianaMinutos());
+    }
+
+    @Test
     @DisplayName("Cocina: el pedido se marca demorado al pasar su tiempo normal y urgente al pasar 1,5 veces")
     void platoDemorado() {
         TiemposPreparacion t = historial();
