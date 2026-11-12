@@ -166,7 +166,7 @@ conectada por SSH, `docker stats` muestra cuánta CPU y memoria usa cada contene
 
 ## 8. Pasar a producción (RES-58)
 
-Cuando `preprod` esté validado y unido a `main`, y `main` tenga la etiqueta de la versión (por ejemplo `v1.1.0`):
+Cuando `preprod` esté validado y unido a `main`, y `main` tenga la etiqueta de la versión (por ejemplo `v1.1.1`):
 
 ```bash
 cd ~/RestoFlow
@@ -180,7 +180,7 @@ Luego se cambian cuatro valores del `.env` del servidor:
 ```bash
 sed -i \
   -e "s|^SPRING_PROFILES_ACTIVE=.*|SPRING_PROFILES_ACTIVE=prod|" \
-  -e "s|^RESTOFLOW_VERSION=.*|RESTOFLOW_VERSION=1.1.0|" \
+  -e "s|^RESTOFLOW_VERSION=.*|RESTOFLOW_VERSION=1.1.1|" \
   .env
 grep -q "^SWAGGER_HABILITADO=" .env || echo "SWAGGER_HABILITADO=true" >> .env
 ```

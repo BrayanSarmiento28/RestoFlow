@@ -79,7 +79,8 @@ class GestionarCuentasServiceTest {
     void noSeDesactivaASiMismo() {
         Usuario admin = servicio.crearCuenta(new ComandoCrearCuenta("Ana Admin", "ana@resto.com", "Admin2026", Rol.ADMIN));
 
-        assertThrows(OperacionNoPermitidaException.class, () -> servicio.cambiarEstado(admin.getId(), false, admin.getId()));
+        Long adminId = admin.getId();
+        assertThrows(OperacionNoPermitidaException.class, () -> servicio.cambiarEstado(adminId, false, adminId));
         assertTrue(usuarios.buscarPorId(admin.getId()).orElseThrow().isActivo());
     }
 

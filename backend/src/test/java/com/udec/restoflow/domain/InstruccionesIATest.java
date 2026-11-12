@@ -101,7 +101,8 @@ class InstruccionesIATest {
         assertTrue(InstruccionesIA.sistemaPregunta().contains("no lo inventes"));
         assertEquals("¿Qué compro?", InstruccionesIA.validarPregunta("  ¿Qué compro?  "));
         assertThrows(DomainException.class, () -> InstruccionesIA.validarPregunta(" "));
-        assertThrows(DomainException.class, () -> InstruccionesIA.validarPregunta("x".repeat(501)));
+        String muyLarga = "x".repeat(501);
+        assertThrows(DomainException.class, () -> InstruccionesIA.validarPregunta(muyLarga));
     }
 
     @Test

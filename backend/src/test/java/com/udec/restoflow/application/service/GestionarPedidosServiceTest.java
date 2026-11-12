@@ -106,8 +106,9 @@ class GestionarPedidosServiceTest {
     void mesaOcupada() {
         Pedido primero = servicio.registrar(pedidoMesa(5), meseroId);
 
+        ComandoPedido otroEnLa5 = pedidoMesa(5);
         MesaOcupadaException e = assertThrows(MesaOcupadaException.class,
-                () -> servicio.registrar(pedidoMesa(5), meseroId));
+                () -> servicio.registrar(otroEnLa5, meseroId));
         assertEquals(5, e.getNumeroMesa());
         assertEquals(primero.getId(), e.getPedidoId());
         assertEquals("La mesa 5 está ocupada (la atiende Laura Gómez). Se libera cuando su pedido se cobre o se "
@@ -128,7 +129,8 @@ class GestionarPedidosServiceTest {
         cocina.cambiarEstado(cobrado.getId(), EstadoCocina.EN_PREPARACION);
         cocina.cambiarEstado(cobrado.getId(), EstadoCocina.LISTO);
         cocina.cambiarEstado(cobrado.getId(), EstadoCocina.ENTREGADO);
-        assertThrows(MesaOcupadaException.class, () -> servicio.registrar(pedidoMesa(5), meseroId));  // aún sin cobrar
+        ComandoPedido nuevoEnLa5 = pedidoMesa(5);
+        assertThrows(MesaOcupadaException.class, () -> servicio.registrar(nuevoEnLa5, meseroId));  // aún sin cobrar
         servicio.registrarVenta(cobrado.getId(), MetodoPago.EFECTIVO);
 
         assertEquals(5, servicio.registrar(pedidoMesa(5), meseroId).getNumeroMesa());
@@ -152,11 +154,13 @@ class GestionarPedidosServiceTest {
         Pedido enLa5 = servicio.registrar(pedidoMesa(5), meseroId);
         Pedido enLa8 = servicio.registrar(pedidoMesa(8), meseroId);
 
-        assertThrows(MesaOcupadaException.class, () -> servicio.cambiarMesa(enLa5.getId(), 8));
-        assertThrows(DomainException.class, () -> servicio.cambiarMesa(enLa5.getId(), 5));
-        assertThrows(DomainException.class, () -> servicio.cambiarMesa(enLa5.getId(), 0));
+        Long idEnLa5 = enLa5.getId();
+        assertThrows(MesaOcupadaException.class, () -> servicio.cambiarMesa(idEnLa5, 8));
+        assertThrows(DomainException.class, () -> servicio.cambiarMesa(idEnLa5, 5));
+        assertThrows(DomainException.class, () -> servicio.cambiarMesa(idEnLa5, 0));
         servicio.cancelar(enLa8.getId());
-        assertThrows(OperacionNoPermitidaException.class, () -> servicio.cambiarMesa(enLa8.getId(), 9));
+        Long idEnLa8 = enLa8.getId();
+        assertThrows(OperacionNoPermitidaException.class, () -> servicio.cambiarMesa(idEnLa8, 9));
     }
 
     @Test
@@ -228,7 +232,8 @@ class GestionarPedidosServiceTest {
     void adicion() {
         Pedido pedido = servicio.registrar(pedidoMesa(5), meseroId);
         List<LineaPedido> otraLimonada = List.of(new LineaPedido(limonadaId, 1, "Sin azúcar"));
-        assertThrows(OperacionNoPermitidaException.class, () -> servicio.agregarAdicion(pedido.getId(), otraLimonada));
+        Long id = pedido.getId();
+        assertThrows(OperacionNoPermitidaException.class, () -> servicio.agregarAdicion(id, otraLimonada));
 
         cocina.cambiarEstado(pedido.getId(), EstadoCocina.EN_PREPARACION);
         cocina.cambiarEstado(pedido.getId(), EstadoCocina.LISTO);
@@ -242,8 +247,9 @@ class GestionarPedidosServiceTest {
         assertEquals(EstadoCocina.EN_PREPARACION, conAdicion.getEstadoCocina());
         assertEquals(1, cocina.comandasPendientes().size());                         // la cocina la ve otra vez
 
-        assertThrows(DomainException.class, () -> servicio.agregarAdicion(pedido.getId(), List.of()));
+        List<LineaPedido> vacia = List.of();
+        assertThrows(DomainException.class, () -> servicio.agregarAdicion(id, vacia));
         List<LineaPedido> inexistente = List.of(new LineaPedido(999L, 1, null));
-        assertThrows(RecursoNoEncontradoException.class, () -> servicio.agregarAdicion(pedido.getId(), inexistente));
+        assertThrows(RecursoNoEncontradoException.class, () -> servicio.agregarAdicion(id, inexistente));
     }
 }

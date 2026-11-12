@@ -95,7 +95,7 @@ public final class AnalizadorVentas {
         List<VentaDia> resultado = new ArrayList<>();
         for (DayOfWeek dia : DayOfWeek.values()) {
             List<BigDecimal> totales = porDia.entrySet().stream()
-                    .filter(e -> e.getKey().getDayOfWeek() == dia)
+                    .filter(e -> e.getKey().getDayOfWeek().equals(dia))
                     .map(e -> Ventas.total(e.getValue()))
                     .toList();
             resultado.add(new VentaDia(dia, promedio(totales)));
@@ -149,7 +149,7 @@ public final class AnalizadorVentas {
      */
     private static Prediccion prediccion(Map<LocalDate, List<Pedido>> porDia, LocalDate hoy, LocalDate inicioSemana) {
         LocalDate manana = hoy.plusDays(1);
-        List<LocalDate> base = porDia.keySet().stream().filter(d -> d.getDayOfWeek() == manana.getDayOfWeek()).toList();
+        List<LocalDate> base = porDia.keySet().stream().filter(d -> d.getDayOfWeek().equals(manana.getDayOfWeek())).toList();
         if (base.isEmpty()) {
             base = porDia.keySet().stream().filter(d -> !d.isBefore(inicioSemana)).toList();
         }

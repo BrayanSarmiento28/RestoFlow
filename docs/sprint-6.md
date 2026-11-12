@@ -739,3 +739,35 @@ La primera revisión encontró **dos requerimientos que se cumplían solo en par
 
 **Pruebas:** 4 nuevas en el backend (`ConsultarStockCocinaServiceTest` y la estadística de tiempos en
 `AvisosDominioTest`) y 5 en el frontend (Cocina, Reportes y la URL del servicio).
+
+### 6.13 Problemas nuevos de SonarQube corregidos y versión 1.1.1 (RES-61)
+
+El análisis de SonarQube de la versión 1.1.0 **no pasó la puerta de calidad** del backend. La regla de la puerta
+pide **0 problemas nuevos**, y desde la versión 0.3.0 se habían acumulado 50: 14 de confiabilidad y 36 de
+mantenibilidad. Ninguno era una vulnerabilidad, pero varios sí podían causar errores. Se corrigieron así:
+
+| Problema (regla) | Dónde | Corrección |
+|---|---|---|
+| Comparar `DayOfWeek` con `==` (S8696) | `AnalizadorVentas`, `HistorialDemoConfig`, una prueba | `.equals()` |
+| Restar fechas locales sin zona horaria (S8700) | `TiemposPreparacion`, `GeneradorAvisos` | Clase `Duraciones`: ubica las fechas en la zona del servidor (`TZ`) antes de restarlas |
+| Posible `NullPointerException` (S2259) | `TiemposPreparacion.minutosNormales`, `GeminiAdapter`, `HistorialDemoConfig` | Un pedido sin platos usa el tiempo por defecto; sin modelos de Gemini se responde "no disponible"; mesas ocupadas vacías si la consulta no devuelve nada |
+| `Optional` comparado con `null` (S2789) | `HistorialDemoConfig` | Se lee el usuario con `orElse(null)` |
+| `volatile` en un objeto (S3077) | `AsistenteIAService` | `AtomicReference` |
+| Mezcla de `Integer` y `Long` en un ternario (S2154) | `DescontarInventarioService` | Se convierte a texto cada rama |
+| Método transaccional llamado con `this` (S6809) | `GestionarPedidosService` | Método privado `buscar` para el uso interno |
+| Complejidad cognitiva 27 (S3776), ternario anidado, regex en un ciclo | `InstruccionesIA` | El contexto para la IA se arma en 4 métodos; la viñeta es un `Pattern` constante |
+| Registro (log) que calcula datos aunque el nivel esté apagado (S2629) | `Auditoria` | `if (log.isInfoEnabled())` |
+| `Thread.sleep` en pruebas (S2925) | 2 pruebas | Awaitility en la prueba de integración; espera con tiempo límite en la de la caché |
+| Lambdas de `assertThrows` con varias llamadas (S5778) | 15 pruebas | Los datos se preparan antes del `assertThrows` |
+| Literales repetidos, import sin usar, `equals` faltante en un `Clock` | Varios | Constante `MESA`, import borrado, `equals`/`hashCode` en `RelojAjustable` |
+| Comentarios con la palabra "todo" (S1135) | 3 comentarios | SonarQube los tomaba como tareas pendientes (*TODO*); se reescribieron |
+
+**Dos casos se dejaron con una justificación (`// NOSONAR`):**
+- `RegistroPeticionJpaRepository` recibe 8 y 9 parámetros (S107). Spring Data necesita un parámetro por cada
+  filtro de la consulta, y agruparlos obligaría a usar expresiones SpEL dentro del JPQL.
+- `MesaOcupadaException` tiene 6 niveles de herencia (S110). SonarQube cuenta también `Throwable`, `Exception` y
+  `RuntimeException`. Heredar de `OperacionNoPermitidaException` es lo que hace que el API responda 409.
+
+**Versión 1.1.1:** son correcciones que no cambian ninguna función. Por versionado semántico se sube el último número.
+
+**Pruebas:** las 316 del backend siguen pasando.

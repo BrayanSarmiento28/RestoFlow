@@ -11,6 +11,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Duration;
+
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -44,17 +47,17 @@ class RegistroActividadIntegracionTest {
      * aparezca la petición con ese id. La consulta va sin caracteres especiales: MockMvc codifica la URL
      * (un "%3D" escrito a mano llegaría como "%253D").
      */
-    private JsonNode esperarRegistros(String admin, String consulta, String requestId) throws Exception {
-        for (int intento = 0; intento < 50; intento++) {
-            String cuerpo = mvc.perform(get("/api/registro?" + consulta).header("Authorization", "Bearer " + admin))
-                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-            JsonNode resultado = json.readTree(cuerpo);
-            if (fila(resultado, requestId) != null) {
-                return resultado;
-            }
-            Thread.sleep(100);
-        }
-        throw new AssertionError("La petición " + requestId + " no llegó al registro en 5 segundos");
+    private JsonNode esperarRegistros(String admin, String consulta, String requestId) {
+        return await("la petición " + requestId + " en el registro")
+                .atMost(Duration.ofSeconds(5))
+                .pollInterval(Duration.ofMillis(100))
+                .until(() -> consultarRegistro(admin, consulta), resultado -> fila(resultado, requestId) != null);
+    }
+
+    private JsonNode consultarRegistro(String admin, String consulta) throws Exception {
+        String cuerpo = mvc.perform(get("/api/registro?" + consulta).header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        return json.readTree(cuerpo);
     }
 
     /** La fila con ese id de petición (puede haber otras peticiones en la misma página), o null. */

@@ -34,7 +34,9 @@ final class Auditoria {
     }
 
     static void inicioSesionFallido(String email, String motivo) {
-        log.warn("evento=INICIO_SESION resultado=RECHAZADO usuario={} motivo={}", limpio(email), motivo);
+        if (log.isWarnEnabled()) {
+            log.warn("evento=INICIO_SESION resultado=RECHAZADO usuario={} motivo={}", limpio(email), motivo);
+        }
     }
 
     static void cuentaCreada(String email, String rol) {
@@ -42,13 +44,17 @@ final class Auditoria {
     }
 
     static void estadoCuentaCambiado(String email, boolean activa, Long administradorId) {
-        log.info("evento={} usuario={} por={}", activa ? "CUENTA_REACTIVADA" : "CUENTA_DESACTIVADA",
-                limpio(email), administradorId);
+        if (log.isInfoEnabled()) {
+            log.info("evento={} usuario={} por={}", activa ? "CUENTA_REACTIVADA" : "CUENTA_DESACTIVADA",
+                    limpio(email), administradorId);
+        }
     }
 
     static void recuperacionSolicitada(String email, boolean cuentaExiste) {
         // Se registra si la cuenta existía (útil para soporte) aunque al usuario siempre se le responda igual
-        log.info("evento=RECUPERACION_SOLICITADA usuario={} cuentaExiste={}", limpio(email), cuentaExiste);
+        if (log.isInfoEnabled()) {
+            log.info("evento=RECUPERACION_SOLICITADA usuario={} cuentaExiste={}", limpio(email), cuentaExiste);
+        }
     }
 
     static void contrasenaRestablecida(String email) {
@@ -56,15 +62,21 @@ final class Auditoria {
     }
 
     static void contrasenaCambiada(String email) {
-        log.info("evento=CONTRASENA_CAMBIADA usuario={}", limpio(email));
+        if (log.isInfoEnabled()) {
+            log.info("evento=CONTRASENA_CAMBIADA usuario={}", limpio(email));
+        }
     }
 
     static void cambioContrasenaRechazado(String email) {
-        log.warn("evento=CAMBIO_CONTRASENA_RECHAZADO usuario={} motivo=contrasena_actual_incorrecta", limpio(email));
+        if (log.isWarnEnabled()) {
+            log.warn("evento=CAMBIO_CONTRASENA_RECHAZADO usuario={} motivo=contrasena_actual_incorrecta", limpio(email));
+        }
     }
 
     static void codigoRecuperacionInvalido(String email) {
-        log.warn("evento=CODIGO_RECUPERACION resultado=RECHAZADO usuario={}", limpio(email));
+        if (log.isWarnEnabled()) {
+            log.warn("evento=CODIGO_RECUPERACION resultado=RECHAZADO usuario={}", limpio(email));
+        }
     }
 
     // ---------- Pedidos y ventas (RF-02) ----------

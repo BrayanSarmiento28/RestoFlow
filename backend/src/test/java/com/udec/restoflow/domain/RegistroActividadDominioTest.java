@@ -88,7 +88,8 @@ class RegistroActividadDominioTest {
     @Test
     @DisplayName("La fecha inicial debe ser anterior a la final")
     void rangoInvalido() {
-        assertThrows(DomainException.class, () -> new FiltroRegistro(AHORA, AHORA.minusDays(1), null, null, null, null));
+        LocalDateTime ayer = AHORA.minusDays(1);
+        assertThrows(DomainException.class, () -> new FiltroRegistro(AHORA, ayer, null, null, null, null));
     }
 
     @Test

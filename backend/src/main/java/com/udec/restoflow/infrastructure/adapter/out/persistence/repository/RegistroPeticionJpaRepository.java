@@ -24,7 +24,9 @@ public interface RegistroPeticionJpaRepository extends JpaRepository<RegistroPet
 
     @Query(value = "select r from RegistroPeticionEntity r " + CONDICIONES + " order by r.fecha desc, r.id desc",
             countQuery = "select count(r) from RegistroPeticionEntity r " + CONDICIONES)
-    Page<RegistroPeticionEntity> buscar(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
+    // Spring Data recibe cada filtro de la consulta como un parámetro propio: agruparlos en un objeto obligaría a
+    // usar expresiones SpEL dentro del JPQL, más difíciles de leer y de probar. Por eso se acepta pasar de 7.
+    Page<RegistroPeticionEntity> buscar(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,   // NOSONAR java:S107
                                         @Param("usuario") String usuario, @Param("metodo") String metodo,
                                         @Param("ruta") String ruta, @Param("estadoDesde") int estadoDesde,
                                         @Param("estadoHasta") int estadoHasta,
@@ -37,7 +39,8 @@ public interface RegistroPeticionJpaRepository extends JpaRepository<RegistroPet
             + "coalesce(sum(case when r.duracionMs > 1000 then 1 else 0 end), 0), "
             + "coalesce(avg(r.duracionMs), 0) "
             + "from RegistroPeticionEntity r " + CONDICIONES)
-    Object[] resumir(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
+    // Misma razón que buscar(...): un parámetro por filtro de la consulta
+    Object[] resumir(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,   // NOSONAR java:S107
                      @Param("usuario") String usuario, @Param("metodo") String metodo, @Param("ruta") String ruta,
                      @Param("estadoDesde") int estadoDesde, @Param("estadoHasta") int estadoHasta,
                      @Param("duracionMinima") long duracionMinima);

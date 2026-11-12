@@ -11,13 +11,13 @@ Asignaturas: Ingeniería de Software y Sistemas de Información.
 |---|---|
 | Brayan Estiven Sarmiento Vargas | Backend, frontend, despliegue y documentación |
 
-## En producción · versión 1.1.0
+## En producción · versión 1.1.1
 
 | Qué | Dónde |
 |---|---|
 | Aplicación | http://18.222.37.70 (AWS EC2, región Ohio) |
 | Estado del API | http://18.222.37.70/api/salud |
-| Versión publicada | [`v1.1.0`](https://github.com/BrayanSarmiento28/RestoFlow/releases/tag/v1.1.0) |
+| Versión publicada | [`v1.1.1`](https://github.com/BrayanSarmiento28/RestoFlow/releases/tag/v1.1.1) |
 
 El servidor corre los mismos contenedores de Docker Compose que el entorno local, con el perfil `prod`. Guía en
 [`docs/despliegue-aws.md`](docs/despliegue-aws.md).
@@ -88,7 +88,7 @@ Convención de mensajes de commit: `feat:` nueva funcionalidad · `fix:` correcc
 | [`sprint-2.md`](docs/sprint-2.md) | Entidades de todo el sistema · RF-02 Pedidos · RF-03 Estados de cocina · RF-04 Comandas · menú de productos · identidad visual | Terminado |
 | [`sprint-3.md`](docs/sprint-3.md) | RF-05 Inventario · RF-06 Descuento automático · RF-07 Alertas · RF-08 Panel administrativo · RF-12 Historial | Terminado |
 | [`sprint-5.md`](docs/sprint-5.md) | RF-09 Estadísticas · RF-10 Análisis · RF-11 Recomendaciones (RestoFlow AI) | Terminado |
-| [`sprint-6.md`](docs/sprint-6.md) | Avisos por rol, Google Gemini, pruebas de carga y estrés, despliegue en AWS y versión 1.1.0 | Terminado |
+| [`sprint-6.md`](docs/sprint-6.md) | Avisos por rol, Google Gemini, pruebas de carga y estrés, despliegue en AWS y versión 1.1.1 | Terminado |
 
 ## Calidad y validación
 

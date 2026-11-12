@@ -88,7 +88,7 @@ class RestoFlowAIDominioTest {
     private static List<Pedido> cuatroSemanas() {
         List<Pedido> ventas = new ArrayList<>();
         for (LocalDate d = HOY.minusDays(28); !d.isAfter(AYER); d = d.plusDays(1)) {
-            if (d.getDayOfWeek() == DayOfWeek.SATURDAY) {
+            if (d.getDayOfWeek().equals(DayOfWeek.SATURDAY)) {
                 for (int i = 0; i < 4; i++) {
                     ventas.add(venta(d.atTime(LocalTime.of(13, 10)), bandeja(1)));
                 }

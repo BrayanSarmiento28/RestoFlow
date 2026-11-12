@@ -80,7 +80,8 @@ public class GeminiAdapter implements AsistenteIAPort {
                 }
             }
         }
-        throw ultimo;
+        // Sin modelos configurados no hubo ningún intento: se avisa igual que cuando Gemini no responde
+        throw ultimo != null ? ultimo : new AsistenteIANoDisponibleException(AsistenteIANoDisponibleException.NO_RESPONDE);
     }
 
     /**

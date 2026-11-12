@@ -27,7 +27,7 @@ public record Aviso(String clave, Tipo tipo, Nivel nivel, String titulo, String 
         para = para == null ? Set.of() : Set.copyOf(para);
     }
 
-    /** El ADMIN ve todo; los demás, lo de su rol; y un mesero, solo lo de sus mesas. */
+    /** El ADMIN ve cualquier aviso; los demás, lo de su rol; y un mesero, solo lo de sus mesas. */
     public boolean esPara(Rol rol, Long idUsuario) {
         if (rol == Rol.ADMIN) {
             return true;
