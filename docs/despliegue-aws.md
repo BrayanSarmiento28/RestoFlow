@@ -188,7 +188,7 @@ grep -q "^SWAGGER_HABILITADO=" .env || echo "SWAGGER_HABILITADO=true" >> .env
 | Variable | Valor | Por qué |
 |---|---|---|
 | `SPRING_PROFILES_ACTIVE` | `prod` | Sin menú de ejemplo, tablas solo por scripts SQL, registros de librerías solo desde `WARN` y correo real |
-| `RESTOFLOW_VERSION` | `1.1.0` | Las imágenes quedan con la versión de la entrega: `restoflow-backend:1.1.0` |
+| `RESTOFLOW_VERSION` | `1.1.1` | Las imágenes quedan con la versión de la entrega: `restoflow-backend:1.1.1` |
 | `SWAGGER_HABILITADO` | `true` | Para mostrar el API en la sustentación. En un restaurante real se deja en `false` |
 | `MAIL_USERNAME` y `MAIL_PASSWORD` | la cuenta de Gmail y su contraseña de aplicación | En `prod` la recuperación de contraseña envía el código por correo real |
 
