@@ -14,7 +14,7 @@ public interface ConsultarStockCocinaUseCase {
 
     /**
      * Insumos en su mínimo o agotados que llevan los productos indicados (según su receta). Solo los que necesitan
-     * atención: si todo alcanza, la lista está vacía.
+     * atención: si nada se está acabando, la lista está vacía.
      */
     List<StockBajo> stockBajo(Collection<Long> productoIds);
 

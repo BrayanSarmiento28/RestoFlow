@@ -206,7 +206,8 @@ class PedidoTest {
         pedido.cambiarEstadoCocina(EstadoCocina.LISTO, AHORA);
         pedido.cambiarEstadoCocina(EstadoCocina.ENTREGADO, AHORA);
         assertThrows(DomainException.class, () -> pedido.registrarVenta(AHORA, null));
-        assertThrows(OperacionNoPermitidaException.class, () -> pedidoDeEjemplo().asignarMetodoPago(MetodoPago.EFECTIVO));
+        Pedido sinCobrar = pedidoDeEjemplo();
+        assertThrows(OperacionNoPermitidaException.class, () -> sinCobrar.asignarMetodoPago(MetodoPago.EFECTIVO));
 
         pedido.registrarVenta(AHORA, MetodoPago.TRANSFERENCIA);
         assertEquals(MetodoPago.TRANSFERENCIA, pedido.getMetodoPago());
@@ -254,17 +255,19 @@ class PedidoTest {
     void adicionReglas() {
         DetallePedido gaseosa = DetallePedido.adicionDe(producto(3, "Gaseosa", "5000"), 1, null);
         Pedido pendiente = pedidoDeEjemplo();
-        assertThrows(OperacionNoPermitidaException.class, () -> pendiente.agregarAdicion(List.of(gaseosa), AHORA));
+        List<DetallePedido> unaGaseosa = List.of(gaseosa);
+        assertThrows(OperacionNoPermitidaException.class, () -> pendiente.agregarAdicion(unaGaseosa, AHORA));
 
         Pedido cancelado = pedidoDeEjemplo();
         cancelado.cancelar(AHORA);
-        assertThrows(OperacionNoPermitidaException.class, () -> cancelado.agregarAdicion(List.of(gaseosa), AHORA));
+        assertThrows(OperacionNoPermitidaException.class, () -> cancelado.agregarAdicion(unaGaseosa, AHORA));
 
         Pedido enCocina = pedidoDeEjemplo();
         enCocina.cambiarEstadoCocina(EstadoCocina.EN_PREPARACION, AHORA);
         assertThrows(DomainException.class, () -> enCocina.agregarAdicion(List.of(), AHORA));
         DetallePedido normal = DetallePedido.de(producto(3, "Gaseosa", "5000"), 1, null);
-        assertThrows(DomainException.class, () -> enCocina.agregarAdicion(List.of(normal), AHORA));
+        List<DetallePedido> sinMarcar = List.of(normal);
+        assertThrows(DomainException.class, () -> enCocina.agregarAdicion(sinMarcar, AHORA));
 
         enCocina.restaurarFechaAdicion(AHORA);
         assertTrue(enCocina.tieneAdicion());

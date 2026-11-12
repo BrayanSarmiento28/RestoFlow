@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -126,9 +127,9 @@ public class HistorialDemoConfig implements CommandLineRunner {
             log.info("RestoFlow AI: ya hay {} ventas en las últimas 3 semanas; no se generan datos de ejemplo.", recientes);
             return;
         }
-        Optional<Usuario> mesero = transaccion.execute(estado -> quienRegistra());
+        Usuario mesero = transaccion.execute(estado -> quienRegistra().orElse(null));
         List<Producto> menu = transaccion.execute(estado -> productosConReceta());
-        if (mesero == null || mesero.isEmpty() || menu == null || menu.isEmpty()) {
+        if (mesero == null || menu == null || menu.isEmpty()) {
             log.warn("RestoFlow AI: no se generaron datos de ejemplo (faltan productos con receta o un usuario activo).");
             return;
         }
@@ -143,8 +144,9 @@ public class HistorialDemoConfig implements CommandLineRunner {
         Random azar = new Random(2026);   // NOSONAR java:S2245
 
         // Las mesas con un pedido abierto de verdad quedan por fuera: no se pueden usar para pedidos nuevos
-        Set<Integer> ocupadas = transaccion.execute(estado -> ventas.mesasOcupadas().stream()
+        Set<Integer> conPedido = transaccion.execute(estado -> ventas.mesasOcupadas().stream()
                 .map(GestionarPedidosUseCase.MesaOcupada::numeroMesa).collect(Collectors.toSet()));
+        Set<Integer> ocupadas = conPedido != null ? conPedido : Set.of();
         int total = 0;
         for (int hace = DIAS; hace >= 1; hace--) {
             LocalDate dia = hoy.minusDays(hace);
@@ -156,7 +158,7 @@ public class HistorialDemoConfig implements CommandLineRunner {
             for (int i = 0; i < cantidad; i++) {
                 int hora = i % 2 == 0 ? 12 + azar.nextInt(3) : 18 + azar.nextInt(3);
                 relojDemo.fijar(dia.atTime(hora, azar.nextInt(60)));
-                Long meseroId = mesero.get().getId();
+                Long meseroId = mesero.getId();
                 List<LineaPedido> lineas = lineas(menu, azar);
                 int mesa = mesaLibre(ocupadas, azar);
                 // Cada venta en su propia transacción, como cuando la hace el mesero desde la pantalla
@@ -195,7 +197,7 @@ public class HistorialDemoConfig implements CommandLineRunner {
     /** Entre semana 8 a 10 pedidos; viernes, sábado y domingo 6 más; la última semana 2 más (tendencia al alza). */
     private static int pedidosDelDia(LocalDate dia, int hace, Random azar) {
         DayOfWeek d = dia.getDayOfWeek();
-        boolean finDeSemana = d == DayOfWeek.FRIDAY || d == DayOfWeek.SATURDAY || d == DayOfWeek.SUNDAY;
+        boolean finDeSemana = d.equals(DayOfWeek.FRIDAY) || d.equals(DayOfWeek.SATURDAY) || d.equals(DayOfWeek.SUNDAY);
         return 8 + (finDeSemana ? 6 : 0) + (hace <= 7 ? 2 : 0) + azar.nextInt(3);
     }
 
@@ -272,6 +274,17 @@ public class HistorialDemoConfig implements CommandLineRunner {
         @Override
         public Instant instant() {
             return instante;
+        }
+
+        /** Dos relojes son iguales si marcan el mismo instante en la misma zona (contrato de {@link Clock}). */
+        @Override
+        public boolean equals(Object otro) {
+            return otro instanceof RelojAjustable r && zona.equals(r.zona) && instante.equals(r.instante);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(zona, instante);
         }
     }
 }

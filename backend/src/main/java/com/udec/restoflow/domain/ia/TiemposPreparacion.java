@@ -3,7 +3,6 @@ package com.udec.restoflow.domain.ia;
 import com.udec.restoflow.domain.model.DetallePedido;
 import com.udec.restoflow.domain.model.Pedido;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -64,7 +63,8 @@ public final class TiemposPreparacion {
     }
 
     public int minutosNormales(Pedido pedido) {
-        return minutosNormales(platoMasLento(pedido).getProductoId());
+        DetallePedido lento = platoMasLento(pedido);
+        return lento == null ? MINUTOS_POR_DEFECTO : minutosNormales(lento.getProductoId());
     }
 
     /**
@@ -93,7 +93,7 @@ public final class TiemposPreparacion {
                     || p.getFechaListo().isBefore(p.getFechaCreacion())) {
                 continue;
             }
-            long minutos = Duration.between(p.getFechaCreacion(), p.getFechaListo()).toMinutes();
+            long minutos = Duraciones.minutosEntre(p.getFechaCreacion(), p.getFechaListo());
             for (DetallePedido d : p.getDetalles()) {
                 nombres.putIfAbsent(d.getProductoId(), d.getProductoNombre());
             }

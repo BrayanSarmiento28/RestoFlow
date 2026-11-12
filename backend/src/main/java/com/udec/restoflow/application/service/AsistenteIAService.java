@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -50,7 +51,7 @@ public class AsistenteIAService implements ResumirAvisosIAUseCase, ConsultarAsis
     private final Clock reloj;
 
     private final Map<String, Guardado<RespuestaIA>> resumenes = new ConcurrentHashMap<>();
-    private volatile Guardado<RecomendacionesIA> recomendaciones;
+    private final AtomicReference<Guardado<RecomendacionesIA>> recomendaciones = new AtomicReference<>();
 
     public AsistenteIAService(AsistenteIAPort ia, ConsultarAvisosUseCase avisos, ConsultarRestoFlowAIUseCase restoFlowAI,
                               Clock reloj) {
@@ -107,7 +108,7 @@ public class AsistenteIAService implements ResumirAvisosIAUseCase, ConsultarAsis
 
     @Override
     public RecomendacionesIA recomendaciones() {
-        Guardado<RecomendacionesIA> guardado = recomendaciones;
+        Guardado<RecomendacionesIA> guardado = recomendaciones.get();
         if (guardado != null && guardado.vigente(reloj.instant())) {
             return guardado.valor();
         }
@@ -128,7 +129,7 @@ public class AsistenteIAService implements ResumirAvisosIAUseCase, ConsultarAsis
             resultado = new RecomendacionesIA(analisis.recomendaciones(), Origen.REGLAS, ahora);
             vigencia = ESPERA_TRAS_FALLA;
         }
-        recomendaciones = new Guardado<>("", resultado, reloj.instant().plus(vigencia));
+        recomendaciones.set(new Guardado<>("", resultado, reloj.instant().plus(vigencia)));
         return resultado;
     }
 

@@ -5,7 +5,7 @@ import com.udec.restoflow.domain.exception.DomainException;
 import java.time.LocalDateTime;
 
 /**
- * Qué registros de actividad buscar. Todo es opcional (null = sin filtrar por eso).
+ * Qué registros de actividad buscar. Cada filtro es opcional (null = sin filtrar por eso).
  *
  * @param desde   desde esta fecha (incluida)
  * @param hasta   hasta esta fecha (sin incluirla)
