@@ -39,6 +39,8 @@
   &:hover { text-decoration: underline; }
 }
 .pronto { font-size: 12px; }
+// Sobre el panel oscuro el enlace usa el ámbar de RestoFlow AI, no el color de enlace del fondo claro
+.enlace-ia { color: var(--rf-ambar); font-weight: 600; }
 
 // API externa: buscar el insumo por código de barras (Open Food Facts)
 .buscar-codigo { display: flex; gap: 8px; .rf-input { flex: 1; min-width: 0; } }
