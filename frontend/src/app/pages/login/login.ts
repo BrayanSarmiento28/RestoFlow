@@ -12,9 +12,9 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrl: './login.scss',
 })
 export class Login {
-  private fb = inject(FormBuilder);
-  private auth = inject(AuthService);
-  private router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -52,4 +52,4 @@ export class Login {
     const control = this.form.controls[campo];
     return control.invalid && control.touched;
   }
-}
+}

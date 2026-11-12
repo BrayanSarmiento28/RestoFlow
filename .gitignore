@@ -3,6 +3,9 @@ backend/target/
 backend/.mvn/wrapper/maven-wrapper.jar
 *.class
 *.log
+# Archivos de log del backend (logback-spring.xml): nunca se suben
+logs/
+*.log.gz
 hs_err_pid*
 
 # ===== Frontend (Angular / Node) =====
@@ -10,6 +13,9 @@ frontend/node_modules/
 frontend/dist/
 frontend/.angular/
 frontend/out-tsc/
+frontend/coverage/
+# Archivos temporales del escáner de SonarQube
+.scannerwork/
 npm-debug.log*
 
 # ===== Configuración local y secretos (NUNCA subir contraseñas) =====
@@ -19,6 +25,13 @@ npm-debug.log*
 # Las plantillas sin datos reales sí se suben
 !.env*.example
 backend/src/main/resources/application-local.yml
+
+# ===== Pruebas de carga (Apache JMeter): JMeter se descarga en herramientas/. Del resultado de cada prueba se sube
+# solo el resumen .md; el detalle por petición (.jtl) y el informe HTML (que incluye librerías de terceros y se
+# regenera con el .jtl) se quedan en el computador =====
+herramientas/
+docs/pruebas/jmeter/resultados/*.jtl
+docs/pruebas/jmeter/resultados/*/
 
 # ===== Editores, extensiones y sistema operativo =====
 .github/modernize/

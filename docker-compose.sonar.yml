@@ -1,0 +1,75 @@
+# =====================================================================
+# RestoFlow · SonarQube (análisis estático de calidad del código)
+#
+# Servidor de SonarQube local con su propia base de datos PostgreSQL. Es independiente de la aplicación:
+# se levanta solo cuando se quiere analizar el código.
+#
+#   sonarqube-db   PostgreSQL 17 (guarda los proyectos, los análisis y los usuarios de SonarQube)
+#   sonarqube      SonarQube Community Build (interfaz web en http://localhost:9000)
+#
+# Uso:
+#   docker compose -f docker-compose.sonar.yml up -d        (la primera vez tarda 2-3 minutos)
+#   Abrir http://localhost:9000  · usuario admin · contraseña admin (pide cambiarla)
+#   Analizar el código:  .\analizar-calidad.ps1   (ver docs/sonarqube.md)
+#   Detener:             docker compose -f docker-compose.sonar.yml down
+#                        (agregar -v borra también los análisis guardados)
+#
+# Versiones fijas (factor II de los 12 factores): nunca "latest".
+# =====================================================================
+name: restoflow-sonar
+
+services:
+
+  # ---------- Base de datos de SonarQube ----------
+  sonarqube-db:
+    image: postgres:17-alpine
+    container_name: restoflow-sonarqube-db
+    environment:
+      POSTGRES_DB: sonarqube
+      POSTGRES_USER: sonar
+      # Contraseña solo de este servidor local de análisis; se puede cambiar con SONAR_DB_PASSWORD en .env
+      POSTGRES_PASSWORD: ${SONAR_DB_PASSWORD:-sonar-local}
+    volumes:
+      - sonarqube_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonarqube"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - sonar-red
+
+  # ---------- SonarQube ----------
+  sonarqube:
+    image: sonarqube:26.9.0.129388-community
+    container_name: restoflow-sonarqube
+    depends_on:
+      sonarqube-db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: ${SONAR_DB_PASSWORD:-sonar-local}
+      # Docker Desktop (Windows) no permite cambiar vm.max_map_count fácilmente; para un servidor local de
+      # pruebas se desactiva esa revisión de Elasticsearch. En un servidor real se configura el sistema.
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    ports:
+      - "${SONAR_PUERTO:-9000}:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    restart: unless-stopped
+    networks:
+      - sonar-red
+
+volumes:
+  sonarqube_db:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+
+networks:
+  sonar-red:
+    driver: bridge

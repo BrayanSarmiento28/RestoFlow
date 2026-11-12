@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 /**
  * RF-05 · Insumo del inventario (arroz, pollo, aceite...). Se descuenta cuando se venden los productos
  * que lo usan en su receta (RF-06) y genera alertas al llegar a su stock mínimo (RF-07).
- * Sus casos de uso se implementan en el sprint de inventario; aquí quedan la entidad y sus reglas.
  */
 public class Ingrediente {
 
@@ -21,18 +20,25 @@ public class Ingrediente {
 
     public Ingrediente(Long id, String nombre, UnidadMedida unidad, BigDecimal stockActual, BigDecimal stockMinimo,
                        boolean activo) {
-        if (nombre == null || nombre.trim().length() < 2) {
-            throw new DomainException("El nombre del ingrediente debe tener al menos 2 caracteres");
-        }
-        if (unidad == null) {
-            throw new DomainException("La unidad de medida es obligatoria");
-        }
         this.id = id;
-        this.nombre = nombre.trim();
-        this.unidad = unidad;
+        this.nombre = nombreValido(nombre);
+        this.unidad = unidadValida(unidad);
         this.stockActual = noNegativo(stockActual, "El stock actual");
         this.stockMinimo = noNegativo(stockMinimo, "El stock mínimo");
         this.activo = activo;
+    }
+
+    /** Insumo recién creado: queda activo con el stock inicial indicado. */
+    public static Ingrediente nuevo(String nombre, UnidadMedida unidad, BigDecimal stockInicial, BigDecimal stockMinimo) {
+        return new Ingrediente(null, nombre, unidad, stockInicial == null ? BigDecimal.ZERO : stockInicial,
+                stockMinimo, true);
+    }
+
+    /** Cambia los datos descriptivos. El stock solo cambia con movimientos (entrada, salida o ajuste). */
+    public void actualizar(String nombre, UnidadMedida unidad, BigDecimal stockMinimo) {
+        this.nombre = nombreValido(nombre);
+        this.unidad = unidadValida(unidad);
+        this.stockMinimo = noNegativo(stockMinimo, "El stock mínimo");
     }
 
     /** Suma una compra o ingreso de mercancía. */
@@ -40,14 +46,28 @@ public class Ingrediente {
         stockActual = stockActual.add(positiva(cantidad));
     }
 
-    /** RF-06 · Resta lo consumido. Nunca deja el stock en negativo. */
+    /** Salida manual (merma, daño, vencimiento). No se puede sacar más de lo que hay. */
     public void descontar(BigDecimal cantidad) {
         BigDecimal resultado = stockActual.subtract(positiva(cantidad));
         if (resultado.signum() < 0) {
-            throw new OperacionNoPermitidaException("No hay suficiente " + nombre + ": quedan " + stockActual + " "
-                    + unidad.name().toLowerCase());
+            throw new OperacionNoPermitidaException("No hay suficiente " + nombre + ": quedan "
+                    + stockActual.stripTrailingZeros().toPlainString() + " " + unidad.name().toLowerCase());
         }
         stockActual = resultado;
+    }
+
+    /**
+     * RF-06 · Consumo por una venta. El plato ya se sirvió, así que la venta nunca se bloquea:
+     * si no alcanza, el stock queda en cero y se devuelve cuánto faltó (para generar una alerta).
+     */
+    public BigDecimal consumir(BigDecimal cantidad) {
+        BigDecimal resultado = stockActual.subtract(positiva(cantidad));
+        if (resultado.signum() < 0) {
+            stockActual = BigDecimal.ZERO;
+            return resultado.negate();
+        }
+        stockActual = resultado;
+        return BigDecimal.ZERO;
     }
 
     /** Ajuste después de un conteo físico. */
@@ -60,12 +80,30 @@ public class Ingrediente {
         return stockActual.compareTo(stockMinimo) <= 0;
     }
 
+    public boolean estaAgotado() {
+        return stockActual.signum() == 0;
+    }
+
     public void activar() {
         activo = true;
     }
 
     public void desactivar() {
         activo = false;
+    }
+
+    private static String nombreValido(String nombre) {
+        if (nombre == null || nombre.trim().length() < 2) {
+            throw new DomainException("El nombre del ingrediente debe tener al menos 2 caracteres");
+        }
+        return nombre.trim();
+    }
+
+    private static UnidadMedida unidadValida(UnidadMedida unidad) {
+        if (unidad == null) {
+            throw new DomainException("La unidad de medida es obligatoria");
+        }
+        return unidad;
     }
 
     private static BigDecimal noNegativo(BigDecimal valor, String campo) {

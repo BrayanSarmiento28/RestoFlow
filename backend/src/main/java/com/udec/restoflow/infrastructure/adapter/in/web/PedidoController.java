@@ -1,8 +1,13 @@
 package com.udec.restoflow.infrastructure.adapter.in.web;
 
 import com.udec.restoflow.application.port.in.GestionarPedidosUseCase;
+import com.udec.restoflow.application.port.in.GestionarPedidosUseCase.MesaOcupada;
 import com.udec.restoflow.domain.model.EstadoCocina;
 import com.udec.restoflow.domain.model.EstadoPedido;
+import com.udec.restoflow.domain.model.MetodoPago;
+import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.AdicionRequest;
+import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.CambioMesaRequest;
+import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.PagoRequest;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.PedidoRequest;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.PedidoResponse;
 import com.udec.restoflow.infrastructure.security.UsuarioAutenticado;
@@ -74,10 +79,38 @@ public class PedidoController {
         return PedidoResponse.desde(pedidos.cancelar(id));
     }
 
-    @Operation(summary = "Registrar la venta",
-            description = "Cierra como Pagado un pedido Entregado. No procesa pagos electrónicos.")
+    @Operation(summary = "Registrar la venta (solo ADMIN)",
+            description = "Cierra como Pagado un pedido Entregado, con su método de pago: EFECTIVO o TRANSFERENCIA "
+                    + "(si no se envía, efectivo). Solo el administrador cobra; el mesero pasa la cuenta. "
+                    + "No procesa pagos electrónicos. La mesa queda libre.")
     @PatchMapping("/{id}/pagar")
-    public PedidoResponse pagar(@PathVariable Long id) {
-        return PedidoResponse.desde(pedidos.registrarVenta(id));
+    public PedidoResponse pagar(@PathVariable Long id, @RequestBody(required = false) PagoRequest request) {
+        MetodoPago metodo = request == null || request.metodoPago() == null ? MetodoPago.EFECTIVO : request.metodoPago();
+        return PedidoResponse.desde(pedidos.registrarVenta(id, metodo));
+    }
+
+    @Operation(summary = "Agregar productos (adición)",
+            description = "El cliente pide algo más con el pedido ya en cocina: los productos se suman al mismo pedido "
+                    + "y a su cuenta, marcados como adición. Si ya estaba Listo o Entregado, vuelve a En preparación. "
+                    + "409 si el pedido está Pendiente (use Editar), cobrado o cancelado.")
+    @PostMapping("/{id}/adiciones")
+    public PedidoResponse agregarAdicion(@PathVariable Long id, @Valid @RequestBody AdicionRequest request) {
+        return PedidoResponse.desde(pedidos.agregarAdicion(id, request.aLineas()));
+    }
+
+    @Operation(summary = "Cambiar de mesa",
+            description = "Pasa un pedido abierto a otra mesa (por ejemplo, el cliente se cambió de lugar). "
+                    + "409 si la mesa nueva está ocupada o si el pedido ya se cobró o se canceló.")
+    @PatchMapping("/{id}/mesa")
+    public PedidoResponse cambiarMesa(@PathVariable Long id, @Valid @RequestBody CambioMesaRequest request) {
+        return PedidoResponse.desde(pedidos.cambiarMesa(id, request.numeroMesa()));
+    }
+
+    @Operation(summary = "Mesas ocupadas",
+            description = "Mesas con un pedido abierto (aún sin cobrar ni cancelar). Una mesa ocupada no recibe "
+                    + "pedidos nuevos hasta que se libere.")
+    @GetMapping("/mesas-ocupadas")
+    public List<MesaOcupada> mesasOcupadas() {
+        return pedidos.mesasOcupadas();
     }
 }

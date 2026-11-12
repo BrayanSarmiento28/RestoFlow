@@ -106,9 +106,10 @@ class PedidoFlujoIntegracionTest {
         enviar(patch("/api/cocina/pedidos/" + id + "/estado"), cocina, "{\"estado\":\"LISTO\"}").andExpect(status().isOk());
         enviar(patch("/api/cocina/pedidos/" + id + "/estado"), cocina, "{\"estado\":\"ENTREGADO\"}").andExpect(status().isOk());
 
-        // Entregado: sale de la cocina y el mesero registra la venta
+        // Entregado: sale de la cocina; el mesero pasa la cuenta y solo el administrador registra la venta
         enviar(get("/api/cocina/comandas"), cocina, null).andExpect(jsonPath("$.length()").value(0));
-        enviar(patch("/api/pedidos/" + id + "/pagar"), mesero, null)
+        enviar(patch("/api/pedidos/" + id + "/pagar"), mesero, null).andExpect(status().isForbidden());
+        enviar(patch("/api/pedidos/" + id + "/pagar"), admin, "{\"metodoPago\":\"EFECTIVO\"}")
                 .andExpect(status().isOk()).andExpect(jsonPath("$.estadoPedido").value("PAGADO"));
     }
 

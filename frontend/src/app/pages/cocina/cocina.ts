@@ -1,9 +1,10 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CocinaService } from '../../core/services/cocina.service';
+import { AuthService } from '../../core/services/auth.service';
 import { mensajeDeError } from '../../core/services/errores';
 import { hora, minutosDesde } from '../../core/util/formato';
-import { EstadoCocina, NOMBRES_ESTADO_COCINA, Pedido, siguienteEstado } from '../../core/entities';
+import { EstadoCocina, NOMBRES_ESTADO_COCINA, Pedido, numeroPedido, siguienteEstado } from '../../core/entities';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -17,7 +18,10 @@ import { environment } from '../../../environments/environment';
   styleUrl: './cocina.scss',
 })
 export class Cocina implements OnInit, OnDestroy {
-  private cocinaApi = inject(CocinaService);
+  private readonly cocinaApi = inject(CocinaService);
+  /** El número del pedido solo lo ve el administrador; la cocina trabaja por mesa. */
+  protected readonly verNumero = inject(AuthService).tieneRol('ADMIN');
+  protected readonly numeroPedido = numeroPedido;
   private temporizador?: ReturnType<typeof setInterval>;
 
   protected readonly hora = hora;
@@ -55,7 +59,8 @@ export class Cocina implements OnInit, OnDestroy {
   }
 
   protected minutos(pedido: Pedido): number {
-    return minutosDesde(pedido.fechaCreacion, this.ahora());
+    // Con una adición, el tiempo cuenta desde la adición: es lo que la cocina tiene que preparar ahora
+    return minutosDesde(pedido.fechaAdicion ?? pedido.fechaCreacion, this.ahora());
   }
 
   /** Texto del botón que lleva el pedido a su siguiente estado. */

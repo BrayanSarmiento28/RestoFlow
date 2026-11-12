@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
  * Solo en desarrollo y pre-producción (restoflow.datos-demo=true) y solo si no hay productos.
  */
 @Component
+@Order(1)
 @ConditionalOnProperty(name = "restoflow.datos-demo", havingValue = "true")
 public class MenuInicialConfig implements CommandLineRunner {
 

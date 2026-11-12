@@ -2,14 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Pedido } from '../entities';
-import { FiltroPedidos, PedidoRequest } from '../models/pedido.models';
+import { MetodoPago, Pedido } from '../entities';
+import { FiltroPedidos, LineaPedidoRequest, MesaOcupada, PedidoRequest } from '../models/pedido.models';
 
 /** RF-02 · Pedidos del mesero: /api/pedidos. */
 @Injectable({ providedIn: 'root' })
 export class PedidoService {
-  private http = inject(HttpClient);
-  private api = `${environment.apiUrl}/pedidos`;
+  private readonly http = inject(HttpClient);
+  private readonly api = `${environment.apiUrl}/pedidos`;
 
   consultar(filtro: FiltroPedidos = {}): Observable<Pedido[]> {
     let params = new HttpParams();
@@ -31,7 +31,23 @@ export class PedidoService {
     return this.http.patch<Pedido>(`${this.api}/${id}/cancelar`, {});
   }
 
-  pagar(id: number): Observable<Pedido> {
-    return this.http.patch<Pedido>(`${this.api}/${id}/pagar`, {});
+  /** Registra la venta con su método de pago. */
+  pagar(id: number, metodoPago: MetodoPago): Observable<Pedido> {
+    return this.http.patch<Pedido>(`${this.api}/${id}/pagar`, { metodoPago });
+  }
+
+  /** Mesas con un pedido abierto: no reciben pedidos nuevos hasta que se cobre o se cancele. */
+  mesasOcupadas(): Observable<MesaOcupada[]> {
+    return this.http.get<MesaOcupada[]>(`${this.api}/mesas-ocupadas`);
+  }
+
+  /** Adición: el cliente pide algo más con el pedido ya en cocina (se suma al mismo pedido y a su cuenta). */
+  agregarAdicion(id: number, lineas: LineaPedidoRequest[]): Observable<Pedido> {
+    return this.http.post<Pedido>(`${this.api}/${id}/adiciones`, { lineas });
+  }
+
+  /** Pasa el pedido a otra mesa libre (por ejemplo, el cliente se cambió de lugar). */
+  cambiarMesa(id: number, numeroMesa: number): Observable<Pedido> {
+    return this.http.patch<Pedido>(`${this.api}/${id}/mesa`, { numeroMesa });
   }
 }

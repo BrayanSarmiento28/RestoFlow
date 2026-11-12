@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 /**
  * RF-12 · Registro inmutable de cada cambio de inventario: quién, cuándo, cuánto y por qué.
  * También es la fuente de datos de RestoFlow AI para calcular el consumo promedio (RF-10).
+ * En un AJUSTE, la cantidad es el valor contado (el stock quedó en esa cantidad).
  */
 public class MovimientoInventario {
 
@@ -19,23 +20,48 @@ public class MovimientoInventario {
     private final Long usuarioId;
     private final Long pedidoId;
     private final LocalDateTime fecha;
+    /** Datos solo para mostrar en el historial (pueden venir vacíos). */
+    private final String ingredienteNombre;
+    private final UnidadMedida unidad;
+    private final String usuarioNombre;
+    /** Número del pedido en su día (#1, #2...) y su mesa, en las salidas por venta (solo para mostrar). */
+    private Integer pedidoNumeroDelDia;
+    private Integer pedidoMesa;
 
     public MovimientoInventario(Long id, Long ingredienteId, TipoMovimiento tipo, BigDecimal cantidad, String motivo,
                                 Long usuarioId, Long pedidoId, LocalDateTime fecha) {
+        this(id, ingredienteId, tipo, cantidad, motivo, usuarioId, pedidoId, fecha, null, null, null);
+    }
+
+    public MovimientoInventario(Long id, Long ingredienteId, TipoMovimiento tipo, BigDecimal cantidad, String motivo,
+                                Long usuarioId, Long pedidoId, LocalDateTime fecha, String ingredienteNombre,
+                                UnidadMedida unidad, String usuarioNombre) {
         if (ingredienteId == null || tipo == null || fecha == null) {
             throw new DomainException("El movimiento debe indicar ingrediente, tipo y fecha");
         }
         if (cantidad == null || cantidad.signum() < 0) {
             throw new DomainException("La cantidad del movimiento no puede ser negativa");
         }
+        if (motivo != null && motivo.trim().length() > 200) {
+            throw new DomainException("El motivo admite máximo 200 caracteres");
+        }
         this.id = id;
         this.ingredienteId = ingredienteId;
         this.tipo = tipo;
         this.cantidad = cantidad;
-        this.motivo = motivo;
+        this.motivo = motivo == null || motivo.isBlank() ? null : motivo.trim();
         this.usuarioId = usuarioId;
         this.pedidoId = pedidoId;
         this.fecha = fecha;
+        this.ingredienteNombre = ingredienteNombre;
+        this.unidad = unidad;
+        this.usuarioNombre = usuarioNombre;
+    }
+
+    /** Movimiento nuevo hecho por una persona (usuarioId) o por el sistema (usuarioId null). */
+    public static MovimientoInventario registrar(Long ingredienteId, TipoMovimiento tipo, BigDecimal cantidad,
+                                                 String motivo, Long usuarioId, Long pedidoId, LocalDateTime ahora) {
+        return new MovimientoInventario(null, ingredienteId, tipo, cantidad, motivo, usuarioId, pedidoId, ahora);
     }
 
     public Long getId() { return id; }
@@ -46,4 +72,19 @@ public class MovimientoInventario {
     public Long getUsuarioId() { return usuarioId; }
     public Long getPedidoId() { return pedidoId; }
     public LocalDateTime getFecha() { return fecha; }
+    public String getIngredienteNombre() { return ingredienteNombre; }
+    public UnidadMedida getUnidad() { return unidad; }
+    public String getUsuarioNombre() { return usuarioNombre; }
+    public Integer getPedidoNumeroDelDia() { return pedidoNumeroDelDia; }
+    public Integer getPedidoMesa() { return pedidoMesa; }
+
+    /**
+     * Datos del pedido que originó la salida, para mostrarlos en el historial (los llena la persistencia al leer).
+     * El número del día es el que ve el administrador; el id interno no se muestra.
+     */
+    public MovimientoInventario conDatosDelPedido(Integer numeroDelDia, Integer mesa) {
+        this.pedidoNumeroDelDia = numeroDelDia;
+        this.pedidoMesa = mesa;
+        return this;
+    }
 }

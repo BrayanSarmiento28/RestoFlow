@@ -1,6 +1,6 @@
 .columnas {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 380px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -51,7 +51,7 @@
   }
 }
 
-.tabla-contenedor { overflow-x: auto; }
+.tabla-contenedor { position: relative; overflow-x: auto; }
 
 .tabla {
   width: 100%;
@@ -101,5 +101,25 @@
 .vacio { color: var(--rf-texto-suave); text-align: center; }
 
 @media (max-width: 1100px) {
-  .columnas { grid-template-columns: 1fr; }
+  .columnas { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* RF-06 · Editor de la receta del producto */
+.receta {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rf-linea);
+  h3 { margin: 0 0 6px; font-size: 18px; }
+  select, input {
+    height: 44px;
+    padding: 0 10px;
+    border: 1.5px solid var(--rf-borde);
+    border-radius: 10px;
+    background: var(--rf-papel);
+    min-width: 0;
+  }
+  &__fila { display: grid; grid-template-columns: 1fr 90px 36px 40px; gap: 8px; align-items: center; margin-bottom: 8px; }
+  &__botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; .boton { min-height: 44px; } }
+}
+.ayuda { margin: 0 0 12px; font-size: 13px; color: var(--rf-texto-2); }
+.unidad { font-family: var(--rf-fuente-mono); font-size: 13px; color: var(--rf-texto-2); }

@@ -15,7 +15,9 @@ import java.util.regex.Pattern;
 public class Usuario {
 
     public static final int LONGITUD_MINIMA_CONTRASENA = 8;
-    private static final Pattern FORMATO_EMAIL = Pattern.compile("^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+$");
+    /** Caracteres permitidos antes y después de la @ (clases simples: se evalúan en tiempo lineal). */
+    private static final Pattern PARTE_LOCAL = Pattern.compile("[\\w.+-]++");
+    private static final Pattern DOMINIO = Pattern.compile("[\\w.-]++");
 
     private final Long id;
     private String nombre;
@@ -72,7 +74,9 @@ public class Usuario {
         if (contrasenaPlana == null || contrasenaPlana.length() < LONGITUD_MINIMA_CONTRASENA) {
             throw new DomainException("La contraseña debe tener al menos " + LONGITUD_MINIMA_CONTRASENA + " caracteres");
         }
-        if (!contrasenaPlana.matches(".*[A-Za-z].*") || !contrasenaPlana.matches(".*\\d.*")) {
+        boolean tieneLetra = contrasenaPlana.chars().anyMatch(c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
+        boolean tieneNumero = contrasenaPlana.chars().anyMatch(c -> c >= '0' && c <= '9');
+        if (!tieneLetra || !tieneNumero) {
             throw new DomainException("La contraseña debe contener al menos una letra y un número");
         }
     }
@@ -83,13 +87,29 @@ public class Usuario {
             throw new DomainException("El correo es obligatorio");
         }
         String normalizado = email.trim().toLowerCase();
-        if (!FORMATO_EMAIL.matcher(normalizado).matches()) {
+        if (!formatoEmailValido(normalizado)) {
             throw new DomainException("El correo " + email + " no tiene un formato válido");
         }
         return normalizado;
     }
 
     // ---------- Validaciones internas ----------
+
+    /**
+     * nombre@dominio.ext: una sola @, el dominio con al menos un punto y sin partes vacías.
+     * Se revisa por partes en vez de con una sola expresión regular con repeticiones anidadas, que con un texto
+     * malicioso puede tardar muchísimo (ReDoS) o desbordar la pila (reglas java:S5998 y java:S8786 de SonarQube).
+     */
+    private static boolean formatoEmailValido(String email) {
+        int arroba = email.indexOf('@');
+        if (arroba <= 0 || arroba != email.lastIndexOf('@')) {
+            return false;
+        }
+        String local = email.substring(0, arroba);
+        String dominio = email.substring(arroba + 1);
+        return PARTE_LOCAL.matcher(local).matches() && DOMINIO.matcher(dominio).matches()
+                && dominio.contains(".") && !dominio.startsWith(".") && !dominio.endsWith(".") && !dominio.contains("..");
+    }
 
     private static String validarNombre(String nombre) {
         if (nombre == null || nombre.trim().length() < 3) {

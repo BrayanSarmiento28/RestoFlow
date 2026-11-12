@@ -1,4 +1,5 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CatalogoService } from '../../core/services/catalogo.service';
@@ -6,19 +7,16 @@ import { PedidoService } from '../../core/services/pedido.service';
 import { mensajeDeError } from '../../core/services/errores';
 import { hora, pesos } from '../../core/util/formato';
 import {
-  EstadoCocina, NOMBRES_ESTADO_COCINA, NOMBRES_ESTADO_PEDIDO, Pedido, Producto,
+  MetodoPago, NOMBRES_ESTADO_COCINA, NOMBRES_ESTADO_PEDIDO, NOMBRES_METODO_PAGO, Pedido, Producto, numeroPedido,
 } from '../../core/entities';
-import { FiltroPedidos } from '../../core/models/pedido.models';
 import { environment } from '../../../environments/environment';
-
-/** Una línea del pedido que el mesero está armando (todavía no se ha enviado). */
-interface ItemCarrito {
-  producto: Producto;
-  cantidad: number;
-  nota: string;
-}
-
-type FiltroEstado = 'ACTIVOS' | EstadoCocina | 'PAGADO' | 'CANCELADO' | 'TODOS';
+import {
+  FiltroEstado, ItemCarrito, aPedidoRequest, agregarProducto, cambiarCantidad, cambiarNota, carritoDesdePedido,
+  categoriasDe, filtrarProductos, filtroDePedidos, quitarItem, totalCarrito,
+} from '../../core/util/carrito';
+import { errorCambioMesa, mensajeMesaOcupada, mesaOcupada, mesasConMesero, nombrePedido } from '../../core/util/mesas';
+import { AuthService } from '../../core/services/auth.service';
+import { LineaPedidoRequest, MesaOcupada } from '../../core/models/pedido.models';
 
 /**
  * RF-02 · Pantalla del mesero: arma el pedido de una mesa, lo envía a cocina
@@ -31,9 +29,14 @@ type FiltroEstado = 'ACTIVOS' | EstadoCocina | 'PAGADO' | 'CANCELADO' | 'TODOS';
   styleUrl: './pedidos.scss',
 })
 export class Pedidos implements OnInit, OnDestroy {
-  private fb = inject(FormBuilder);
-  private catalogoApi = inject(CatalogoService);
-  private pedidosApi = inject(PedidoService);
+  private readonly fb = inject(FormBuilder);
+  private readonly catalogoApi = inject(CatalogoService);
+  private readonly pedidosApi = inject(PedidoService);
+  private readonly auth = inject(AuthService);
+  /** El número del pedido (#275) solo lo ve el administrador; el mesero identifica el pedido por la mesa. */
+  protected readonly verNumero = this.auth.tieneRol('ADMIN');
+  /** #1, #2... del día (el id interno solo en pedidos antiguos). */
+  protected readonly numeroPedido = numeroPedido;
   private temporizador?: ReturnType<typeof setInterval>;
 
   protected readonly pesos = pesos;
@@ -55,23 +58,32 @@ export class Pedidos implements OnInit, OnDestroy {
   protected readonly productos = signal<Producto[]>([]);
   protected readonly categoriaActiva = signal<string>('Todas');
   protected readonly busqueda = signal('');
-  protected readonly categorias = computed(() =>
-    ['Todas', ...new Set(this.productos().map((p) => p.categoriaNombre))]);
-  protected readonly productosVisibles = computed(() => {
-    const texto = this.busqueda().trim().toLowerCase();
-    return this.productos().filter((p) =>
-      (this.categoriaActiva() === 'Todas' || p.categoriaNombre === this.categoriaActiva())
-      && (!texto || p.nombre.toLowerCase().includes(texto)));
-  });
+  // Lógica del carrito y de los filtros en core/util/carrito.ts (probada con Jest)
+  protected readonly categorias = computed(() => categoriasDe(this.productos()));
+  protected readonly productosVisibles = computed(() =>
+    filtrarProductos(this.productos(), this.categoriaActiva(), this.busqueda()));
 
   // ---------- Pedido en construcción ----------
   protected readonly carrito = signal<ItemCarrito[]>([]);
   protected readonly editandoId = signal<number | null>(null);
-  protected readonly total = computed(() =>
-    this.carrito().reduce((suma, item) => suma + item.producto.precio * item.cantidad, 0));
+  protected readonly editandoNumero = signal<number | null>(null);
+  /** Pedido ya en cocina al que se le agregan productos (adición): el carrito trae solo lo nuevo. */
+  protected readonly adicionPara = signal<Pedido | null>(null);
+  protected readonly total = computed(() => totalCarrito(this.carrito()));
   protected readonly form = this.fb.group({
     mesa: [null as number | null, [Validators.required, Validators.min(1), Validators.max(999)]],
     observaciones: ['', Validators.maxLength(300)],
+  });
+
+  // ---------- Mesas ocupadas (RN: una mesa con pedido abierto no recibe otro) ----------
+  protected readonly ocupadas = signal<MesaOcupada[]>([]);
+  protected readonly mesasOcupadas = computed(() => mesasConMesero(this.ocupadas()));
+  private readonly mesaEscrita = toSignal(this.form.controls.mesa.valueChanges, { initialValue: null });
+  /** Aviso debajo del campo Mesa mientras se arma un pedido nuevo (al editar, la mesa es la del propio pedido). */
+  protected readonly avisoMesa = computed(() => {
+    if (this.editandoId() || this.adicionPara()) return null;
+    const ocupada = mesaOcupada(this.ocupadas(), this.mesaEscrita());
+    return ocupada ? mensajeMesaOcupada(ocupada) : null;
   });
 
   // ---------- Lista de pedidos ----------
@@ -101,34 +113,26 @@ export class Pedidos implements OnInit, OnDestroy {
   // ---------- Armar el pedido ----------
 
   protected agregar(producto: Producto): void {
-    const existente = this.carrito().find((i) => i.producto.id === producto.id);
-    if (existente) {
-      this.cambiarCantidad(existente, 1);
-    } else {
-      this.carrito.update((items) => [...items, { producto, cantidad: 1, nota: '' }]);
-    }
+    this.carrito.update((items) => agregarProducto(items, producto));
   }
 
   protected cambiarCantidad(item: ItemCarrito, cambio: number): void {
-    const nueva = item.cantidad + cambio;
-    if (nueva < 1) {
-      this.quitar(item);
-      return;
-    }
-    this.carrito.update((items) => items.map((i) => (i === item ? { ...i, cantidad: Math.min(nueva, 99) } : i)));
+    this.carrito.update((items) => cambiarCantidad(items, item, cambio));
   }
 
   protected cambiarNota(item: ItemCarrito, nota: string): void {
-    this.carrito.update((items) => items.map((i) => (i === item ? { ...i, nota } : i)));
+    this.carrito.update((items) => cambiarNota(items, item, nota));
   }
 
   protected quitar(item: ItemCarrito): void {
-    this.carrito.update((items) => items.filter((i) => i !== item));
+    this.carrito.update((items) => quitarItem(items, item));
   }
 
   protected limpiar(): void {
     this.carrito.set([]);
     this.editandoId.set(null);
+    this.editandoNumero.set(null);
+    this.adicionPara.set(null);
     this.form.reset({ mesa: null, observaciones: '' });
     this.form.controls.mesa.enable();
   }
@@ -143,12 +147,17 @@ export class Pedidos implements OnInit, OnDestroy {
       this.error.set('Agrega al menos un producto al pedido.');
       return;
     }
+    if (this.avisoMesa()) {
+      this.error.set(this.avisoMesa());
+      return;
+    }
     const valores = this.form.getRawValue();
-    const datos = {
-      numeroMesa: Number(valores.mesa),
-      observaciones: valores.observaciones?.trim() || null,
-      lineas: this.carrito().map((i) => ({ productoId: i.producto.id, cantidad: i.cantidad, nota: i.nota.trim() || null })),
-    };
+    const datos = aPedidoRequest(valores.mesa, valores.observaciones, this.carrito());
+    const adicion = this.adicionPara();
+    if (adicion) {
+      this.enviarAdicion(adicion, datos.lineas);
+      return;
+    }
     const id = this.editandoId();
     const peticion = id ? this.pedidosApi.modificar(id, datos) : this.pedidosApi.registrar(datos);
 
@@ -159,8 +168,27 @@ export class Pedidos implements OnInit, OnDestroy {
       next: (pedido) => {
         this.enviando.set(false);
         this.exito.set(id
-          ? `Pedido #${pedido.id} de la mesa ${pedido.numeroMesa} actualizado.`
-          : `Pedido #${pedido.id} de la mesa ${pedido.numeroMesa} enviado a cocina.`);
+          ? `${this.nombre(pedido)} actualizado.`
+          : `${this.nombre(pedido)} enviado a cocina.`);
+        this.limpiar();
+        this.cargarPedidos();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviando.set(false);
+        this.error.set(mensajeDeError(err));
+      },
+    });
+  }
+
+  /** Envía a cocina los productos agregados a un pedido que ya se estaba preparando o que ya se entregó. */
+  private enviarAdicion(pedido: Pedido, lineas: LineaPedidoRequest[]): void {
+    this.enviando.set(true);
+    this.error.set(null);
+    this.exito.set(null);
+    this.pedidosApi.agregarAdicion(pedido.id, lineas).subscribe({
+      next: (actualizado) => {
+        this.enviando.set(false);
+        this.exito.set(`Adición del ${this.nombre(actualizado).toLowerCase()} enviada a cocina.`);
         this.limpiar();
         this.cargarPedidos();
       },
@@ -173,19 +201,42 @@ export class Pedidos implements OnInit, OnDestroy {
 
   // ---------- Acciones sobre pedidos existentes ----------
 
+  /**
+   * El cliente pide algo más con el pedido ya en cocina: el carrito queda vacío para lo nuevo y la mesa fija.
+   * Al enviarlo, se suma al mismo pedido (y a su cuenta) y la cocina lo ve marcado como "Adición".
+   */
+  protected agregarProductos(pedido: Pedido): void {
+    this.limpiar();
+    this.adicionPara.set(pedido);
+    this.form.reset({ mesa: pedido.numeroMesa, observaciones: '' });
+    this.form.controls.mesa.disable();
+    this.error.set(null);
+    this.exito.set(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /** Título del formulario: pedido nuevo, edición o adición. */
+  protected tituloFormulario(): string {
+    const adicion = this.adicionPara();
+    if (adicion) return `Adición al ${this.nombre(adicion).toLowerCase()}`;
+    if (this.editandoId()) {
+      return this.verNumero
+        ? `Editar pedido #${this.editandoNumero()}`
+        : `Editar pedido de la mesa ${this.form.getRawValue().mesa}`;
+    }
+    return 'Nuevo pedido';
+  }
+
   /** Carga un pedido Pendiente en el formulario para cambiarlo. */
   protected editar(pedido: Pedido): void {
-    const items: ItemCarrito[] = [];
-    for (const linea of pedido.lineas) {
-      const producto = this.productos().find((p) => p.id === linea.productoId);
-      if (!producto) {
-        this.error.set(`El producto ${linea.productoNombre} ya no está disponible; registra un pedido nuevo.`);
-        return;
-      }
-      items.push({ producto, cantidad: linea.cantidad, nota: linea.nota ?? '' });
+    const { items, faltante } = carritoDesdePedido(pedido, this.productos());
+    if (faltante) {
+      this.error.set(`El producto ${faltante} ya no está disponible; registra un pedido nuevo.`);
+      return;
     }
     this.carrito.set(items);
     this.editandoId.set(pedido.id);
+    this.editandoNumero.set(numeroPedido(pedido));
     this.form.reset({ mesa: pedido.numeroMesa, observaciones: pedido.observaciones ?? '' });
     this.form.controls.mesa.disable();
     this.error.set(null);
@@ -197,14 +248,124 @@ export class Pedidos implements OnInit, OnDestroy {
     this.limpiar();
   }
 
+  // ---------- Ventanas de "Cancelar" y "Cambiar mesa" (antes eran las del navegador: confirm y prompt) ----------
+  // Mismo estilo que la ventana de cobro: centradas, con los colores de RestoFlow y los mensajes en español.
+
+  /** Pedido que se va a cancelar (abre la ventana de confirmación). */
+  protected readonly porCancelar = signal<Pedido | null>(null);
+  /** Pedido que se pasa a otra mesa, lo que se escribe y el problema si la mesa no sirve. */
+  protected readonly porCambiarMesa = signal<Pedido | null>(null);
+  protected readonly mesaNueva = signal('');
+  protected readonly errorMesa = signal<string | null>(null);
+
   protected cancelar(pedido: Pedido): void {
-    if (!confirm(`¿Cancelar el pedido #${pedido.id} de la mesa ${pedido.numeroMesa}?`)) return;
-    this.ejecutar(this.pedidosApi.cancelar(pedido.id), `Pedido #${pedido.id} cancelado.`);
+    this.porCancelar.set(pedido);
   }
 
+  protected confirmarCancelacion(): void {
+    const pedido = this.porCancelar();
+    if (!pedido) return;
+    this.porCancelar.set(null);
+    this.ejecutar(this.pedidosApi.cancelar(pedido.id), `${this.nombre(pedido)} cancelado.`);
+  }
+
+  /** "Pedido #275 de la mesa 5" para el admin; "Pedido de la mesa 5" para el mesero. */
+  protected nombre(pedido: Pedido): string {
+    const texto = nombrePedido(numeroPedido(pedido), pedido.numeroMesa, this.verNumero);
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+
+  /** El cliente se cambió de lugar: el pedido pasa a otra mesa libre (la anterior queda libre). */
+  protected cambiarMesa(pedido: Pedido): void {
+    this.mesaNueva.set('');
+    this.errorMesa.set(null);
+    this.porCambiarMesa.set(pedido);
+  }
+
+  /** Revisa la mesa escrita antes de enviarla; si no sirve, lo explica dentro de la misma ventana. */
+  protected confirmarCambioMesa(): void {
+    const pedido = this.porCambiarMesa();
+    if (!pedido) return;
+    const texto = this.mesaNueva();
+    const problema = errorCambioMesa(texto, pedido.numeroMesa, this.ocupadas());
+    if (problema) {
+      this.errorMesa.set(problema);
+      return;
+    }
+    const nueva = Number(texto.trim());
+    this.porCambiarMesa.set(null);
+    this.ejecutar(this.pedidosApi.cambiarMesa(pedido.id, nueva),
+      `${this.nombre(pedido)} pasado a la mesa ${nueva}.`);
+  }
+
+  /** Cierra las ventanas de cancelar y cambiar mesa (botón "Volver", clic afuera o Escape). */
+  @HostListener('document:keydown.escape')
+  protected cerrarVentana(): void {
+    this.porCancelar.set(null);
+    this.porCambiarMesa.set(null);
+  }
+
+  // ---------- Registrar la venta (ventana con el método de pago) ----------
+
+  protected readonly metodosPago: MetodoPago[] = ['EFECTIVO', 'TRANSFERENCIA'];
+  protected readonly nombresMetodo = NOMBRES_METODO_PAGO;
+  /** Pedido que se está cobrando (abre la ventana) y el método elegido. */
+  protected readonly cobrando = signal<Pedido | null>(null);
+  protected readonly metodoElegido = signal<MetodoPago | null>(null);
+  protected readonly cobrandoEnvio = signal(false);
+
+  /** Admin: registrar la venta. Mesero: pasar la cuenta (ver, imprimir; el cobro lo hace el administrador). */
   protected pagar(pedido: Pedido): void {
-    if (!confirm(`¿Registrar la venta del pedido #${pedido.id} por ${pesos(pedido.total)}?`)) return;
-    this.ejecutar(this.pedidosApi.pagar(pedido.id), `Venta del pedido #${pedido.id} registrada.`);
+    this.metodoElegido.set(null);
+    this.cobrando.set(pedido);
+  }
+
+  /** "4 nov 2026, 9:30 p. m." en la cuenta impresa. */
+  protected fechaCuenta(): string {
+    return new Date().toLocaleString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+
+  /** Abre el cuadro de impresión del navegador; solo se imprime la cuenta (estilos @media print). */
+  protected imprimirCuenta(): void {
+    window.print();
+  }
+
+  @HostListener('document:keydown.escape')
+  protected cerrarCobro(): void {
+    if (this.cobrandoEnvio()) return;
+    this.cobrando.set(null);
+  }
+
+  protected confirmarCobro(): void {
+    const pedido = this.cobrando();
+    const metodo = this.metodoElegido();
+    if (!pedido || !metodo || !this.verNumero || this.cobrandoEnvio()) return;
+    this.cobrandoEnvio.set(true);
+    this.error.set(null);
+    this.exito.set(null);
+    this.pedidosApi.pagar(pedido.id, metodo).subscribe({
+      next: () => {
+        this.cobrandoEnvio.set(false);
+        this.cobrando.set(null);
+        this.exito.set(`Venta del ${nombrePedido(numeroPedido(pedido), pedido.numeroMesa, this.verNumero)} `
+          + `registrada (${NOMBRES_METODO_PAGO[metodo].toLowerCase()}). La mesa quedó libre.`);
+        this.cargarPedidos();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cobrandoEnvio.set(false);
+        this.cobrando.set(null);
+        this.error.set(mensajeDeError(err));
+      },
+    });
+  }
+
+
+  /** Accesibilidad: con el teclado (Enter o Espacio) la fila se abre igual que con un clic. */
+  protected teclaEnFila(evento: KeyboardEvent, id: number): void {
+    if (evento.key === 'Enter' || evento.key === ' ') {
+      evento.preventDefault();
+      this.alternarDetalle(id);
+    }
   }
 
   protected alternarDetalle(id: number): void {
@@ -229,6 +390,8 @@ export class Pedidos implements OnInit, OnDestroy {
       next: (lista) => this.pedidos.set(lista),
       error: (err: HttpErrorResponse) => this.error.set(mensajeDeError(err)),
     });
+    // Se actualizan junto con la lista: otro mesero pudo ocupar o liberar una mesa
+    this.pedidosApi.mesasOcupadas().subscribe({ next: (m) => this.ocupadas.set(m) });
   }
 
   protected invalido(campo: 'mesa' | 'observaciones'): boolean {
@@ -236,13 +399,8 @@ export class Pedidos implements OnInit, OnDestroy {
     return control.invalid && control.touched;
   }
 
-  private filtroActual(): FiltroPedidos {
-    const estado = this.filtroEstado();
-    const filtro: FiltroPedidos = { mesa: this.filtroMesa() };
-    if (estado === 'ACTIVOS') filtro.estadoPedido = 'ABIERTO';
-    else if (estado === 'PAGADO' || estado === 'CANCELADO') filtro.estadoPedido = estado;
-    else if (estado !== 'TODOS') filtro.estadoCocina = estado;
-    return filtro;
+  private filtroActual() {
+    return filtroDePedidos(this.filtroEstado(), this.filtroMesa());
   }
 
   private ejecutar(peticion: ReturnType<PedidoService['cancelar']>, mensaje: string): void {

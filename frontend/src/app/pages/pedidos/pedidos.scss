@@ -1,6 +1,6 @@
 .columnas {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: minmax(0, 1fr) 400px;
   gap: 24px;
   align-items: start;
   margin-bottom: 24px;
@@ -172,7 +172,7 @@
 
 .filtro-mesa { width: 90px; }
 
-.tabla-contenedor { overflow-x: auto; }
+.tabla-contenedor { position: relative; overflow-x: auto; }
 
 .tabla {
   width: 100%;
@@ -190,7 +190,7 @@
   td { padding: 12px; border-bottom: 1px solid var(--rf-borde); }
 }
 
-.fila { cursor: pointer; &:hover { background: var(--rf-fondo); } }
+.fila { cursor: pointer; &:hover { background: var(--rf-fondo); } &:focus-visible { outline: 2px solid var(--rf-tinta); outline-offset: -2px; } }
 
 .detalle {
   background: var(--rf-fondo);
@@ -235,6 +235,166 @@
 .vacio { color: var(--rf-texto-suave); text-align: center; }
 
 @media (max-width: 1100px) {
-  .columnas { grid-template-columns: 1fr; }
+  .columnas { grid-template-columns: minmax(0, 1fr); }
   .carrito { position: static; }
 }
+
+// Mesas con un pedido abierto y el mesero que las atiende: no se pueden usar para un pedido nuevo
+.mesas-ocupadas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 16px;
+  &__titulo { margin-right: 2px; font-size: 13px; color: var(--rf-texto-2); }
+  &__lista { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+}
+.mesa-ocupada {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  font-size: 13px;
+  color: var(--rf-cocina-texto);
+  border: 1px solid var(--rf-cocina-borde);
+  border-radius: 999px;
+  background: var(--rf-cocina-fondo);
+  strong { font-family: var(--rf-fuente-mono); }
+}
+
+/* Ventana para registrar la venta: centrada, angosta, con los colores de RestoFlow */
+.cobro-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(27, 31, 29, 0.55);
+}
+.cobro {
+  width: min(440px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid var(--rf-borde);
+  border-radius: var(--rf-radio-l);
+  background: var(--rf-papel);
+  box-shadow: 0 18px 48px rgba(27, 31, 29, 0.25);
+  h2 { margin: 0 0 4px; font-family: var(--rf-fuente-titulo); font-size: 22px; }
+  &__pedido { margin: 0 0 16px; font-size: 14px; color: var(--rf-texto-2); }
+  &__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 0 0 20px;
+    padding: 14px 16px;
+    border-radius: var(--rf-radio-m);
+    background: var(--rf-crema);
+    span { font-size: 14px; color: var(--rf-texto-2); }
+    strong { font-family: var(--rf-fuente-titulo); font-size: 26px; font-variant-numeric: tabular-nums; }
+  }
+  &__etiqueta { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+  &__metodos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  &__nota { margin: 0 0 20px; font-size: 14px; color: var(--rf-texto-2); }
+  // "Imprimir factura" ocupa su propia fila; debajo, Cancelar y Aceptar a la derecha
+  &__imprimir { flex: 1 1 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  &__botones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    .boton, .boton-secundario { width: auto; height: 44px; min-height: 44px; margin: 0; padding: 0 22px; }
+  }
+}
+.metodo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rf-tinta);
+  border: 1.5px solid var(--rf-borde);
+  border-radius: var(--rf-radio-m);
+  background: var(--rf-papel);
+  cursor: pointer;
+  &:hover { border-color: var(--rf-tinta); }
+  &:focus-visible, &:has(input:focus-visible) { outline: 2px solid var(--rf-brasa); outline-offset: 2px; }
+  &--activo {
+    color: var(--rf-brasa-oscura);
+    border-color: var(--rf-brasa-oscura);
+    background: var(--rf-cocina-fondo);
+  }
+}
+
+/* Detalle de la cuenta (lo mismo que se imprime) */
+.factura {
+  &__marca { display: none; }          // solo en papel
+  &__fecha { display: none; }
+  &__pie { display: none; }
+  &__lineas {
+    width: 100%;
+    margin: 0 0 16px;
+    border-collapse: collapse;
+    font-size: 14px;
+    th {
+      padding: 0 0 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: left;
+      color: var(--rf-texto-2);
+      border-bottom: 1px solid var(--rf-linea);
+    }
+    td { padding: 8px 0; vertical-align: top; border-bottom: 1px solid var(--rf-linea); }
+    td small { display: block; font-size: 12px; color: var(--rf-texto-2); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
+  }
+}
+
+/* Ventanas de "Cancelar pedido" y "Cambiar de mesa": la misma ventana del cobro, más corta */
+.ventana {
+  h2 { margin-bottom: 4px; }
+  &__mesa { margin-bottom: 8px; &.con-error { border-color: var(--rf-error); } }
+  .error-campo { display: block; margin: 0 0 20px; }
+}
+
+/* Adición: explicación debajo del título del formulario */
+.ayuda-adicion { margin: 4px 0 12px; font-size: 13px; color: var(--rf-texto-suave); }
+
+/* Celular y tableta: la lista de pedidos pasa de tabla a tarjetas, para que los botones (cobrar, agregar
+   productos, cambiar mesa) siempre se vean sin desplazar de lado. Fila 1: mesa, número y estado;
+   fila 2: hora, mesero y total; fila 3: botones. */
+@media (max-width: 900px) {
+  .lista__encabezado { flex-wrap: wrap; }
+  .tabla thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tabla, .tabla tbody { display: block; }
+  .fila {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 6px 12px;
+    align-items: center;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--rf-borde);
+    td { padding: 0; border: 0; }
+  }
+  .c-mesa { grid-area: 1 / 1; font-size: 16px; &::before { content: 'Mesa '; font-weight: 400; } }
+  .c-numero { grid-area: 1 / 2; color: var(--rf-texto-suave); &::before { content: 'Pedido #'; } }
+  .c-estado { grid-area: 1 / 3; justify-self: end; }
+  .c-hora { grid-area: 2 / 1; color: var(--rf-texto-suave); }
+  .c-mesero { grid-area: 2 / 2; }
+  .c-total { grid-area: 2 / 3; justify-self: end; font-weight: 600; }
+  .fila .acciones { grid-area: 3 / 1 / 4 / 4; display: flex; flex-wrap: wrap; gap: 6px; white-space: normal; text-align: left; }
+  .accion { margin-left: 0; }
+  .detalle { display: block; td { display: block; } }
+}
+
+/* Celular: el menú en dos columnas para llegar más rápido al pedido */
+@media (max-width: 600px) {
+  .productos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .producto { padding: 12px; }
+}
+

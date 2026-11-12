@@ -22,6 +22,19 @@ spring:
     username: ${DB_USER:restoflow_app}
     password: ${DB_PASSWORD:}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    # RES-59 · Fallar rápido cuando el sistema está saturado (prueba de estrés)
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAXIMO:10}   # conexiones a SQL Server que se mantienen abiertas
+      # Si en 5 s no hay una conexión libre, la petición responde 503 "sistema ocupado" en vez de quedarse en
+      # una fila que el cliente ya abandonó (antes esperaba hasta 30 s y el trabajo pendiente se acumulaba)
+      connection-timeout: 5000
+
+  # ---------- Transacciones ----------
+  transaction:
+    # RES-59 · Tiempo máximo de una transacción: sus consultas se cancelan en SQL Server al pasarlo, así una
+    # consulta lenta no ocupa una conexión indefinidamente. La operación más pesada (cobrar) tarda menos de 1 s.
+    default-timeout: 10s
+
   # ---------- Correo: Gmail SMTP ----------
   mail:
     host: smtp.gmail.com
@@ -42,11 +55,68 @@ spring:
     open-in-view: false
     show-sql: false
 
+  # Factor IX (desechabilidad): al detener el contenedor se terminan las peticiones en curso
+  # (máximo 20 s) antes de apagar, en vez de cortarlas a la mitad
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
 server:
-  port: 8080
+  # Factor VII: el API se publica en un puerto; se puede cambiar con la variable PORT
+  port: ${PORT:8080}
+  shutdown: graceful
+
+# ---------- Actuator: salud y datos de la aplicación (factores IX y XII) ----------
+# /actuator/health           estado general (lo usa el healthcheck de Docker)
+# /actuator/health/liveness  ¿el proceso está vivo?  ·  /actuator/health/readiness  ¿puede recibir peticiones?
+# /actuator/info             versión, fecha de compilación, Java y entorno
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never        # no se publican detalles internos (base de datos, disco)
+  health:
+    mail:
+      enabled: false             # Gmail no debe marcar el sistema como caído
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: false             # no se publica la versión exacta de Java (información útil para un atacante)
+
+# Datos que muestra /actuator/info (Maven reemplaza @project.version@ al compilar)
+info:
+  app:
+    nombre: RestoFlow
+    version: '@project.version@'
+    entorno: ${restoflow.entorno:desarrollo}
+    instancia: ${HOSTNAME:local}   # en Docker, el contenedor que respondió (útil al escalar, factor VIII)
+
+# ---------- Logs (formato y archivos en logback-spring.xml) ----------
+logging:
+  level:
+    # restoflow.peticiones (una línea por petición) y restoflow.auditoria (quién hizo qué)
+    restoflow: INFO
+  # Datos que acompañan cada línea cuando los logs salen en JSON (perfil "json", ver logback-spring.xml)
+  structured:
+    ecs:
+      service:
+        name: restoflow-backend
+        version: '@project.version@'
+        environment: ${restoflow.entorno:desarrollo}
 
 # ---------- Configuración propia de RestoFlow ----------
 restoflow:
+  panel:
+    # RES-59 · Segundos que se reutiliza el resumen del Dashboard antes de recalcularlo (0 = siempre se recalcula)
+    vigencia-segundos: ${PANEL_VIGENCIA_SEGUNDOS:5}
+  logs:
+    # Carpeta de los archivos de log; en Docker es /app/logs (montada en un volumen)
+    directorio: ${LOG_DIR:logs}
   jwt:
     # Clave para firmar los tokens (mínimo 32 caracteres). En producción debe venir de la variable JWT_SECRET.
     secret: ${JWT_SECRET:restoflow-udec-2026-clave-de-desarrollo-cambiar-en-produccion}
@@ -62,3 +132,37 @@ restoflow:
     nombre: Administrador RestoFlow
     email: ${ADMIN_EMAIL:admin@restoflow.com}
     contrasena: ${ADMIN_PASSWORD:Admin2026*}
+  # ---------- API externa: Open Food Facts (gratuita y sin clave) ----------
+  apis-externas:
+    tiempo-espera-segundos: ${APIS_TIEMPO_ESPERA:4}   # si no responde en 4 s, se avisa y se escribe a mano
+    open-food-facts:
+      url: ${OPENFOODFACTS_URL:https://world.openfoodfacts.org}
+      user-agent: RestoFlow/@project.version@ (Proyecto Integrador UdeC)
+    # ---------- IA externa: Google Gemini (RestoFlow AI) ----------
+    # Clave gratuita en https://aistudio.google.com → "Get API key". Va SOLO en el .env (nunca en GitHub).
+    # Sin clave, RestoFlow funciona igual con sus reglas (la campana y las recomendaciones no se rompen).
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      # Flash-Lite: el más rápido del plan gratuito (responde en ~1 s) y suficiente para redactar con datos dados
+      modelo: ${GEMINI_MODELO:gemini-3.5-flash-lite}
+      # Si el principal está saturado, sin cupo o tarda demasiado, se prueban estos (separados por coma)
+      modelos-respaldo: ${GEMINI_MODELOS_RESPALDO:gemini-3.8-flash}
+      tiempo-espera-segundos: ${GEMINI_TIEMPO_ESPERA:15}
+  # ---------- Registro de actividad en la base de datos (recomendación del comité) ----------
+  # Cada petición al API se guarda en la tabla registro_peticiones (en segundo plano) y se consulta en SQL Server.
+  # Los logs de texto siguen igual.
+  registro:
+    habilitado: ${REGISTRO_BD_HABILITADO:true}
+    # Días que se conservan; cada madrugada se borran los más viejos
+    dias: ${REGISTRO_BD_DIAS:30}
+    limpieza-programada: ${REGISTRO_BD_LIMPIEZA:true}
+    cron-limpieza: "${REGISTRO_BD_CRON_LIMPIEZA:0 30 3 * * *}"
+  # ---------- RestoFlow AI (Sprint 5) ----------
+  ia:
+    # Tarea programada que crea y cierra las alertas anticipadas (RES-40). Formato cron de Spring:
+    # segundo minuto hora día mes día-semana → "0 5 * * * *" = al minuto 5 de cada hora
+    alertas-programadas: ${IA_ALERTAS_PROGRAMADAS:true}
+    cron: "${IA_CRON:0 5 * * * *}"
+    # Solo para demostraciones: si es true y casi no hay ventas recientes, al arrancar se generan 3 semanas de
+    # ventas de ejemplo (con su consumo de inventario) para que RestoFlow AI tenga qué analizar.
+    historial-demo: ${IA_HISTORIAL_DEMO:false}

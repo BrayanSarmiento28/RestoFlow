@@ -32,11 +32,20 @@ public final class AuthDto {
             @Pattern(regexp = "\\d{6}", message = "El código debe tener 6 dígitos") String codigo,
             @NotBlank(message = "La nueva contraseña es obligatoria") String nuevaPassword) { }
 
+    /** Mi cuenta: cambiar la contraseña escribiendo la actual. */
+    public record CambioContrasenaRequest(
+            @NotBlank(message = "Escriba su contraseña actual") String actual,
+            @NotBlank(message = "Escriba la nueva contraseña") @Size(max = 72, message = "Máximo 72 caracteres")
+            String nueva) { }
+
     public record CrearUsuarioRequest(
             @NotBlank(message = "El nombre es obligatorio") @Size(max = 100) String nombre,
             @NotBlank(message = "El correo es obligatorio") @Email(message = "El correo no es válido") String email,
             @NotBlank(message = "La contraseña es obligatoria") @Size(max = 72) String password,
             @NotNull(message = "El rol es obligatorio") Rol rol) { }
+
+    /** Desactivar (false) o reactivar (true) una cuenta del personal. */
+    public record CambioEstadoRequest(@NotNull(message = "Indica si la cuenta queda activa") Boolean activa) { }
 
     // ---------- Salida ----------
 

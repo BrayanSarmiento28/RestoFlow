@@ -6,7 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.udec.restoflow.application.port.out.GeneradorTokenPort;
 import com.udec.restoflow.domain.model.Rol;
 import com.udec.restoflow.domain.model.Usuario;
-import org.springframework.beans.factory.annotation.Value;
+import com.udec.restoflow.infrastructure.config.RestoFlowProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Mac;
@@ -38,9 +39,13 @@ public class JwtTokenAdapter implements GeneradorTokenPort {
     private final long vigenciaSegundos;
     private final ObjectMapper json;
 
-    public JwtTokenAdapter(@Value("${restoflow.jwt.secret}") String secreto,
-                           @Value("${restoflow.jwt.expiracion-minutos:480}") long expiracionMinutos,
-                           ObjectMapper json) {
+    @Autowired
+    public JwtTokenAdapter(RestoFlowProperties propiedades, ObjectMapper json) {
+        this(propiedades.jwt().secret(), propiedades.jwt().expiracionMinutos(), json);
+    }
+
+    /** También se usa en las pruebas unitarias, sin levantar Spring. */
+    public JwtTokenAdapter(String secreto, long expiracionMinutos, ObjectMapper json) {
         if (secreto == null || secreto.length() < 32) {
             throw new IllegalStateException("restoflow.jwt.secret debe tener al menos 32 caracteres");
         }

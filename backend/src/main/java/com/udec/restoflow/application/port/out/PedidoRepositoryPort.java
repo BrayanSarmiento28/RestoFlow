@@ -4,6 +4,8 @@ import com.udec.restoflow.domain.model.EstadoCocina;
 import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.domain.model.Pedido;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,4 +21,13 @@ public interface PedidoRepositoryPort {
 
     /** RF-04 · Pedidos abiertos aún no entregados, del más antiguo al más reciente. */
     List<Pedido> pendientesEnCocina();
+
+    /** RF-12 · Pedidos creados en el rango [desde, hasta), del más reciente al más antiguo. */
+    List<Pedido> creadosEntre(LocalDateTime desde, LocalDateTime hasta, EstadoPedido estadoPedido);
+
+    /** El número del día más alto ya usado (0 si aún no hay pedidos ese día). */
+    int ultimoNumeroDelDia(LocalDate dia);
+
+    /** RF-08 / RF-12 · Ventas: pedidos Pagados cerrados en el rango [desde, hasta). */
+    List<Pedido> pagadosEntre(LocalDateTime desde, LocalDateTime hasta);
 }

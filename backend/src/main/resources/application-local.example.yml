@@ -11,3 +11,8 @@ spring:
 restoflow:
   correo:
     modo: gmail   # use "consola" si no tiene Gmail configurado
+  # IA externa de RestoFlow AI (Google Gemini). Clave gratuita en https://aistudio.google.com -> "Get API key".
+  # Si la deja vacía, RestoFlow AI funciona con sus reglas (sin la IA externa).
+  apis-externas:
+    gemini:
+      api-key: ESCRIBA_AQUI_LA_CLAVE_DE_GEMINI
