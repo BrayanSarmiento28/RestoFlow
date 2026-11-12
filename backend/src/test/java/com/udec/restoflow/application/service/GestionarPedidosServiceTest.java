@@ -95,6 +95,15 @@ class GestionarPedidosServiceTest {
     }
 
     @Test
+    @DisplayName("Se consulta un pedido por su id; uno que no existe responde 404")
+    void obtener() {
+        Pedido pedido = servicio.registrar(pedidoMesa(5), meseroId);
+
+        assertEquals(5, servicio.obtener(pedido.getId()).getNumeroMesa());
+        assertThrows(RecursoNoEncontradoException.class, () -> servicio.obtener(999L));
+    }
+
+    @Test
     @DisplayName("No se puede cambiar la mesa de un pedido al modificarlo")
     void noCambiaLaMesa() {
         Pedido pedido = servicio.registrar(pedidoMesa(5), meseroId);

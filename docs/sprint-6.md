@@ -770,4 +770,16 @@ mantenibilidad. Ninguno era una vulnerabilidad, pero varios sí podían causar e
 
 **Versión 1.1.1:** son correcciones que no cambian ninguna función. Por versionado semántico se sube el último número.
 
-**Pruebas:** las 316 del backend siguen pasando.
+**Segunda pasada:** al subir la versión, SonarQube empezó a medir el código nuevo desde la 1.1.0. Quedaba 1 problema
+(un ternario dentro de `String.valueOf`, regla S9358) y la cobertura del código nuevo era 65,6 %, por debajo del 80 %
+que pide la puerta. Se resolvió así:
+- **Menos ramas sin probar:** en `Auditoria` el texto del log se limpia en una variable antes de registrarlo, en vez
+  de preguntar por el nivel del log. En `TiemposPreparacion` y `GeminiAdapter`, los casos que no pueden ocurrir (un
+  pedido sin platos, un adaptador sin modelos) se dejan explícitos con `Objects.requireNonNull`.
+- **Pruebas nuevas:** `RelojAjustableTest`, `HistorialDemoIntegracionTest` (las 3 semanas de ventas de ejemplo de
+  RestoFlow AI), consultar un pedido por id, el resumen sin avisos urgentes y el máximo de recomendaciones de la IA.
+- **Error encontrado con la prueba nueva:** en una base vacía, el historial de ejemplo no se generaba en el primer
+  arranque. Corría antes de que existiera el administrador inicial y no tenía quién registrara los pedidos; solo
+  funcionaba al reiniciar. Ahora `AdministradorInicialConfig` corre primero (`@Order(0)`).
+
+**Pruebas:** 321 en el backend, todas pasan. La cobertura del código nuevo, medida con JaCoCo, es de 93 %.

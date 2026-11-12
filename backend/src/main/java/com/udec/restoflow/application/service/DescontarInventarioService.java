@@ -71,7 +71,7 @@ public class DescontarInventarioService implements DescontarInventarioUseCase {
         LocalDateTime ahora = LocalDateTime.now(reloj);
         // El número del día (#1, #2...) es el que ve el administrador; los pedidos antiguos sin él usan el id
         Integer numero = pedido.getNumeroDelDia();
-        String referencia = numero != null ? String.valueOf(numero) : String.valueOf(pedido.getId());
+        long referencia = numero != null ? numero.longValue() : pedido.getId();
         String motivo = "Venta del pedido #" + referencia + " (mesa " + pedido.getNumeroMesa() + ")";
         List<Consumo> resultado = new ArrayList<>();
 
