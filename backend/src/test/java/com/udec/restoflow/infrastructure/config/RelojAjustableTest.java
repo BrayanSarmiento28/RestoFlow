@@ -4,6 +4,7 @@ import com.udec.restoflow.infrastructure.config.HistorialDemoConfig.RelojAjustab
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
@@ -37,7 +38,7 @@ class RelojAjustableTest {
         assertThat(uno).isEqualTo(otro).hasSameHashCodeAs(otro);
 
         otro.avanzarMinutos(1);
-        assertThat(uno).isNotEqualTo(otro).isNotEqualTo("reloj");
+        assertThat(uno).isNotEqualTo(otro).isNotEqualTo(Clock.systemUTC());   // otro tipo de reloj
         RelojAjustable utc = new RelojAjustable(ZoneId.of("UTC"));
         utc.fijar(MEDIODIA);
         assertThat(uno).isNotEqualTo(utc);

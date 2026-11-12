@@ -783,3 +783,23 @@ que pide la puerta. Se resolvió así:
   funcionaba al reiniciar. Ahora `AdministradorInicialConfig` corre primero (`@Order(0)`).
 
 **Pruebas:** 321 en el backend, todas pasan. La cobertura del código nuevo, medida con JaCoCo, es de 93 %.
+
+**Tercera pasada · cobertura total del backend:** la puerta ya pasaba en cobertura (94,9 % del código nuevo), pero
+quedaban partes del backend sin ninguna prueba: el envío de correo por Gmail, el flujo completo de recuperar la
+contraseña por el API, las dos tareas programadas y el escritor asíncrono del registro de actividad. Se agregaron
+45 pruebas:
+
+| Prueba nueva | Qué cubre |
+|---|---|
+| `RecuperacionContrasenaIntegracionTest` | HU-02 por el API: pedir el código, usarlo una sola vez e iniciar sesión con la contraseña nueva |
+| `ApiCompletaIntegracionTest` | Editar productos e insumos, ajustar un conteo, atender la alerta que crea, consultar y modificar un pedido |
+| `CorreoAdaptersTest` | El correo de Gmail (destinatario, asunto, código y nombre escapado contra HTML) y el error cuando no sale |
+| `TareasProgramadasTest` | Las tareas de RestoFlow AI y de limpieza siguen corriendo aunque una ejecución falle |
+| `EscritorRegistroAsincronoTest` | Registro deshabilitado, fallo de la base de datos y cola llena (descarta en vez de frenar el API) |
+| `GlobalExceptionHandlerTest` | Respuestas 404, 405, 409 y 500 con el formato de error del API |
+| `ValidacionesDominioTest` | Las validaciones de usuarios, insumos, recetas, movimientos, productos, pedidos y registros |
+| `ReglasRestoFlowAITest` | Casos límite de las recomendaciones, los avisos y los datos que se envían a Gemini |
+| `CasosLimiteSeguridadTest` | Clave de tokens corta, tokens ilegibles y configuración de Gemini sin mostrar la clave |
+
+**Resultado (JaCoCo):** 366 pruebas, todas pasan. Cobertura de líneas 98,2 %, de ramas 90,6 % y total 96,2 %
+(antes: 93,6 %, 82,4 % y 90,6 %).
