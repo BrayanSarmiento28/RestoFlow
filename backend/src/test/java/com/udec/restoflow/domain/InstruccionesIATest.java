@@ -61,6 +61,14 @@ class InstruccionesIATest {
     }
 
     @Test
+    @DisplayName("Si la IA da más recomendaciones de las que caben en la pantalla, se toman las primeras")
+    void recomendacionesMaximas() {
+        String respuesta = "MEDIA|DEMANDA|Recomendación|Detalle con números.\n".repeat(9);
+
+        assertEquals(6, InstruccionesIA.leerRecomendaciones(respuesta).size());   // RECOMENDACIONES_MAXIMAS
+    }
+
+    @Test
     @DisplayName("Los datos para la IA son del negocio (ventas, platos, insumos, avisos) y en texto corto")
     void contexto() {
         AnalisisVentas ventas = new AnalisisVentas(20, true, new BigDecimal("1250000"), 12, DayOfWeek.SATURDAY, 13,
@@ -91,6 +99,11 @@ class InstruccionesIATest {
         assertEquals("Tiene 2 avisos (1 urgente). Empiece por: Mesa 4 · pedido demorado.",
                 InstruccionesIA.resumenSinIA(List.of(aviso("a", Aviso.Nivel.URGENTE, "Mesa 4 · pedido demorado"),
                         aviso("b", Aviso.Nivel.ATENCION, "Mesa 2"))));
+        assertEquals("Tiene 1 aviso. Empiece por: Mesa 2.",
+                InstruccionesIA.resumenSinIA(List.of(aviso("b", Aviso.Nivel.ATENCION, "Mesa 2"))));
+        assertEquals("Tiene 2 avisos (2 urgentes). Empiece por: Mesa 4.",
+                InstruccionesIA.resumenSinIA(List.of(aviso("a", Aviso.Nivel.URGENTE, "Mesa 4"),
+                        aviso("c", Aviso.Nivel.URGENTE, "Mesa 7"))));
     }
 
     @Test

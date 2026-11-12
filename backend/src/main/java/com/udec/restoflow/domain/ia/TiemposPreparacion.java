@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * RestoFlow AI · cuánto tarda normalmente cada plato, aprendido de los pedidos reales (desde que se registra hasta
@@ -63,8 +64,9 @@ public final class TiemposPreparacion {
     }
 
     public int minutosNormales(Pedido pedido) {
-        DetallePedido lento = platoMasLento(pedido);
-        return lento == null ? MINUTOS_POR_DEFECTO : minutosNormales(lento.getProductoId());
+        // Un pedido siempre tiene al menos un plato (lo valida Pedido), así que siempre hay uno más lento
+        DetallePedido lento = Objects.requireNonNull(platoMasLento(pedido), "El pedido no tiene platos");
+        return minutosNormales(lento.getProductoId());
     }
 
     /**

@@ -100,7 +100,7 @@ Convención de mensajes de commit: `feat:` nueva funcionalidad · `fix:` correcc
 | Análisis de calidad con SonarQube | [`docs/sonarqube.md`](docs/sonarqube.md) |
 | Principios SOLID y los doce factores | [`docs/principios-solid.md`](docs/principios-solid.md) · [`docs/doce-factores.md`](docs/doce-factores.md) |
 
-**Pruebas automáticas:** 316 en el backend (JUnit 5, integración con H2 y MockMvc, y pruebas que vigilan las
+**Pruebas automáticas:** 321 en el backend (JUnit 5, integración con H2 y MockMvc, y pruebas que vigilan las
 reglas de la arquitectura hexagonal) y unas 250 en el frontend (Jest).
 
 El **manual de usuario** se entrega aparte, en PDF.

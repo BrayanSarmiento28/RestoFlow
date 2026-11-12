@@ -7,13 +7,17 @@ import com.udec.restoflow.domain.model.Rol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
  * HU-03 · Como solo un administrador puede crear cuentas, alguien tiene que ser el primero.
  * Al arrancar, si la tabla de usuarios está vacía, se crea el administrador inicial.
+ * Corre antes que los datos de ejemplo (@Order 0): el historial de ventas de ejemplo necesita un usuario que
+ * registre los pedidos.
  */
 @Component
+@Order(0)
 public class AdministradorInicialConfig implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(AdministradorInicialConfig.class);
