@@ -80,6 +80,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        VERSION: ${RESTOFLOW_VERSION:-1.1.1}
     image: restoflow-backend:${RESTOFLOW_VERSION:-1.1.1}
     container_name: restoflow-backend
     depends_on:
@@ -134,6 +136,7 @@ services:
       dockerfile: Dockerfile
       args:
         CONFIGURACION: production
+        VERSION: ${RESTOFLOW_VERSION:-1.1.1}
     image: restoflow-frontend:${RESTOFLOW_VERSION:-1.1.1}
     container_name: restoflow-frontend
     depends_on:
