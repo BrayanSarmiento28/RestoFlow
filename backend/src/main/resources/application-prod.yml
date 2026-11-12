@@ -19,12 +19,14 @@ spring:
       ddl-auto: none          # en producción las tablas se crean con el script SQL, nunca automáticamente
     show-sql: false
 
-# Swagger apagado: en producción no se publica la documentación del API
+# Swagger apagado por defecto: en producción no se publica la documentación del API. Se puede encender con
+# SWAGGER_HABILITADO=true (por ejemplo, para la sustentación); cada operación sigue exigiendo el token JWT
 springdoc:
   api-docs:
-    enabled: false
+    enabled: ${SWAGGER_HABILITADO:false}
   swagger-ui:
-    enabled: false
+    enabled: ${SWAGGER_HABILITADO:false}
+    path: /swagger-ui.html
 
 logging:
   level:

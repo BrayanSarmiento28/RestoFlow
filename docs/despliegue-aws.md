@@ -166,23 +166,53 @@ conectada por SSH, `docker stats` muestra cuánta CPU y memoria usa cada contene
 
 ## 8. Pasar a producción (RES-58)
 
-Cuando `preprod` esté validado y unido a `main`:
+Cuando `preprod` esté validado y unido a `main`, y `main` tenga la etiqueta `v1.0.0`:
 
 ```bash
 cd ~/RestoFlow
-git fetch && git checkout main && git pull
-sed -i "s|^SPRING_PROFILES_ACTIVE=.*|SPRING_PROFILES_ACTIVE=prod|" .env
-docker compose up -d --build
+git fetch
+git checkout main
+git pull
 ```
 
-En `prod`:
-- Swagger se apaga.
-- No se crea el menú de ejemplo.
-- Las tablas solo se crean con los scripts SQL.
+Luego se cambian cuatro valores del `.env` del servidor:
 
-Los datos de pre-producción, incluidos los pedidos de las pruebas de carga, siguen en la misma base de datos. Para
-empezar producción con la base vacía, **antes** del `up` ejecute `docker compose down -v`. **Esto borra la base de
-datos para siempre**, así que úselo solo si no hay nada que conservar.
+```bash
+sed -i \
+  -e "s|^SPRING_PROFILES_ACTIVE=.*|SPRING_PROFILES_ACTIVE=prod|" \
+  -e "s|^RESTOFLOW_VERSION=.*|RESTOFLOW_VERSION=1.0.0|" \
+  .env
+grep -q "^SWAGGER_HABILITADO=" .env || echo "SWAGGER_HABILITADO=true" >> .env
+```
+
+| Variable | Valor | Por qué |
+|---|---|---|
+| `SPRING_PROFILES_ACTIVE` | `prod` | Sin menú de ejemplo, tablas solo por scripts SQL, registros de librerías solo desde `WARN` y correo real |
+| `RESTOFLOW_VERSION` | `1.0.0` | Las imágenes quedan con la versión de la entrega: `restoflow-backend:1.0.0` |
+| `SWAGGER_HABILITADO` | `true` | Para mostrar el API en la sustentación. En un restaurante real se deja en `false` |
+| `MAIL_USERNAME` y `MAIL_PASSWORD` | la cuenta de Gmail y su contraseña de aplicación | En `prod` la recuperación de contraseña envía el código por correo real |
+
+Las credenciales de Gmail **no se escriben en esta guía**: se copian a mano del `.env` del PC con `nano .env`,
+igual que `GEMINI_API_KEY`. Después:
+
+```bash
+docker compose up -d --build
+docker compose ps
+curl -s http://localhost/api/salud; echo
+```
+
+Debe responder `"entorno":"produccion"`.
+
+En `prod`:
+- No se crea el menú de ejemplo. Si la base ya tiene datos (por ejemplo, el menú y el inventario que cargó
+  `preprod`), se conservan: cambiar de perfil no borra nada.
+- Las tablas solo se crean con los scripts SQL (`ddl-auto: none`).
+- Swagger queda en `http://IP-DEL-SERVIDOR/swagger-ui.html` solo si `SWAGGER_HABILITADO=true`. Aunque se vea la
+  documentación, cada operación sigue pidiendo iniciar sesión.
+
+Para empezar producción con la base de datos vacía, **antes** del `up` se borra solo el volumen de SQL Server con
+`docker compose down` y luego `docker volume rm restoflow_sqlserver_datos`. **Esto borra la base de datos para
+siempre**, así que úselo solo si no hay nada que conservar.
 
 ## 9. Costos y cuidado de los créditos
 

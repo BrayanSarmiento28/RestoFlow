@@ -682,3 +682,33 @@ durante 7 días (por ejemplo, *"comprar 603 aguacates"*). Por eso se reinició *
 (`docker volume rm restoflow_sqlserver_datos`). Al arrancar, `db-init` volvió a crear las tablas y el perfil
 `preprod` volvió a cargar el menú de ejemplo y el inventario inicial. Los registros del backend se conservaron, y
 los resultados de las pruebas están en `docs/pruebas/carga-y-estres.md`.
+
+### 6.11 Paso a producción y versión 1.0.0 (RES-58)
+
+El servidor de AWS pasa de la rama `preprod` a `main`, con el perfil `prod` y las imágenes en la versión **1.0.0**.
+`main` queda con la etiqueta `v1.0.0`, que es la versión de la entrega del 15 de noviembre.
+
+**Decisión: producción con los datos actuales.** Al pasar a `prod` no se borró la base de datos. El menú y el
+inventario de ejemplo que cargó `preprod` después del reinicio de RES-60, y las cuentas del personal, se conservan
+para la demostración. Cambiar de perfil no borra datos: `prod` solo deja de crear el menú de ejemplo cuando la base
+está vacía.
+
+**Swagger en producción, apagado por defecto.** El perfil `prod` apagaba Swagger sin excepción. Para mostrar el API
+en la sustentación, se volvió configurable:
+
+| Archivo | Cambio |
+|---|---|
+| `application-prod.yml` | `springdoc.api-docs.enabled` y `springdoc.swagger-ui.enabled` leen `SWAGGER_HABILITADO` (por defecto `false`) |
+| `docker-compose.yml` | Pasa `SWAGGER_HABILITADO` al backend (por defecto `false`) |
+| `.env.example` | Documenta la variable y cuándo usar cada valor |
+| `frontend/nginx.conf` | Reenvía `/swagger-ui` y `/v3/api-docs` al backend. Antes solo reenviaba `/api`, así que Swagger no se podía abrir desde el servidor |
+
+Así un restaurante real lo deja apagado sin tocar código, y en la demostración se enciende con una variable. Aunque
+la documentación esté visible, cada operación sigue exigiendo el token JWT: Swagger muestra el API, no lo abre.
+
+**Versión 1.0.0:** `pom.xml` (también la ven `/actuator/info` y el `User-Agent` de Open Food Facts), las imágenes de
+Docker (`RESTOFLOW_VERSION`), `.env.example` y `docs/doce-factores.md`.
+
+**Correo en producción:** `prod` usa Gmail para la recuperación de contraseña, así que el `.env` del servidor
+necesita `MAIL_USERNAME` y `MAIL_PASSWORD`. Se copian a mano, como la clave de Gemini, y nunca se suben al
+repositorio. Los pasos están en `docs/despliegue-aws.md` §8.

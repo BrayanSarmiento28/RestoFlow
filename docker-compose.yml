@@ -80,7 +80,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: restoflow-backend:${RESTOFLOW_VERSION:-0.3.0}
+    image: restoflow-backend:${RESTOFLOW_VERSION:-1.0.0}
     container_name: restoflow-backend
     depends_on:
       db-init:
@@ -98,6 +98,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD en el archivo .env}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
       CORREO_MODO: ${CORREO_MODO:-consola}
+      # Swagger (documentación del API) en producción: apagado salvo que se pida (RES-58)
+      SWAGGER_HABILITADO: ${SWAGGER_HABILITADO:-false}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       LOG_DIR: /app/logs
@@ -132,7 +134,7 @@ services:
       dockerfile: Dockerfile
       args:
         CONFIGURACION: production
-    image: restoflow-frontend:${RESTOFLOW_VERSION:-0.3.0}
+    image: restoflow-frontend:${RESTOFLOW_VERSION:-1.0.0}
     container_name: restoflow-frontend
     depends_on:
       backend:
