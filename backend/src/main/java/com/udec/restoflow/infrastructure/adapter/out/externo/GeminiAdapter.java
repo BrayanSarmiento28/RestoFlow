@@ -80,7 +80,8 @@ public class GeminiAdapter implements AsistenteIAPort {
                 }
             }
         }
-        throw ultimo;
+        // El constructor exige al menos un modelo: si se llega aquí, todos fallaron y ultimo tiene la última falla
+        throw Objects.requireNonNull(ultimo);
     }
 
     /**

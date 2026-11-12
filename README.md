@@ -9,8 +9,21 @@ Asignaturas: Ingeniería de Software y Sistemas de Información.
 
 | Integrante | Responsabilidad |
 |---|---|
-| Brayan Estiven Sarmiento Vargas | Backend (Java 17 · Spring Boot 3 · Arquitectura hexagonal · SQL Server) |
-| Juan Sebastián Patiño Ocampo | Frontend (Angular · diseño UI/UX en Figma) |
+| Brayan Estiven Sarmiento Vargas | Backend, frontend, despliegue y documentación |
+
+## En producción · versión 1.1.1
+
+| Qué | Dónde |
+|---|---|
+| Aplicación | http://18.222.37.70 (AWS EC2, región Ohio) |
+| Estado del API | http://18.222.37.70/api/salud |
+| Versión publicada | [`v1.1.1`](https://github.com/BrayanSarmiento28/RestoFlow/releases/tag/v1.1.1) |
+
+El servidor corre los mismos contenedores de Docker Compose que el entorno local, con el perfil `prod`. Guía en
+[`docs/despliegue-aws.md`](docs/despliegue-aws.md).
+
+**Tecnologías:** Java 17 · Spring Boot 3.5 con arquitectura hexagonal · Angular · SQL Server 2022 · Docker ·
+Google Gemini (RestoFlow AI) · Apache JMeter (pruebas de carga) · SonarQube · AWS EC2.
 
 ## Estructura del repositorio
 
@@ -25,8 +38,11 @@ RestoFlow/
 El frontend y el backend son **aplicaciones independientes** que se comunican por HTTP (JSON) con autenticación JWT:
 
 ```
-Angular (localhost:4200)  ──HTTP/JSON──►  Spring Boot (localhost:8080/api)  ──JPA──►  SQL Server
+Angular (Nginx)  ──HTTP/JSON──►  Spring Boot (/api)  ──JPA──►  SQL Server
 ```
+
+En el servidor solo Nginx está expuesto a internet (puerto 80): reenvía `/api` al backend, y el backend y SQL Server
+quedan cerrados dentro de la red de Docker.
 
 ## Ejecutar con Docker
 
@@ -66,9 +82,25 @@ Convención de mensajes de commit: `feat:` nueva funcionalidad · `fix:` correcc
 
 ## Avance
 
-| Sprint | Alcance | Estado |
+| Documento | Alcance | Estado |
 |---|---|---|
-| 1 | RF-01 Autenticación: iniciar sesión, recuperar contraseña, creación de cuentas por el administrador | Terminado |
-| 2 | Entidades de todo el sistema · RF-02 Pedidos · RF-03 Estados de cocina · RF-04 Comandas · menú de productos · identidad visual | Terminado |
+| [`sprint-1.md`](docs/sprint-1.md) | RF-01 Autenticación: iniciar sesión, recuperar contraseña, creación de cuentas por el administrador | Terminado |
+| [`sprint-2.md`](docs/sprint-2.md) | Entidades de todo el sistema · RF-02 Pedidos · RF-03 Estados de cocina · RF-04 Comandas · menú de productos · identidad visual | Terminado |
+| [`sprint-3.md`](docs/sprint-3.md) | RF-05 Inventario · RF-06 Descuento automático · RF-07 Alertas · RF-08 Panel administrativo · RF-12 Historial | Terminado |
+| [`sprint-5.md`](docs/sprint-5.md) | RF-09 Estadísticas · RF-10 Análisis · RF-11 Recomendaciones (RestoFlow AI) | Terminado |
+| [`sprint-6.md`](docs/sprint-6.md) | Avisos por rol, Google Gemini, pruebas de carga y estrés, despliegue en AWS y versión 1.1.1 | Terminado |
 
-Detalle en [`docs/sprint-1.md`](docs/sprint-1.md) y [`docs/sprint-2.md`](docs/sprint-2.md).
+## Calidad y validación
+
+| Tema | Documento |
+|---|---|
+| Validación de los 19 requerimientos (12 funcionales y 7 no funcionales) | [`docs/validacion-requisitos.md`](docs/validacion-requisitos.md) |
+| Pruebas de carga y estrés con Apache JMeter en AWS | [`docs/pruebas/carga-y-estres.md`](docs/pruebas/carga-y-estres.md) |
+| Rendimiento con un usuario | [`docs/pruebas/rendimiento.md`](docs/pruebas/rendimiento.md) |
+| Análisis de calidad con SonarQube | [`docs/sonarqube.md`](docs/sonarqube.md) |
+| Principios SOLID y los doce factores | [`docs/principios-solid.md`](docs/principios-solid.md) · [`docs/doce-factores.md`](docs/doce-factores.md) |
+
+**Pruebas automáticas:** 366 en el backend (JUnit 5, integración con H2 y MockMvc, y pruebas que vigilan las
+reglas de la arquitectura hexagonal) y unas 250 en el frontend (Jest).
+
+El **manual de usuario** se entrega aparte, en PDF.

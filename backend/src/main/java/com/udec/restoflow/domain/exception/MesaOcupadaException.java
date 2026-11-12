@@ -5,7 +5,9 @@ package com.udec.restoflow.domain.exception;
  * qué mesero la atiende y cómo se libera. El número del pedido no va en el mensaje (solo lo ve el administrador);
  * como una mesa tiene un solo pedido abierto, la mesa basta para identificarlo.
  */
-public class MesaOcupadaException extends OperacionNoPermitidaException {
+// Hereda de OperacionNoPermitidaException para que el API responda 409 sin un manejador propio. SonarQube cuenta
+// también Throwable, Exception y RuntimeException, por eso marca más de 5 niveles (java:S110).
+public class MesaOcupadaException extends OperacionNoPermitidaException {   // NOSONAR java:S110
 
     private final int numeroMesa;
     private final Long pedidoId;

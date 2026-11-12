@@ -32,6 +32,7 @@ class ConsultarPanelEnCacheServiceTest {
     /** Cálculo de mentira que cuenta cuántas veces se ejecutó. */
     private static class CalculoContado implements ConsultarPanelUseCase {
         final AtomicInteger veces = new AtomicInteger();
+        final CountDownLatch nuncaLlega = new CountDownLatch(1);
         long demoraMs;
 
         @Override
@@ -39,7 +40,8 @@ class ConsultarPanelEnCacheServiceTest {
             int numero = veces.incrementAndGet();
             if (demoraMs > 0) {
                 try {
-                    Thread.sleep(demoraMs);
+                    // Simula un cálculo lento: espera demoraMs a una señal que nunca llega
+                    nuncaLlega.await(demoraMs, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }

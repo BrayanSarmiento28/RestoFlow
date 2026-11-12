@@ -16,9 +16,11 @@ RUN mvn -B -q package -DskipTests \
 # ---------- Etapa 2: imagen final ----------
 FROM eclipse-temurin:17-jre-alpine
 
+# La versión llega desde docker-compose (RESTOFLOW_VERSION), la misma de la etiqueta de la imagen
+ARG VERSION=1.1.1
 LABEL org.opencontainers.image.title="restoflow-backend" \
       org.opencontainers.image.description="API REST de RestoFlow (Spring Boot, arquitectura hexagonal)" \
-      org.opencontainers.image.version="0.3.0"
+      org.opencontainers.image.version="${VERSION}"
 
 # Usuario sin privilegios: el contenedor no se ejecuta como root
 RUN addgroup -S restoflow && adduser -S -G restoflow restoflow

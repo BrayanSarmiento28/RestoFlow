@@ -14,7 +14,7 @@
 
     <groupId>com.udec</groupId>
     <artifactId>restoflow-backend</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <name>RestoFlow Backend</name>
     <description>API REST de RestoFlow - Spring Boot 3 con arquitectura hexagonal</description>
 
@@ -102,6 +102,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Esperar algo asíncrono en las pruebas sin Thread.sleep (versión la define Spring Boot) -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

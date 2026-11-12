@@ -3,12 +3,12 @@ package com.udec.restoflow.domain.ia;
 import com.udec.restoflow.domain.model.DetallePedido;
 import com.udec.restoflow.domain.model.Pedido;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * RestoFlow AI · cuánto tarda normalmente cada plato, aprendido de los pedidos reales (desde que se registra hasta
@@ -64,7 +64,9 @@ public final class TiemposPreparacion {
     }
 
     public int minutosNormales(Pedido pedido) {
-        return minutosNormales(platoMasLento(pedido).getProductoId());
+        // Un pedido siempre tiene al menos un plato (lo valida Pedido), así que siempre hay uno más lento
+        DetallePedido lento = Objects.requireNonNull(platoMasLento(pedido), "El pedido no tiene platos");
+        return minutosNormales(lento.getProductoId());
     }
 
     /**
@@ -93,7 +95,7 @@ public final class TiemposPreparacion {
                     || p.getFechaListo().isBefore(p.getFechaCreacion())) {
                 continue;
             }
-            long minutos = Duration.between(p.getFechaCreacion(), p.getFechaListo()).toMinutes();
+            long minutos = Duraciones.minutosEntre(p.getFechaCreacion(), p.getFechaListo());
             for (DetallePedido d : p.getDetalles()) {
                 nombres.putIfAbsent(d.getProductoId(), d.getProductoNombre());
             }

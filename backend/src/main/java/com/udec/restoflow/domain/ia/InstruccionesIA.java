@@ -14,6 +14,7 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -38,6 +39,8 @@ public final class InstruccionesIA {
     private static final int AVISOS_EN_CONTEXTO = 15;
     private static final Locale COLOMBIA = Locale.forLanguageTag("es-CO");
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    /** Viñetas, guiones o numeración que la IA a veces pone al inicio de la línea. */
+    private static final Pattern VINETA = Pattern.compile("^[\\s\\-*•\\d.)]+");
 
     static final String BASE = """
             Eres RestoFlow AI, el asistente de un restaurante colombiano que usa el software RestoFlow.
@@ -67,8 +70,14 @@ public final class InstruccionesIA {
         }
         long urgentes = avisos.stream().filter(a -> a.nivel() == Aviso.Nivel.URGENTE).count();
         String cuantos = avisos.size() == 1 ? "Tiene 1 aviso" : "Tiene " + avisos.size() + " avisos";
-        String detalle = urgentes == 0 ? "" : urgentes == 1 ? " (1 urgente)" : " (" + urgentes + " urgentes)";
-        return cuantos + detalle + ". Empiece por: " + avisos.get(0).titulo() + ".";
+        return cuantos + detalleUrgentes(urgentes) + ". Empiece por: " + avisos.get(0).titulo() + ".";
+    }
+
+    private static String detalleUrgentes(long urgentes) {
+        if (urgentes == 0) {
+            return "";
+        }
+        return urgentes == 1 ? " (1 urgente)" : " (" + urgentes + " urgentes)";
     }
 
     // ---------- 2. Pregúntale a RestoFlow AI (administrador) ----------
@@ -121,23 +130,31 @@ public final class InstruccionesIA {
             return lista;
         }
         for (String linea : texto.split("\\R")) {
-            String l = linea.replaceAll("^[\\s\\-*•\\d.)]+", "").replace("**", "").trim();
-            String[] partes = l.split("\\|", 4);
-            if (partes.length < 4 || partes[2].isBlank() || partes[3].isBlank()) {
-                continue;
+            Recomendacion r = leerLinea(linea);
+            if (r != null) {
+                lista.add(r);
             }
-            PrioridadAlerta prioridad = enumOrNull(PrioridadAlerta.class, partes[0]);
-            if (prioridad == null) {
-                continue;
-            }
-            Tipo tipo = enumOrNull(Tipo.class, partes[1]);
-            lista.add(new Recomendacion(tipo == null ? Tipo.INFORMACION : tipo, prioridad,
-                    recortar(partes[2].trim(), 120), recortar(partes[3].trim(), 400), null, null));
             if (lista.size() == RECOMENDACIONES_MAXIMAS) {
                 break;
             }
         }
         return lista;
+    }
+
+    /** Una línea "PRIORIDAD|TIPO|Título|Detalle" (sin viñetas ni negritas), o null si no cumple el formato. */
+    private static Recomendacion leerLinea(String linea) {
+        String l = VINETA.matcher(linea).replaceAll("").replace("**", "").trim();
+        String[] partes = l.split("\\|", 4);
+        if (partes.length < 4 || partes[2].isBlank() || partes[3].isBlank()) {
+            return null;
+        }
+        PrioridadAlerta prioridad = enumOrNull(PrioridadAlerta.class, partes[0]);
+        if (prioridad == null) {
+            return null;
+        }
+        Tipo tipo = enumOrNull(Tipo.class, partes[1]);
+        return new Recomendacion(tipo == null ? Tipo.INFORMACION : tipo, prioridad,
+                recortar(partes[2].trim(), 120), recortar(partes[3].trim(), 400), null, null);
     }
 
     // ---------- Datos que se le entregan a la IA ----------
@@ -149,52 +166,69 @@ public final class InstruccionesIA {
         t.append("Fecha y hora: ").append(ahora.format(FECHA)).append(" (")
                 .append(ahora.getDayOfWeek().getDisplayName(TextStyle.FULL, COLOMBIA)).append(")\n");
         if (ventas != null) {
-            t.append("VENTAS de los últimos 7 días completos: ").append(GeneradorRecomendaciones.pesos(ventas.ventasSemana()));
-            if (ventas.tendenciaVentas() != null) {
-                t.append(" (").append(signo(ventas.tendenciaVentas())).append(" frente a la semana anterior)");
-            }
-            t.append(". Días con ventas en las últimas 4 semanas: ").append(ventas.diasConVentas()).append(".");
-            if (ventas.diaMasFuerte() != null) {
-                t.append(" Día más fuerte: ").append(ventas.diaMasFuerte().getDisplayName(TextStyle.FULL, COLOMBIA)).append(".");
-            }
-            if (ventas.horaPico() != null) {
-                t.append(" Hora pico: ").append(ventas.horaPico()).append(":00.");
-            }
-            t.append("\nPRODUCTOS (unidades esta semana / semana anterior):\n");
-            for (ProductoTendencia p : ventas.productos()) {
-                t.append("- ").append(p.nombre()).append(": ").append(p.unidadesSemana()).append(" / ")
-                        .append(p.unidadesSemanaAnterior());
-                if (p.tendenciaPorcentaje() != null) {
-                    t.append(" (").append(signo(p.tendenciaPorcentaje())).append(")");
-                }
-                t.append("\n");
-            }
-            Prediccion pr = ventas.prediccion();
-            if (pr != null) {
-                t.append("PREDICCIÓN para ").append(pr.fecha().getDayOfWeek().getDisplayName(TextStyle.FULL, COLOMBIA))
-                        .append(" ").append(pr.fecha()).append(": unos ").append(pr.pedidosEsperados())
-                        .append(" pedidos y ").append(GeneradorRecomendaciones.pesos(pr.ventasEsperadas()));
-                if (pr.variacionPromedio() != null) {
-                    t.append(" (").append(signo(pr.variacionPromedio())).append(" frente a un día normal)");
-                }
-                String mas = pr.productos().stream().map(d -> d.nombre() + " " + d.unidades())
-                        .collect(Collectors.joining(", "));
-                t.append(mas.isEmpty() ? "" : ". Más pedidos: " + mas).append("\n");
-            }
+            agregarVentas(t, ventas);
+            agregarProductos(t, ventas.productos());
+            agregarPrediccion(t, ventas.prediccion());
         }
-        if (!insumos.isEmpty()) {
-            t.append("INSUMOS (stock / mínimo / consumo diario / días que alcanza / sugerido comprar):\n");
-            insumos.stream().limit(INSUMOS_EN_CONTEXTO).forEach(i -> {
-                String u = " " + GeneradorRecomendaciones.abreviatura(i.unidad());
-                t.append("- ").append(i.nombre()).append(": ").append(num(i.stockActual())).append(u).append(" / ")
-                        .append(num(i.stockMinimo())).append(u).append(" / ").append(num(i.consumoDiario())).append(u)
-                        .append(" / ").append(i.diasCobertura() == null ? "sin consumo" : num(i.diasCobertura()) + " días")
-                        .append(" / ").append(i.cantidadSugerida() == null ? "nada" : num(i.cantidadSugerida()) + u)
-                        .append("\n");
-            });
-        }
+        agregarInsumos(t, insumos);
         t.append("AVISOS DEL MOMENTO:\n").append(listaAvisos(avisos));
         return t.toString();
+    }
+
+    private static void agregarVentas(StringBuilder t, AnalisisVentas ventas) {
+        t.append("VENTAS de los últimos 7 días completos: ").append(GeneradorRecomendaciones.pesos(ventas.ventasSemana()));
+        if (ventas.tendenciaVentas() != null) {
+            t.append(" (").append(signo(ventas.tendenciaVentas())).append(" frente a la semana anterior)");
+        }
+        t.append(". Días con ventas en las últimas 4 semanas: ").append(ventas.diasConVentas()).append(".");
+        if (ventas.diaMasFuerte() != null) {
+            t.append(" Día más fuerte: ").append(ventas.diaMasFuerte().getDisplayName(TextStyle.FULL, COLOMBIA)).append(".");
+        }
+        if (ventas.horaPico() != null) {
+            t.append(" Hora pico: ").append(ventas.horaPico()).append(":00.");
+        }
+    }
+
+    private static void agregarProductos(StringBuilder t, List<ProductoTendencia> productos) {
+        t.append("\nPRODUCTOS (unidades esta semana / semana anterior):\n");
+        for (ProductoTendencia p : productos) {
+            t.append("- ").append(p.nombre()).append(": ").append(p.unidadesSemana()).append(" / ")
+                    .append(p.unidadesSemanaAnterior());
+            if (p.tendenciaPorcentaje() != null) {
+                t.append(" (").append(signo(p.tendenciaPorcentaje())).append(")");
+            }
+            t.append("\n");
+        }
+    }
+
+    private static void agregarPrediccion(StringBuilder t, Prediccion pr) {
+        if (pr == null) {
+            return;
+        }
+        t.append("PREDICCIÓN para ").append(pr.fecha().getDayOfWeek().getDisplayName(TextStyle.FULL, COLOMBIA))
+                .append(" ").append(pr.fecha()).append(": unos ").append(pr.pedidosEsperados())
+                .append(" pedidos y ").append(GeneradorRecomendaciones.pesos(pr.ventasEsperadas()));
+        if (pr.variacionPromedio() != null) {
+            t.append(" (").append(signo(pr.variacionPromedio())).append(" frente a un día normal)");
+        }
+        String mas = pr.productos().stream().map(d -> d.nombre() + " " + d.unidades())
+                .collect(Collectors.joining(", "));
+        t.append(mas.isEmpty() ? "" : ". Más pedidos: " + mas).append("\n");
+    }
+
+    private static void agregarInsumos(StringBuilder t, List<PronosticoInsumo> insumos) {
+        if (insumos.isEmpty()) {
+            return;
+        }
+        t.append("INSUMOS (stock / mínimo / consumo diario / días que alcanza / sugerido comprar):\n");
+        insumos.stream().limit(INSUMOS_EN_CONTEXTO).forEach(i -> {
+            String u = " " + GeneradorRecomendaciones.abreviatura(i.unidad());
+            t.append("- ").append(i.nombre()).append(": ").append(num(i.stockActual())).append(u).append(" / ")
+                    .append(num(i.stockMinimo())).append(u).append(" / ").append(num(i.consumoDiario())).append(u)
+                    .append(" / ").append(i.diasCobertura() == null ? "sin consumo" : num(i.diasCobertura()) + " días")
+                    .append(" / ").append(i.cantidadSugerida() == null ? "nada" : num(i.cantidadSugerida()) + u)
+                    .append("\n");
+        });
     }
 
     /** Quita formato que la pantalla no muestra (markdown) y acota el largo. */
