@@ -44,6 +44,11 @@
                   <strong>{{ l.cantidad }}×</strong> {{ l.productoNombre }}
                   @if (l.adicion) { <span class="rf-chip rf-chip--alerta adicion">Adición</span> }
                   @if (l.nota) { <em>{{ l.nota }}</em> }
+                  @if (col.estado !== 'LISTO') {
+                    @for (s of stockDe(l.productoId); track s.texto) {
+                      <span class="stock" [class.stock--agotado]="s.agotado">{{ s.texto }}</span>
+                    }
+                  }
                 </li>
               }
             </ul>

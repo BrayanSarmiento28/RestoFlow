@@ -10,10 +10,14 @@ const listo = pedido({ id: 3, estadoCocina: 'LISTO' });
 
 describe('Pantalla de Cocina', () => {
   let montaje: Montaje<Cocina>;
-  let api: { comandas: jest.Mock; cambiarEstado: jest.Mock };
+  let api: { comandas: jest.Mock; cambiarEstado: jest.Mock; stockBajo: jest.Mock };
 
   function abrir(rol: 'COCINA' | 'ADMIN' = 'COCINA') {
-    api = { comandas: jest.fn(() => ok([pendiente, preparando, listo])), cambiarEstado: jest.fn(() => ok(listo)) };
+    api = {
+      comandas: jest.fn(() => ok([pendiente, preparando, listo])),
+      cambiarEstado: jest.fn(() => ok(listo)),
+      stockBajo: jest.fn(() => ok([])),
+    };
     montaje = crear(Cocina, [{ provide: CocinaService, useValue: api }, conSesion(rol)]);
     montaje.componente.ngOnInit();
     return montaje.componente;
@@ -40,6 +44,37 @@ describe('Pantalla de Cocina', () => {
     const recien = new Date(Date.now() - 2 * 60_000).toISOString();
     expect(c['minutos'](pedido({ fechaCreacion: haceUnaHora }))).toBeGreaterThanOrEqual(59);
     expect(c['minutos'](pedido({ fechaCreacion: haceUnaHora, fechaAdicion: recien }))).toBeLessThan(5);
+  });
+
+  it('avisa bajo cada plato los insumos en su mínimo o agotados (usabilidad)', () => {
+    const c = abrir();
+    const productoId = pendiente.lineas[0].productoId;
+    expect(api.stockBajo).toHaveBeenCalledWith([productoId]);   // sin repetir y sin los pedidos ya listos
+    c['stock'].set([
+      { productoId, ingredienteId: 1, insumo: 'Aguacate', stockActual: 2, stockMinimo: 6, unidad: 'UNIDAD', agotado: false },
+      { productoId, ingredienteId: 2, insumo: 'Mora', stockActual: 0, stockMinimo: 500, unidad: 'GRAMO', agotado: true },
+    ]);
+    expect(c['stockDe'](productoId)).toEqual([
+      { texto: 'Aguacate: quedan 2 und', agotado: false },
+      { texto: 'Mora agotado', agotado: true },
+    ]);
+    expect(c['stockDe'](999)).toEqual([]);
+  });
+
+  it('el stock no se vuelve a consultar en cada actualización si los platos no cambian', () => {
+    const c = abrir();
+    c['cargar']();
+    expect(api.comandas).toHaveBeenCalledTimes(2);
+    expect(api.stockBajo).toHaveBeenCalledTimes(1);
+  });
+
+  it('si la consulta de stock falla, la cocina sigue trabajando sin avisos', () => {
+    const c = abrir();
+    api.stockBajo.mockReturnValue(falla(500));
+    c['stockConsultado'] = { productos: '', momento: 0 };
+    c['cargar']();
+    expect(c['stock']()).toEqual([]);
+    expect(c['error']()).toBeNull();
   });
 
   it('el botón de cada pedido dice el siguiente paso', () => {

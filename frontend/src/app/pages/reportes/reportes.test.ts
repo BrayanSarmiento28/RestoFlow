@@ -11,6 +11,7 @@ function apis() {
     panel: {
       ventas: jest.fn(() => ok({
         desde: '2026-11-01', hasta: '2026-11-05', total: 300000, cantidad: 3, ticketPromedio: 100000, ventas: [],
+        tiemposPreparacion: [{ productoId: 1, nombre: 'Bandeja paisa', pedidos: 4, medianaMinutos: 24, promedioMinutos: 47 }],
         porDia: [{ dia: '2026-11-04', total: 100000, cantidad: 1 }, { dia: '2026-11-05', total: 200000, cantidad: 2 }],
       })),
       pedidos: jest.fn(() => ok([pedido({ total: 64000 }), pedido({ id: 41, total: 36000 })])),
@@ -45,6 +46,13 @@ describe('Pantalla de Reportes', () => {
     expect(api.panel.ventas).toHaveBeenCalledWith(c['desde'](), hoy);
     expect(c['insumos']()).toHaveLength(1);
     expect(c['cargando']()).toBe(false);
+  });
+
+  it('RF-09 · recibe el tiempo de preparación de cada plato del periodo', () => {
+    const c = abrir();
+    expect(c['ventas']()?.tiemposPreparacion).toEqual([
+      { productoId: 1, nombre: 'Bandeja paisa', pedidos: 4, medianaMinutos: 24, promedioMinutos: 47 },
+    ]);
   });
 
   it('calcula la altura de cada barra frente al mejor día', () => {

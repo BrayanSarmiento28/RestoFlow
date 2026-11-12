@@ -55,4 +55,28 @@ export interface ResumenVentas {
   ticketPromedio: number;
   porDia: { dia: string; total: number; cantidad: number }[];
   ventas: Pedido[];
+  /** RF-09 · Tiempo de preparación de cada plato vendido en el periodo (del más lento al más rápido). */
+  tiemposPreparacion: TiempoPlato[];
+}
+
+/** RF-09 · Minutos desde que se registra el pedido hasta que la cocina lo marca Listo. */
+export interface TiempoPlato {
+  productoId: number;
+  nombre: string;
+  /** Pedidos que se pudieron medir (los que tienen adición no cuentan). */
+  pedidos: number;
+  /** Tiempo normal: la mediana, que no se dispara por un pedido olvidado. */
+  medianaMinutos: number;
+  promedioMinutos: number;
+}
+
+/** Usabilidad · GET /api/cocina/stock: insumo de un plato de las comandas que está en su mínimo o agotado. */
+export interface StockBajo {
+  productoId: number;
+  ingredienteId: number;
+  insumo: string;
+  stockActual: number;
+  stockMinimo: number;
+  unidad: UnidadMedida;
+  agotado: boolean;
 }

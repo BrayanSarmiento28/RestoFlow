@@ -5,6 +5,7 @@ import com.udec.restoflow.domain.model.Pedido;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,17 +33,7 @@ public final class TiemposPreparacion {
 
     /** Aprende de los pedidos que ya llegaron a Listo. */
     public static TiemposPreparacion aprender(List<Pedido> historial) {
-        Map<Long, List<Long>> muestras = new HashMap<>();
-        for (Pedido p : historial) {
-            // Un pedido con adición no sirve de muestra: su hora de Listo incluye lo que se pidió después
-            if (p.tieneAdicion() || p.getFechaListo() == null || p.getFechaCreacion() == null
-                    || p.getFechaListo().isBefore(p.getFechaCreacion())) {
-                continue;
-            }
-            long minutos = Duration.between(p.getFechaCreacion(), p.getFechaListo()).toMinutes();
-            p.getDetalles().stream().map(DetallePedido::getProductoId).distinct()
-                    .forEach(id -> muestras.computeIfAbsent(id, k -> new ArrayList<>()).add(minutos));
-        }
+        Map<Long, List<Long>> muestras = muestras(historial, new HashMap<>());
         Map<Long, Integer> medianas = new HashMap<>();
         muestras.forEach((id, lista) -> {
             if (lista.size() >= MUESTRAS_MINIMAS) {
@@ -75,6 +66,46 @@ public final class TiemposPreparacion {
     public int minutosNormales(Pedido pedido) {
         return minutosNormales(platoMasLento(pedido).getProductoId());
     }
+
+    /**
+     * RF-09 · Estadística de tiempos de preparación por plato: cuántos pedidos se midieron, el tiempo normal
+     * (mediana) y el promedio, del plato más lento al más rápido. A diferencia de {@link #aprender}, incluye los
+     * platos con pocas muestras: es un reporte de lo que pasó, no una predicción.
+     */
+    public static List<TiempoPlato> porPlato(List<Pedido> pedidos) {
+        Map<Long, String> nombres = new HashMap<>();
+        Map<Long, List<Long>> muestras = muestras(pedidos, nombres);
+        return muestras.entrySet().stream()
+                .map(e -> new TiempoPlato(e.getKey(), nombres.get(e.getKey()), e.getValue().size(),
+                        mediana(e.getValue()),
+                        Math.round(e.getValue().stream().mapToLong(Long::longValue).average().orElse(0))))
+                .sorted(Comparator.comparingLong(TiempoPlato::medianaMinutos).reversed()
+                        .thenComparing(TiempoPlato::nombre, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+    }
+
+    /** Minutos desde que se registró el pedido hasta que la cocina lo marcó Listo, por plato. */
+    private static Map<Long, List<Long>> muestras(List<Pedido> pedidos, Map<Long, String> nombres) {
+        Map<Long, List<Long>> muestras = new HashMap<>();
+        for (Pedido p : pedidos) {
+            // Un pedido con adición no sirve de muestra: su hora de Listo incluye lo que se pidió después
+            if (p.tieneAdicion() || p.getFechaListo() == null || p.getFechaCreacion() == null
+                    || p.getFechaListo().isBefore(p.getFechaCreacion())) {
+                continue;
+            }
+            long minutos = Duration.between(p.getFechaCreacion(), p.getFechaListo()).toMinutes();
+            for (DetallePedido d : p.getDetalles()) {
+                nombres.putIfAbsent(d.getProductoId(), d.getProductoNombre());
+            }
+            p.getDetalles().stream().map(DetallePedido::getProductoId).distinct()
+                    .forEach(id -> muestras.computeIfAbsent(id, k -> new ArrayList<>()).add(minutos));
+        }
+        return muestras;
+    }
+
+    /** RF-09 · Tiempo de preparación de un plato en un periodo. */
+    public record TiempoPlato(Long productoId, String nombre, int pedidos, long medianaMinutos,
+                              long promedioMinutos) { }
 
     static long mediana(List<Long> valores) {
         List<Long> ordenados = valores.stream().sorted().toList();

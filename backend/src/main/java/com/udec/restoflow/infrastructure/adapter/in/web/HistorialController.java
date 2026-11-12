@@ -3,6 +3,7 @@ package com.udec.restoflow.infrastructure.adapter.in.web;
 import com.udec.restoflow.application.port.in.ConsultarHistorialUseCase;
 import com.udec.restoflow.application.port.in.ConsultarHistorialUseCase.ResumenVentas;
 import com.udec.restoflow.application.port.in.ConsultarHistorialUseCase.VentaPorDia;
+import com.udec.restoflow.domain.ia.TiemposPreparacion.TiempoPlato;
 import com.udec.restoflow.domain.model.EstadoPedido;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.PedidoResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,16 +41,18 @@ public class HistorialController {
     }
 
     @Operation(summary = "Ventas por rango de fechas",
-            description = "Pedidos pagados según la fecha de cobro, con total, ticket promedio y total por día.")
+            description = "Pedidos pagados según la fecha de cobro, con total, ticket promedio, total por día y "
+                    + "tiempo de preparación de cada plato (RF-09).")
     @GetMapping("/ventas")
     public VentasResponse ventas(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
         ResumenVentas r = historial.ventas(desde, hasta);
         return new VentasResponse(r.desde(), r.hasta(), r.total(), r.cantidad(), r.ticketPromedio(), r.porDia(),
-                r.ventas().stream().map(PedidoResponse::desde).toList());
+                r.ventas().stream().map(PedidoResponse::desde).toList(), r.tiemposPreparacion());
     }
 
     public record VentasResponse(LocalDate desde, LocalDate hasta, BigDecimal total, int cantidad,
-                                 BigDecimal ticketPromedio, List<VentaPorDia> porDia, List<PedidoResponse> ventas) { }
+                                 BigDecimal ticketPromedio, List<VentaPorDia> porDia, List<PedidoResponse> ventas,
+                                 List<TiempoPlato> tiemposPreparacion) { }
 }

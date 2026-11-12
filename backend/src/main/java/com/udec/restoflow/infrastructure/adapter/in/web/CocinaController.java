@@ -1,5 +1,7 @@
 package com.udec.restoflow.infrastructure.adapter.in.web;
 
+import com.udec.restoflow.application.port.in.ConsultarStockCocinaUseCase;
+import com.udec.restoflow.application.port.in.ConsultarStockCocinaUseCase.StockBajo;
 import com.udec.restoflow.application.port.in.GestionarCocinaUseCase;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.CambioEstadoRequest;
 import com.udec.restoflow.infrastructure.adapter.in.web.dto.PedidoDto.PedidoResponse;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -22,9 +25,11 @@ import java.util.List;
 public class CocinaController {
 
     private final GestionarCocinaUseCase cocina;
+    private final ConsultarStockCocinaUseCase stock;
 
-    public CocinaController(GestionarCocinaUseCase cocina) {
+    public CocinaController(GestionarCocinaUseCase cocina, ConsultarStockCocinaUseCase stock) {
         this.cocina = cocina;
+        this.stock = stock;
     }
 
     @Operation(summary = "Comandas por atender",
@@ -32,6 +37,14 @@ public class CocinaController {
     @GetMapping("/comandas")
     public List<PedidoResponse> comandas() {
         return cocina.comandasPendientes().stream().map(PedidoResponse::desde).toList();
+    }
+
+    @Operation(summary = "Insumos que se están acabando en los platos de las comandas",
+            description = "Para los productos indicados, los insumos de su receta que están en su mínimo o agotados. "
+                    + "Lista vacía si todo alcanza.")
+    @GetMapping("/stock")
+    public List<StockBajo> stockBajo(@RequestParam(name = "productos", required = false) List<Long> productos) {
+        return stock.stockBajo(productos == null ? List.of() : productos);
     }
 
     @Operation(summary = "Cambiar el estado de preparación",
